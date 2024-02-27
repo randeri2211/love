@@ -1,0 +1,55 @@
+enemy1:
+    radius:50
+    x:100
+    y:-200
+    name:enemy1
+    hpBar:
+        maxHP:50
+        regen:0
+        currentHP:50
+
+
+enemy1:
+    radius:50
+    x:200
+    y:-200
+    name:enemy1
+    hpBar:
+        maxHP:50
+        regen:0
+        currentHP:50
+
+
+enemy1:
+    radius:50
+    x:300
+    y:-200
+    name:enemy1
+    hpBar:
+        maxHP:50
+        regen:0
+        currentHP:50
+
+
+enemy:
+    radius:50
+    x:400
+    y:-200
+    name:enemy
+    hpBar:
+        maxHP:50
+        regen:0
+        currentHP:50
+
+
+enemy:
+    radius:50
+    x:500
+    y:-200
+    name:enemy
+    hpBar:
+        maxHP:50
+        regen:0
+        currentHP:50
+
+
