@@ -10,9 +10,10 @@ require "blocks.block"
 
 function love.load()
     initVars()
+    tempMap()
     initScreen()
 
-    -- saveScene()
+    saveScene()
     loadScene()
 end
 
@@ -23,10 +24,11 @@ function love.update(dt)
     -- Movement update
     -- moveEnemies(0, 0)
     player.movement(dt)
-
+    groundRay()
     -- Setting the camera to the player position
     local x,y = player.body:getWorldCenter()
     game_cam:lookAt(x, y)
+    map.update()
 end
 
 function love.draw()

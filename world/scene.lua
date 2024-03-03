@@ -42,11 +42,13 @@ function saveScene()
 end
 
 function loadScene()
+    initVars()
+
     -- Load Player
     local path = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
     local file = io.open(path, "r")
     local lines = file:lines()
-    -- loadPlayer(lines, 0)
+    loadPlayer(lines, 0)
 
     -- Load Map
     local path = SAVE_FOLDER .. "/" .. MAP_FILENAME
@@ -140,7 +142,6 @@ function loadEntities(lines, spaces)
     -- Loads all blocks into the map from the given lines iterator
     local line = lines()
     repeat
-        print(tostring(line))
         local res = recursiveLoad(spaces + DATA_SPACING, lines)
 
         if res.name == "enemy" then
@@ -151,7 +152,6 @@ function loadEntities(lines, spaces)
             
             local enemy = Enemy1(res.x, res.y)
 
-            print(tostring(enemy))
             enemy.load(res)
             addEnemy(enemy)
         end
@@ -170,19 +170,34 @@ function recursiveSave(file, t, spaces)
     allowed["table"] = true
     
 
+
     for key, val in pairs(t) do
-        if allowed[type(val)] then
+        if allowed[type(val)] and allowed[type(key)] then
             if type(val) == "table" then
-                space = ""
-                --multiply spaces
-                for i=1 ,spaces do 
-                    space = space .. " "
+
+                -- Making sure the table has a valueable information to store
+                local okay = false
+                for o_key, o_val in pairs(val) do
+
+                    if allowed[type(o_key)] and allowed[type(o_val)] then
+                        okay = true
+                        break
+                    end
                 end
-                file:write(space .. tostring(key) .. ":" .. "\n")
-                recursiveSave(file, val, spaces + DATA_SPACING)
+
+                -- As long as we have save worthy data,go inside
+                if okay == true then
+                    space = ""
+                    --multiply spaces
+                    for i=1 ,spaces do 
+                        space = space .. " "
+                    end
+                    file:write(space .. tostring(key) .. ":" .. "\n")
+                    recursiveSave(file, val, spaces + DATA_SPACING)
+                end
             else
                 space = ""
-                --multiply spaces
+                -- Multiply spaces
                 for i=1 ,spaces do 
                     space = space .. " "
                 end
