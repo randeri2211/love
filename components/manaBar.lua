@@ -1,6 +1,7 @@
 
+
 function ManaBar(currentMana, maxMana, manaRegen)
-    manaBar = {}
+    local manaBar = {}
 
     manaBar.currentMana = currentMana
     manaBar.maxMana = maxMana

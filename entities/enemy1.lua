@@ -1,16 +1,19 @@
 require "entities.enemy"
 
-function Enemy1(x, y)
-    local enemy1 = Enemy(x, y)
+Enemy1 = Enemy:new()
+
+function Enemy1:new(x, y)
+    local enemy1 = Enemy:new(x, y)
+    self.__index = self
+    setmetatable(enemy1,self)
+
     enemy1.name = "enemy1"
-
-
-    function enemy1.draw()
-        love.graphics.setColor(0, 1, 0, 1)
-        local x, y = enemy1.body:getWorldCenter()
-        love.graphics.circle("fill",x, y,enemy1.radius)
-        love.graphics.setColor(1, 1, 1, 1)
-    end
-
     return enemy1
+end
+
+function Enemy1:draw()
+    love.graphics.setColor(0, 1, 0, 1)
+    local x, y = self.body:getWorldCenter()
+    love.graphics.circle("fill",x, y,self.radius)
+    love.graphics.setColor(1, 1, 1, 1)
 end

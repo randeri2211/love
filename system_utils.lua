@@ -1,26 +1,56 @@
 camera = require "libraries.hump.camera"
 require "world.map"
-
+require "blocks.block2"
 function initVars()
     game_cam = camera()
-    enemies = {}        -- Global enemies array
-    blocks = {}         -- Global blocks array
-    map = Map(MAP_X, MAP_Y)
-    map.emptyMap()
+    map = Map:new(MAP_X, MAP_Y)
+    map:emptyMap()
     -- Physics init
     love.physics.setMeter(1)
     p_world = love.physics.newWorld(0, GRAVITY, true)
 
     -- Player init
-    player = Player(TILE_SIZE, - TILE_SIZE)
-    print(map.center.x)
+    player = Player:new(TILE_SIZE, - TILE_SIZE)
+
     -- World collision callbacks
     p_world:setCallbacks(startCollisionCallback, finishCollisionCallback, nil, nil)
 end
 
-function initScreen()
 
+function manageHitbox()
+    local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2 + CAMERA_RENDER_OFFSET))
+    local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2 + CAMERA_RENDER_OFFSET))
+    local p_x,p_y = loveToMap(player.body:getWorldCenter())
+    local turnOffDistance = 3
+    
+    for x = p_x - x_diff,p_x +x_diff do
+        for y = p_y - y_diff,p_y + y_diff do
+
+            if x > 0 and x <= map.width and y > 0 and y <= map.height then
+                local block = map.map[x][y]
+                if block ~= nil then
+                    if x < p_x - x_diff or x > p_x +x_diff or y < p_y - y_diff or y > p_y + y_diff then
+                        -- If outside of range, destroy the body
+                        if block.body ~= nil then
+                            block.body:destroy()
+                        end
+                    else
+                        local bx, by = loveToMap(block.x, block.y)
+                        -- If in range, and one of the neighbors is not a block,or at the edge of the map, generate a body
+                        if bx > 1 and bx < map.width and by > 1 and by < map.height then
+                            if map.map[x - 1][y] == nil or map.map[x + 1][y] == nil or map.map[x][y - 1] == nil or map.map[x][y + 1] == nil then
+                                block:generateBody()
+                            end
+                        else
+                            block:generateBody()
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
+
 
 function startCollisionCallback(fixture1, fixture2, contact)
     if fixture1 == player.fixture or fixture2 == player.fixture then
@@ -60,46 +90,19 @@ end
 
 function tempMap()
     for i = 1, map.width do
-        for j = 0, 3 do
-            local block = Block((i - map.center.x - 1) * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            map.insert(block)
+        for j = 0, 100 do
+            local block = Block:new((i - map.center.x - 1) * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            map:insert(block)
         end
     end
-    addEnemy(Enemy1(0,-200))
-    addEnemy(Enemy1(200,-200))
-    addEnemy(Enemy1(300,-200))
-    addEnemy(Enemy(-200,-200))
-    addEnemy(Enemy(-300,-200))
+    local block = Block2:new(5 * TILE_SIZE, -1*TILE_SIZE, TILE_SIZE, TILE_SIZE / 2)
+    map:insert(block)
+    map.enemies:addEnemy(Enemy1:new(0,-200))
+    map.enemies:addEnemy(Enemy1:new(200,-200))
+    map.enemies:addEnemy(Enemy1:new(300,-200))
+    map.enemies:addEnemy(Enemy:new(-200,-200))
+    map.enemies:addEnemy(Enemy:new(-300,-200))
 end
-
--- Enemy Util Functions
-function drawEnemies()
-    for i, enemy in pairs(enemies) do
-        -- print(i)
-        -- print(tostring(enemy))
-        local x, y = enemy.body:getWorldCenter()
-        local x, y = game_cam:cameraCoords(x, y)
-        if x > - CAMERA_RENDER_OFFSET and x < SCREEN_X + CAMERA_RENDER_OFFSET and y > - CAMERA_RENDER_OFFSET and y < SCREEN_Y + CAMERA_RENDER_OFFSET then
-            enemy.draw()
-        end
-    end
-end
-
-function moveEnemies(x, y)
-    for i in pairs(enemies) do
-        enemies[i].move(x, y)
-        enemies[i].wakeUp()
-    end
-end
-
-function addEnemy(enemy)
-    local arrSize = table.getn(enemies)
-    enemies[arrSize + 1] = enemy
-end
-
-
-
-
 
 -- Debug Util Functions
 local order = 0

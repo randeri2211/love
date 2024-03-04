@@ -1,20 +1,23 @@
 player:
-    radius:10
-    jumpHeight:80
-    hpBar:
-        regen:1
-        currentHP:100
-        maxHP:100
+    x:0
+    grounded:false
+    radius:15
+    movement:
+        jumpHeight:120
+        currentSpeed:120
+        maxSpeed:120
 
+    y:-30
+    up:true
     manaBar:
+        maxMana:100
         manaRegen:10
         currentMana:100
-        maxMana:100
 
-    x:0
-    y:-20
-    grounded:false
+    hpBar:
+        regen:1
+        maxHP:100
+        currentHP:100
+
     jumping:false
-    speed:80
-    up:true
 

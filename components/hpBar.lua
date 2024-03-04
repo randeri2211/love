@@ -1,6 +1,6 @@
 
 function HPBar(currentHP, maxHP, regen)
-    hpBar = {}
+    local hpBar = {}
 
     hpBar.currentHP = currentHP
     hpBar.maxHP = maxHP

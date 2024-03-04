@@ -1,51 +1,59 @@
 require "components.hpBar"
 
-function Enemy(x, y)
+Enemy = {}
+
+function Enemy:new(x, y)
     -- Enemy Attributes
     local enemy = {}
+    setmetatable(enemy,self)
+    self.__index = self
     enemy.radius = 50
+    enemy.hpBar = HPBar(50, 50, 0)
+    enemy.name = "enemy"
+
+    if x == nil or y == nil then
+        return enemy
+    end
     enemy.body = love.physics.newBody(p_world, x, y, "dynamic")
     enemy.shape = love.physics.newCircleShape(enemy.radius)
     enemy.fixture = love.physics.newFixture(enemy.body, enemy.shape, 1)
-    enemy.name = "enemy"
-    enemy.hpBar = HPBar(50, 50, 0)
 
     -- Enemy Init
     enemy.body:setGravityScale(0)
     enemy.body:setSleepingAllowed(false)
-    
-    -- Enemy Functions
-    function enemy.draw()
-        local x, y = enemy.body:getWorldCenter()
-        love.graphics.circle("fill",x, y,enemy.radius)
-    end
-    
-    function enemy.move(x, y)
-        enemy.body:setLinearVelocity(x, y)
-    end    
-
-    function enemy.prepSave()
-        -- Prep the x and y values for saving(easier than trying to save the box and whatever user data)
-        enemy.x, enemy.y = enemy.body:getWorldCenter()
-    end
-
-    function enemy.load(enemyTable)
-        -- Loads the enemy from a loaded table
-        enemy.hpBar = enemyTable.hpBar
-        enemy.radius = enemyTable.radius
-        enemy.shape:setRadius(enemy.radius)
-        enemy.fixture:destroy()
-        enemy.fixture = love.physics.newFixture(enemy.body, enemy.shape, 1)
-        
-    end
-    
-    function enemy.wakeUp()
-        if enemy.body:isAwake() == false then
-            enemy.body:wakeUp()
-        end
-    end
-
     return enemy
 end
+
+-- Enemy Functions
+function Enemy:draw()
+    local x, y = self.body:getWorldCenter()
+    love.graphics.circle("fill",x, y,self.radius)
+end
+
+function Enemy:move(x, y)
+    self.body:setLinearVelocity(x, y)
+end    
+
+function Enemy:prepSave()
+    -- Prep the x and y values for saving(easier than trying to save the box and whatever user data)
+    self.x, self.y = self.body:getWorldCenter()
+end
+
+function Enemy:load(enemyTable)
+    -- Loads the enemy from a loaded table
+    self.hpBar = enemyTable.hpBar
+    self.radius = enemyTable.radius
+    self.shape:setRadius(self.radius)
+    self.fixture:destroy()
+    self.fixture = love.physics.newFixture(self.body, self.shape, 1)
+    
+end
+
+function Enemy:wakeUp()
+    if self.body:isAwake() == false then
+        self.body:wakeUp()
+    end
+end
+
 
 

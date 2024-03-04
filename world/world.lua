@@ -18,6 +18,6 @@ function loveToMap(l_x, l_y)
 end
 
 function worldToMap(w_x, w_y)
-    -- Calculate position on the map(add 1 to account for block with and 0.1 for rounding error)
-    return math.floor(w_x + map.center.x + 1.1), math.floor(w_y + map.center.y + 1.1)
+    -- Calculate position on the map(add 1 to account for block size and 0.1 for rounding error)
+    return math.floor(w_x + map.center.x + 1.8), math.floor(w_y + map.center.y + 1.8)
 end

@@ -69,7 +69,7 @@ end
 -- Helper Functions
 function savePlayer(file, spaces)
     -- Saves a player to a given file within the spaces
-    player.prepSave()
+    player:prepSave()
 
     space = ""
     --multiply spaces
@@ -100,7 +100,6 @@ end
 function saveMap(file, spaces)
     for x, col in pairs(map.map) do
         for y, block in pairs(col) do
-            block.prepSave()
             space = ""
             --multiply spaces
             for j=1 ,spaces do 
@@ -117,7 +116,7 @@ function loadPlayer(lines, spaces)
     -- Loads a player from the given lines iterator
     lines()
     local res = recursiveLoad(spaces + DATA_SPACING, lines)
-    player.load(res)
+    player:load(res)
 end
 
 function loadMap(lines, spaces)
@@ -130,9 +129,9 @@ function loadMap(lines, spaces)
         --     print(k..","..tostring(v))
         -- end
         if res.type == "Block" then
-            local block = Block(res.x, res.y, res.width, res.height)
-            block.load(res)
-            map.insert(block)
+            local block = Block:new(res.x, res.y, res.width, res.height)
+            block:load(res)
+            map:insert(block)
         end
         line = lines()
     until line == nil
