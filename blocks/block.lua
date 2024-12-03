@@ -27,7 +27,7 @@ function Block:new(x, y, width, height)
     if block.x % TILE_SIZE ~= 0 then
         block.x = block.x - (block.x % TILE_SIZE)
     end
-
+    
     return block
 end
 
@@ -61,6 +61,14 @@ function Block:generateBody()
         self.body:setSleepingAllowed(true)
         self.body:isAwake(false)
         self.fixture:setCategory(BLOCKS_CATEGORY)
+    end
+end
+
+
+function Block:destroyBody()
+    if self.body ~= nil then
+        self.body:destroy()
+        self.body = nil
     end
 end
 

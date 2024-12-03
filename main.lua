@@ -7,62 +7,59 @@ require "world.scene"
 require "entities.enemy"
 require "entities.enemy1"
 require "blocks.block"
-require "animations"
+require "animations.animations"
 
 
 function love.load()
     initVars()
     tempMap()
 
-    -- saveScene()
+    saveScene()
     -- loadScene()
-    t = love.timer.getTime()
-    animate()
+    fpsTimer = love.timer.getTime()
+    debug = true
 end
 
 function love.update(dt)
-    -- updateAnimation()
     -- Update physics
+    manageHitbox()
+    -- map:update()
     p_world:update(dt)
     
     -- Movement update
-    -- moveEnemies(0, 0)
-    player:move(dt)
+    player:move()
     groundRay()
     -- Setting the camera to the player position
     local x,y = player.body:getWorldCenter()
     game_cam:lookAt(x, y)
-    map:update()
-    manageHitbox()
-
-    if (myActor:GetTransformer():GetPower("player") > 0) then
-		local vars = myActor:GetTransformer():GetVariables("player");
-        print(vars)
+    
+    -- Animation update
+    if (player.anim.actor:GetTransformer():GetPower("player") > 0) then
+		local vars = player.anim.actor:GetTransformer():GetVariables("player")
 		vars.time = vars.time + dt;
 	end
-	myActor:Update(dt);
-
-    if love.timer.getTime() - t > 1 then
-        t = love.timer.getTime()
-        print(love.timer.getFPS())
+	player.anim.actor:Update(dt);
+    
+    if debug then
+        -- Print the update fps to the console every second
+        if love.timer.getTime() - fpsTimer > 1 then
+            fpsTimer = love.timer.getTime()
+            print("FPS: " .. love.timer.getFPS())
+            print("body count: " .. p_world:getBodyCount())
+        end
     end
 end
 
 function love.draw()
     -- Drawing everything in regard to the camera
-    debugPrint()
+    if debug then
+        debugPrint()
+    end
 
     game_cam:attach()
         map:draw() 
-        player:draw()
+        player.anim.actor:Draw()
     game_cam:detach()
-    myActor:Draw();
-end
-
-function love.keypressed(key, isRepeat)
-	if (key == 'z') then
-		myActor:GetTransformer():SetPower("player", 1);
-	end
 end
 
 

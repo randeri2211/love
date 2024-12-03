@@ -4,41 +4,39 @@ require "constants"
 -- Main Functions
 function saveScene()
     -- Saving Player
-    local path = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
-    -- Clear the save file if it exists
-    local file = io.open(path,"w")
-    file:write("")
-    file:close()
+    local playerPath = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
+        -- Clear the save file if it exists
+    local playerFile = io.open(playerPath,"w")
+    playerFile:write("")
+    playerFile:close()
 
-    -- Open file in appending mode and add a player tag and recursively save the player
-    file = io.open(path,"a")
-    savePlayer(file, 0)
-    file:close()
+        -- Open file in appending mode and add a player tag and recursively save the player
+    playerFile = io.open(playerPath,"a")
+    -- savePlayer(file, 0)
+    playerFile:close()
 
 
     -- Saving Entities
-    local path = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
-    -- Clear the save file if it exists
-    local file = io.open(path,"w")
-    file:write("")
-    file:close()
+    local entityPath = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
+        -- Clear the save file if it exists
+    local entityFile = io.open(entityPath,"w")
+    entityFile:write("")
+    entityFile:close()
 
-    -- Open file in appending mode and add a player tag and recursively save the player
-    file = io.open(path,"a")
-    saveEntities(file, 0)
-    file:close()
+    entityFile = io.open(entityPath,"a")
+    -- saveEntities(entityFile, 0)
+    entityFile:close()
 
     -- Saving Map
-    local path = SAVE_FOLDER .. "/" .. MAP_FILENAME
-    -- Clear the save file if it exists
-    local file = io.open(path,"w")
-    file:write("")
-    file:close()
+    local mapPath = SAVE_FOLDER .. "/" .. MAP_FILENAME
+        -- Clear the save file if it exists
+    local mapFile = io.open(mapPath,"w")
+    mapFile:write("")
+    mapFile:close()
 
-    -- Open file in appending mode and add a player tag and recursively save the player
-    file = io.open(path,"a")
-    saveMap(file, 0)
-    file:close()
+    mapFile = io.open(mapPath,"a")
+    saveMap(mapFile, 0)
+    mapFile:close()
 end
 
 function loadScene()
@@ -84,7 +82,7 @@ end
 
 function saveEntities(file, spaces)
     -- Save all entities in the world
-    for i, entity in pairs(enemies) do
+    for i, entity in pairs(map.enemies.enemies) do
         entity.prepSave()
         space = ""
         --multiply spaces

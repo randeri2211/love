@@ -1,6 +1,7 @@
 camera = require "libraries.hump.camera"
 require "world.map"
 require "blocks.block2"
+
 function initVars()
     game_cam = camera()
     map = Map:new(MAP_X, MAP_Y)
@@ -18,22 +19,22 @@ end
 
 
 function manageHitbox()
-    local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2 + CAMERA_RENDER_OFFSET))
-    local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2 + CAMERA_RENDER_OFFSET))
+    local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2) + CAMERA_RENDER_OFFSET)
+    local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2) + CAMERA_RENDER_OFFSET)
     local p_x,p_y = loveToMap(player.body:getWorldCenter())
-    local turnOffDistance = 3
-    
-    for x = p_x - x_diff,p_x +x_diff do
-        for y = p_y - y_diff,p_y + y_diff do
-
+    local destroyDistance = 3    
+    for x = math.max(p_x - x_diff - destroyDistance, 1), math.min(p_x + x_diff + destroyDistance, map.width) do
+        for y = math.max(p_y - y_diff - destroyDistance, 1),math.min(p_y + y_diff + destroyDistance, map.height) do
+            -- Making sure were only checking within map bounds (might be redundant)
             if x > 0 and x <= map.width and y > 0 and y <= map.height then
                 local block = map.map[x][y]
                 if block ~= nil then
+                    -- In the body destroy area
                     if x < p_x - x_diff or x > p_x +x_diff or y < p_y - y_diff or y > p_y + y_diff then
                         -- If outside of range, destroy the body
-                        if block.body ~= nil then
-                            block.body:destroy()
-                        end
+                        block:destroyBody()
+                        -- print("destroying")
+                    -- In the body generate area
                     else
                         local bx, by = loveToMap(block.x, block.y)
                         -- If in range, and one of the neighbors is not a block,or at the edge of the map, generate a body
@@ -93,6 +94,8 @@ function tempMap()
         for j = 0, 100 do
             local block = Block:new((i - map.center.x - 1) * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             map:insert(block)
+            -- local block1 = Block:new((i - map.center.x - 1) * TILE_SIZE,  (-3 -j) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            -- map:insert(block1)
         end
     end
     local block = Block2:new(5 * TILE_SIZE, -1*TILE_SIZE, TILE_SIZE, TILE_SIZE / 2)

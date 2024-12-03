@@ -4,6 +4,9 @@ require "components.hpBar"
 require "components.manaBar"
 require "components.movement"
 Player = {}
+AS = 25
+AD = 1
+-- AS / (self.movement.currentSpeed * AD) = 0.3
 
 function Player:new(x, y)
     local player = {}
@@ -17,7 +20,7 @@ function Player:new(x, y)
     player.shapes[1] = love.physics.newRectangleShape(PLAYER_WIDTH, PLAYER_HEIGHT - PLAYER_WIDTH)
     player.shapes[2] = love.physics.newCircleShape(0, -(PLAYER_HEIGHT - PLAYER_WIDTH) / 2, player.radius)
     player.shapes[3] = love.physics.newCircleShape(0, (PLAYER_HEIGHT - PLAYER_WIDTH) / 2, player.radius)
-
+    player.direction = ""
 
     player.fixtures = {}
     player.fixtures[1] = love.physics.newFixture(player.body, player.shapes[1], 1)
@@ -43,28 +46,48 @@ function Player:new(x, y)
     player.body:setFixedRotation(true)
     player.body:setLinearDamping(LINEAR_DAMPING)
     player.up = true
+    player:animationSetup()
 
     return player
 end
 
 -- Player Functions
-function Player:move(dt)
+function Player:move()
     -- Increase linear velocity according to speed(does'nt depend on time since its using world)
     local moved = false
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown("d") then
         self.body:setLinearVelocity(self.movement.currentSpeed, y)
         moved = true
+        if self.direction ~= 'right' then
+            self.direction = 'right'
+            self.anim.actor:GetTransformer():SetTransform("player", self.animations["right"].animation)
+            self.anim.bones['right_hand']:SetLayer(1)
+            self.anim.bones['left_hand']:SetLayer(4)
+            self.anim.bones['right_leg']:SetLayer(1)
+            self.anim.bones['left_leg']:SetLayer(3)
+            self.anim.actor:GetTransformer():SetPower("player", 1)
+        end
     end
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown("a") then
         self.body:setLinearVelocity(-self.movement.currentSpeed, y)
         moved = true
+        if self.direction ~= 'left' then
+            self.direction = 'left'
+            self.anim.actor:GetTransformer():SetTransform("player", self.animations["left"].animation)
+            self.anim.bones['right_hand']:SetLayer(4)
+            self.anim.bones['left_hand']:SetLayer(1)
+            self.anim.bones['right_leg']:SetLayer(3)
+            self.anim.bones['left_leg']:SetLayer(1)
+            self.anim.actor:GetTransformer():SetPower("player", 1)
+        end
     end
 
 
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown("space") then
+        self.moving = true
         if self.grounded then
             self.jumping = true
             self.body:setLinearVelocity(x, - self.movement.jumpHeight)
@@ -77,19 +100,24 @@ function Player:move(dt)
         self.jumping = false
         self.body:setGravityScale(1)
     end
-    
-    self:stopNoMove(moved)
+
+    self:moveControl(moved)
     self:upDown()
     -- self:linearDamping(moved)
     self:resetSmallVel()
 end
 
 
-function Player:stopNoMove(moved)
+function Player:moveControl(moved)
     if moved == false then
+        self.anim.actor:GetTransformer():SetPower("player", 0)
+        self.direction = ''
         local x, y = self.body:getLinearVelocity()
         self.body:setLinearVelocity(0, y)
     end
+    local x, y = self.body:getWorldCenter()
+    self.anim.actor:GetTransformer():GetRoot().translation = {x , y - PLAYER_HEIGHT / 2 + TILE_SIZE / 3}
+    
 end
 
 
@@ -132,22 +160,6 @@ function Player:resetSmallVel()
 end
 
 
-function Player:draw()
-    -- Get the world center to base all player drawing on
-    for i = 1, #self.shapes do
-        -- print(tostring(self.shapes[i]))
-        if i == 1 then
-            love.graphics.polygon("line", self.body:getWorldPoints(self.shapes[i]:getPoints()))
-        else
-            local x, y = self.shapes[i]:getPoint()
-            local b_x, b_y = self.body:getWorldCenter()
-            love.graphics.circle("line", x + b_x, y + b_y, self.radius)
-        end
-    end
-    -- myActor:Draw();
-end
-
-
 function Player:prepSave()
     -- Prep the x and y values for saving(easier than trying to save the box and whatever user data)
     self.x, self.y = self.body:getWorldCenter()
@@ -161,4 +173,142 @@ function Player:load(playerTable)
 end
 
 
+function Player:animationSetup()
+    -- local path = "assets/paneling_small.png"
+    -- local imgData = love.image.newImageData(path)
+    -- local path2 = "assets/grass.png"
+    -- local imgData2 = love.image.newImageData(path2)
 
+    local headHeight = TILE_SIZE / 3
+    local headhWidth = TILE_SIZE / 3
+    local torsoHeight = TILE_SIZE 
+    local torsoWidth = TILE_SIZE / 2
+    local legHeight = PLAYER_HEIGHT - torsoHeight - headHeight
+    local legWidth = TILE_SIZE/ 3
+    local handHeight = torsoHeight * 4 / 3
+    local handWidth = legWidth
+
+    -- Creating a table to hold all the animations
+    self.animations = {}
+    -- Creating the body
+    self.anim = Animateable:new();
+
+
+    local leftHandData = love.image.newImageData(handHeight, handWidth);
+    leftHandData:mapPixel(fullRed)
+    
+    local rightHandData = love.image.newImageData(handHeight, handWidth);
+    rightHandData:mapPixel(fullBlue)
+
+    -- Adding all the bones
+    self.anim:addBone("torso", nil, 2, {0, 0}, torsoWidth, torsoHeight)
+    self.anim:addBone("head", "torso", 2,{-headHeight, 0}, headhWidth, headHeight)
+    self.anim:addBone("right_leg", "torso", 1, {torsoHeight, 0}, legWidth, legHeight)
+    self.anim:addBone("left_leg", "torso", 3, {torsoHeight, 0}, legWidth, legHeight)
+    self.anim:addBone("right_hand", "torso", 1, {0, 0}, handWidth, handHeight, rightHandData)
+    self.anim:addBone( "left_hand", "torso", 4, {0, 0}, handWidth, handHeight, leftHandData)
+
+    -- Creating the actor AFTER adding all the bones
+    self.anim:newActor()
+    
+    -- Setting all the attachments
+    self.anim:SetAttachment("head")
+    self.anim:SetAttachment("torso")
+    self.anim:SetAttachment("right_hand")
+    self.anim:SetAttachment("left_hand")
+    self.anim:SetAttachment("right_leg")
+    self.anim:SetAttachment("left_leg")
+
+    self.anim.actor:GetTransformer():GetRoot().rotation = math.rad(90)
+    -- self.anim.actor:GetTransformer():GetRoot().translation = {love.graphics.getWidth() / 2 , love.graphics.getHeight() / 2 - PLAYER_HEIGHT / 2 + headHeight}
+    local x, y = self.body:getWorldCenter()
+    self.anim.actor:GetTransformer():GetRoot().translation = {x , y}
+
+    -- Creating a new animation for the body
+    self.animations["right"] = Animation:new(self.anim.skeleton)
+    self.animations["left"] = Animation:new(self.anim.skeleton)
+
+    -- Adding animation frames
+    self:rightAnimation()
+    self:leftAnimation()
+
+    -- Choosing animation to display
+    self.anim.actor:GetTransformer():SetTransform("player", self.animations["left"].animation)
+end
+
+
+function Player:rightAnimation()
+    self.animations["right"]:newAnimation()
+    self.animations["right"]:AddKeyFrame("head", 0, math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("torso", 0, math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_hand", 0, math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_hand", 0, math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_leg", 0, math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_leg", 0, math.rad(0), nil, nil)
+
+    self.animations["right"]:AddKeyFrame("head", 1 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("torso", 1 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_hand", 1 * AS / (self.movement.currentSpeed * AD), math.rad(45), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_hand", 1 * AS / (self.movement.currentSpeed * AD), math.rad(-45), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_leg", 1 * AS / (self.movement.currentSpeed * AD), math.rad(30), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_leg", 1 * AS / (self.movement.currentSpeed * AD), math.rad(-30), nil, nil)
+
+    self.animations["right"]:AddKeyFrame("head", 3 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("torso", 3 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_hand", 3 * AS / (self.movement.currentSpeed * AD), math.rad(-45), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_hand", 3 * AS / (self.movement.currentSpeed * AD), math.rad(45), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_leg", 3 * AS / (self.movement.currentSpeed * AD), math.rad(-30), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_leg", 3 * AS / (self.movement.currentSpeed * AD), math.rad(30), nil, nil)
+
+    self.animations["right"]:AddKeyFrame("head", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("torso", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_hand", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_hand", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("right_leg", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["right"]:AddKeyFrame("left_leg", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+end
+
+
+function Player:leftAnimation()
+    self.animations["left"]:newAnimation()
+    self.animations["left"]:AddKeyFrame("head", 0, math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("torso", 0, math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_hand", 0, math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_hand", 0, math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_leg", 0, math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_leg", 0, math.rad(0), nil, nil)
+
+    self.animations["left"]:AddKeyFrame("head", 1 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("torso", 1 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_hand", 1 * AS / (self.movement.currentSpeed * AD), math.rad(-45), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_hand", 1 * AS / (self.movement.currentSpeed * AD), math.rad(45), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_leg", 1 * AS / (self.movement.currentSpeed * AD), math.rad(30), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_leg", 1 * AS / (self.movement.currentSpeed * AD), math.rad(-30), nil, nil)
+
+    self.animations["left"]:AddKeyFrame("head", 3 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("torso", 3 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_hand", 3 * AS / (self.movement.currentSpeed * AD), math.rad(45), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_hand", 3* AS / (self.movement.currentSpeed * AD), math.rad(-45), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_leg", 3 * AS / (self.movement.currentSpeed * AD), math.rad(-30), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_leg", 3 * AS / (self.movement.currentSpeed * AD), math.rad(30), nil, nil)
+
+    self.animations["left"]:AddKeyFrame("head", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("torso", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_hand", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_hand", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("right_leg", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+    self.animations["left"]:AddKeyFrame("left_leg", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+end
+
+
+function fullWhite(x, y, r, g, b, a) 
+    return 255, 255, 255, 255
+end
+
+function fullBlue(x, y, r, g, b, a)
+    return 0, 0, 255, 255
+end
+
+function fullRed(x, y, r, g, b, a)
+    return 255, 0, 0, 255
+end

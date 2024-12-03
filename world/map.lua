@@ -35,11 +35,10 @@ end
 
 function Map:draw()
     -- Only draw blocks around the player to not waste time
-    local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2 + CAMERA_RENDER_OFFSET))
-    local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2 + CAMERA_RENDER_OFFSET))
+    local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2) + CAMERA_RENDER_OFFSET)
+    local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2) + CAMERA_RENDER_OFFSET)
     local p_x,p_y = loveToMap(player.body:getWorldCenter())
-    
-    for x = p_x - x_diff,p_x +x_diff do
+    for x = p_x - x_diff,p_x + x_diff do
         for y = p_y - y_diff,p_y + y_diff do
             if x > 0 and x <= self.width and y > 0 and y <= self.height then
                 local block = self.map[x][y]

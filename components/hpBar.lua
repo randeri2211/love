@@ -1,4 +1,3 @@
-
 function HPBar(currentHP, maxHP, regen)
     local hpBar = {}
 
