@@ -4,8 +4,8 @@ Enemy1 = Enemy:new()
 
 function Enemy1:new(x, y)
     local enemy1 = Enemy:new(x, y)
-    self.__index = self
     setmetatable(enemy1,self)
+    self.__index = self
 
     enemy1.name = "enemy1"
     return enemy1

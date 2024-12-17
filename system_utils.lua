@@ -3,6 +3,10 @@ require "world.map"
 require "blocks.block2"
 
 function initVars()
+    game_state = IN_WORLD
+    player_control = true
+    paused = false
+    
     game_cam = camera()
     map = Map:new(MAP_X, MAP_Y)
     map:emptyMap()
@@ -102,8 +106,10 @@ function tempMap()
     map:insert(block)
     map.enemies:addEnemy(Enemy1:new(0,-200))
     map.enemies:addEnemy(Enemy1:new(200,-200))
-    map.enemies:addEnemy(Enemy1:new(300,-200))
-    map.enemies:addEnemy(Enemy:new(-200,-200))
+    enemy1 = Enemy:new(-200,-200)
+    enemy2 = Enemy1:new(300,-200)
+    map.enemies:addEnemy(enemy2)
+    map.enemies:addEnemy(enemy1)
     map.enemies:addEnemy(Enemy:new(-300,-200))
 end
 

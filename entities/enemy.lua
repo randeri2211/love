@@ -1,10 +1,11 @@
 require "components.hpBar"
+require "entities.entity"
 
-Enemy = {}
+Enemy = Entity:new()
 
 function Enemy:new(x, y)
     -- Enemy Attributes
-    local enemy = {}
+    local enemy = Entity:new(x, y, 100, 0, 0)
     setmetatable(enemy,self)
     self.__index = self
     enemy.radius = 50
@@ -14,7 +15,6 @@ function Enemy:new(x, y)
     if x == nil or y == nil then
         return enemy
     end
-    enemy.body = love.physics.newBody(p_world, x, y, "dynamic")
     enemy.shape = love.physics.newCircleShape(enemy.radius)
     enemy.fixture = love.physics.newFixture(enemy.body, enemy.shape, 1)
 
@@ -34,10 +34,6 @@ function Enemy:move(x, y)
     self.body:setLinearVelocity(x, y)
 end    
 
-function Enemy:prepSave()
-    -- Prep the x and y values for saving(easier than trying to save the box and whatever user data)
-    self.x, self.y = self.body:getWorldCenter()
-end
 
 function Enemy:load(enemyTable)
     -- Loads the enemy from a loaded table

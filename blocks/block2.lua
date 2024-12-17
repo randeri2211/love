@@ -8,7 +8,9 @@ function Block2:new(x, y, width, height)
     setmetatable(block2, self)
     self.__index = self
 
-    block2.image = PANELING_SMALL
+    block2.imagePath = "PANELING_SMALL"
+    block2.type = "Block2"
+    block2.image = BLOCK_IMG[block2.imagePath]
 
     return block2
 end

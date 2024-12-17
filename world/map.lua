@@ -8,7 +8,7 @@ function Map:new(width,height)
     map.map = {}
     map.width = width
     map.height = height
-    map.enemies = Enemies:new()
+    map:emptyMap()
     map.center = {x = math.floor(map.width * SPAWN_X + 0.5),
                     y = math.floor(map.height * SPAWN_Y + 0.5)}
     return map
@@ -17,6 +17,7 @@ end
 
 -- Map Functions
 function Map:emptyMap()
+    self.enemies = Enemies:new()
     -- Empty the map
     for x = 1, self.width do
         self.map[x] = {}

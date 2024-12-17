@@ -12,7 +12,7 @@ function Block:new(x, y, width, height)
     block.type = "Block"
     block.hpBar = HPBar(1, 1, 0)
     block.imagePath = "GRASS"
-    block.image = GRASS
+    block.image = BLOCK_IMG[block.imagePath]
     block.x = x
     block.y = y
     
@@ -21,7 +21,9 @@ function Block:new(x, y, width, height)
     end
     -- Adjust y to block size
     if height ~= TILE_SIZE then
-        block.y = block.y + TILE_SIZE - height
+        if block.y % TILE_SIZE == 0 then
+            block.y = block.y + TILE_SIZE - height
+        end
     end
     -- Round x to tiles
     if block.x % TILE_SIZE ~= 0 then
@@ -74,8 +76,8 @@ end
 
 function Block:load(blockTable)
     self.hpBar = blockTable.hpBar
-    self.imagePath = blockTable.imagePath
-    self.image = love.image.newImageData(block.imagePath)
+    -- self.imagePath = blockTable.imagePath
+    -- self.image = BLOCK_IMG[self.imagePath]
 end
 
 

@@ -2,6 +2,7 @@ require "system_utils"
 
 require "entities.player"
 require "constants"
+require "keys"
 require "world.world"
 require "world.scene"
 require "entities.enemy"
@@ -14,31 +15,42 @@ function love.load()
     initVars()
     tempMap()
 
-    saveScene()
+    -- saveScene()
     -- loadScene()
     fpsTimer = love.timer.getTime()
     debug = true
 end
 
 function love.update(dt)
-    -- Update physics
-    manageHitbox()
-    -- map:update()
-    p_world:update(dt)
+    if game_state == IN_WORLD then
+        if not paused then
+            player:updateAnimation()
+
+            -- Update physics
+            manageHitbox()
+            map:update()
+            p_world:update(dt)
+            
+            -- Movement update
+            if player_control then
+                player:update()
+            end
+            
+            -- Setting the camera to the player position
+            local x,y = player.body:getWorldCenter()
+            game_cam:lookAt(x, y)
+            
+            -- Animation update
+            if (player.anim.actor:GetTransformer():GetPower("player") > 0) then
+                local vars = player.anim.actor:GetTransformer():GetVariables("player")
+                vars.time = vars.time + dt;
+            end
+            player.anim.actor:Update(dt);
+        else
+
+        end
+    end
     
-    -- Movement update
-    player:move()
-    groundRay()
-    -- Setting the camera to the player position
-    local x,y = player.body:getWorldCenter()
-    game_cam:lookAt(x, y)
-    
-    -- Animation update
-    if (player.anim.actor:GetTransformer():GetPower("player") > 0) then
-		local vars = player.anim.actor:GetTransformer():GetVariables("player")
-		vars.time = vars.time + dt;
-	end
-	player.anim.actor:Update(dt);
     
     if debug then
         -- Print the update fps to the console every second
@@ -62,4 +74,14 @@ function love.draw()
     game_cam:detach()
 end
 
-
+function love.keypressed(key)
+    if key == "escape" then
+        love.event.quit()
+    elseif key == "p" then 
+        player_control = not player_control
+    elseif key == SAVE_KEY then
+        saveScene()
+    elseif key == LOAD_KEY then
+        loadScene()
+    end
+end

@@ -1,0 +1,6 @@
+LOAD_KEY = "l"
+SAVE_KEY = "k"
+LEFT_KEY = "a"
+RIGHT_KEY = "d"
+JUMP_KEY = "space"
+INTERACT_KEY = "e"

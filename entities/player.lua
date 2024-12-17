@@ -3,13 +3,16 @@ require "world.world"
 require "components.hpBar"
 require "components.manaBar"
 require "components.movement"
-Player = {}
+require "entities.entity"
+require "keys"
+
+Player = Entity:new()
 AS = 25
 AD = 1
 -- AS / (self.movement.currentSpeed * AD) = 0.3
 
 function Player:new(x, y)
-    local player = {}
+    local player = Entity:new(x, y, 100, PLAYER_MOVE_SPEED, PLAYER_JUMP_HEIGHT)
     setmetatable(player,self)
     self.__index = self
     player.radius = PLAYER_WIDTH / 2
@@ -21,6 +24,7 @@ function Player:new(x, y)
     player.shapes[2] = love.physics.newCircleShape(0, -(PLAYER_HEIGHT - PLAYER_WIDTH) / 2, player.radius)
     player.shapes[3] = love.physics.newCircleShape(0, (PLAYER_HEIGHT - PLAYER_WIDTH) / 2, player.radius)
     player.direction = ""
+    player.last_direction = player.direction
 
     player.fixtures = {}
     player.fixtures[1] = love.physics.newFixture(player.body, player.shapes[1], 1)
@@ -35,9 +39,9 @@ function Player:new(x, y)
     player.fixture_check[player.fixtures[3]] = true
 
 
-    player.movement = Movement(4 * TILE_SIZE, 4 * TILE_SIZE)
+    -- player.movement = Movement(4 * TILE_SIZE, 4 * TILE_SIZE)
 
-    player.hpBar = HPBar(100, 100, 1)
+    -- player.hpBar = HPBar(100, 100, 1)
     player.manaBar = ManaBar(100, 100, 10)
 
     -- Player Init
@@ -52,41 +56,57 @@ function Player:new(x, y)
 end
 
 -- Player Functions
+function Player:updateAnimation()
+    if self.direction == 'right' then
+        self.anim.bones['right_hand']:SetLayer(1)
+        self.anim.bones['left_hand']:SetLayer(4)
+        self.anim.bones['right_leg']:SetLayer(1)
+        self.anim.bones['left_leg']:SetLayer(3)
+    elseif self.direction == 'left' then
+        self.anim.bones['right_hand']:SetLayer(4)
+        self.anim.bones['left_hand']:SetLayer(1)
+        self.anim.bones['right_leg']:SetLayer(3)
+        self.anim.bones['left_leg']:SetLayer(1)
+    end
+end
+
 function Player:move()
-    -- Increase linear velocity according to speed(does'nt depend on time since its using world)
+    -- Increase linear velocity according to speed(doesn't depend on time since its using world)
     local moved = false
     local x,y = self.body:getLinearVelocity()
-    if love.keyboard.isDown("d") then
+    if love.keyboard.isDown(RIGHT_KEY) then
         self.body:setLinearVelocity(self.movement.currentSpeed, y)
         moved = true
         if self.direction ~= 'right' then
             self.direction = 'right'
+            self.last_direction = self.direction
             self.anim.actor:GetTransformer():SetTransform("player", self.animations["right"].animation)
-            self.anim.bones['right_hand']:SetLayer(1)
-            self.anim.bones['left_hand']:SetLayer(4)
-            self.anim.bones['right_leg']:SetLayer(1)
-            self.anim.bones['left_leg']:SetLayer(3)
+            -- self.anim.bones['right_hand']:SetLayer(1)
+            -- self.anim.bones['left_hand']:SetLayer(4)
+            -- self.anim.bones['right_leg']:SetLayer(1)
+            -- self.anim.bones['left_leg']:SetLayer(3)
             self.anim.actor:GetTransformer():SetPower("player", 1)
         end
     end
     local x,y = self.body:getLinearVelocity()
-    if love.keyboard.isDown("a") then
+    if love.keyboard.isDown(LEFT_KEY) then
         self.body:setLinearVelocity(-self.movement.currentSpeed, y)
         moved = true
         if self.direction ~= 'left' then
             self.direction = 'left'
+            self.last_direction = self.direction
             self.anim.actor:GetTransformer():SetTransform("player", self.animations["left"].animation)
-            self.anim.bones['right_hand']:SetLayer(4)
-            self.anim.bones['left_hand']:SetLayer(1)
-            self.anim.bones['right_leg']:SetLayer(3)
-            self.anim.bones['left_leg']:SetLayer(1)
+            -- self.anim.bones['right_hand']:SetLayer(4)
+            -- self.anim.bones['left_hand']:SetLayer(1)
+            -- self.anim.bones['right_leg']:SetLayer(3)
+            -- self.anim.bones['left_leg']:SetLayer(1)
             self.anim.actor:GetTransformer():SetPower("player", 1)
         end
     end
 
 
     local x,y = self.body:getLinearVelocity()
-    if love.keyboard.isDown("space") then
+    if love.keyboard.isDown(JUMP_KEY) then
         self.moving = true
         if self.grounded then
             self.jumping = true
@@ -107,8 +127,28 @@ function Player:move()
     self:resetSmallVel()
 end
 
+function Player:interact()
+    if love.keyboard.isDown(INTERACT_KEY) then
+        -- Get mouse position
+        local mx, my = love.mouse.getPosition()
+        -- Convert mouse position from cameraCoords to loveCoords
+        mx, my = game_cam:cameraCoords(mx, my)
+        -- Convent mouse position from loveCoords to mapCoords
+        mx ,my = loveToMap(mx, my)
+        print("mouse x "..mx.."\nmouse y "..my)
+    end
+end
+
+
+function Player:update()
+    player:move()
+    player.interact()
+    groundRay()
+end
+
 
 function Player:moveControl(moved)
+    -- Handles movement after keypress
     if moved == false then
         self.anim.actor:GetTransformer():SetPower("player", 0)
         self.direction = ''
@@ -122,7 +162,7 @@ end
 
 
 function Player:upDown()
--- Figuring up direction
+    -- Figuring up direction
     local x,y_after = loveToWorld(self.body:getLinearVelocity())
     if y_after < 0.1 then
         if self.up == true then
@@ -139,6 +179,7 @@ end
 
 
 function Player:linearDamping(moved)
+    -- Determines linear damping at every moment
     if moved == false and Player.grounded == true then
         self.body:setLinearDamping(2)
     else
@@ -160,18 +201,17 @@ function Player:resetSmallVel()
 end
 
 
-function Player:prepSave()
-    -- Prep the x and y values for saving(easier than trying to save the box and whatever user data)
-    self.x, self.y = self.body:getWorldCenter()
-end
-
-
 function Player:load(playerTable)
     -- Gets a table with all the values from the recursiveLoad and sets the player with them
     self.body:setPosition(playerTable.x, playerTable.y)
     self.movement = playerTable.movement
+    self.direction = playerTable.last_direction
+    self.last_direction = playerTable.last_direction
+    self.hpBar = playerTable.hpBar
+    self.manaBar = playerTable.manaBar
 end
 
+-- Animations
 
 function Player:animationSetup()
     -- local path = "assets/paneling_small.png"

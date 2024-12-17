@@ -7,36 +7,48 @@ function saveScene()
     local playerPath = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
         -- Clear the save file if it exists
     local playerFile = io.open(playerPath,"w")
-    playerFile:write("")
-    playerFile:close()
+    if playerFile ~= nil then
+        playerFile:write("")
+        playerFile:close()
+    end
 
         -- Open file in appending mode and add a player tag and recursively save the player
     playerFile = io.open(playerPath,"a")
-    -- savePlayer(file, 0)
-    playerFile:close()
+    if playerFile ~= nil then
+        savePlayer(playerFile, 0)
+        playerFile:close()
+    end
 
 
     -- Saving Entities
     local entityPath = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
         -- Clear the save file if it exists
     local entityFile = io.open(entityPath,"w")
-    entityFile:write("")
-    entityFile:close()
+    if entityFile ~= nil then
+        entityFile:write("")
+        entityFile:close()
+    end
 
     entityFile = io.open(entityPath,"a")
-    -- saveEntities(entityFile, 0)
-    entityFile:close()
+    if entityFile ~= nil then
+        saveEntities(entityFile, 0)
+        entityFile:close()
+    end
 
     -- Saving Map
     local mapPath = SAVE_FOLDER .. "/" .. MAP_FILENAME
         -- Clear the save file if it exists
     local mapFile = io.open(mapPath,"w")
-    mapFile:write("")
-    mapFile:close()
+    if mapFile ~= nil then
+        mapFile:write("")
+        mapFile:close()
+    end
 
     mapFile = io.open(mapPath,"a")
-    saveMap(mapFile, 0)
-    mapFile:close()
+    if mapFile ~= nil then
+        saveMap(mapFile, 0)
+        mapFile:close()
+    end
 end
 
 function loadScene()
@@ -45,22 +57,28 @@ function loadScene()
     -- Load Player
     local path = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
     local file = io.open(path, "r")
-    local lines = file:lines()
-    loadPlayer(lines, 0)
+    if file ~= nil then
+        local lines = file:lines()
+        loadPlayer(lines, 0)
+    end
 
     -- Load Map
     local path = SAVE_FOLDER .. "/" .. MAP_FILENAME
     local file = io.open(path, "r")
-    local lines = file:lines()
-
-    loadMap(lines, 0)
+    if file ~= nil then
+        local lines = file:lines()
+        map:emptyMap()
+        loadMap(lines, 0)
+    end
 
     -- Load Entities
     local path = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
     local file = io.open(path, "r")
-    local lines = file:lines()
-
-    loadEntities(lines, 0)
+    if file ~= nil then
+        local lines = file:lines()
+    
+        loadEntities(lines, 0)
+    end
 
 end
 
@@ -83,7 +101,7 @@ end
 function saveEntities(file, spaces)
     -- Save all entities in the world
     for i, entity in pairs(map.enemies.enemies) do
-        entity.prepSave()
+        entity:prepSave()
         space = ""
         --multiply spaces
         for j=1 ,spaces do 
@@ -114,6 +132,9 @@ function loadPlayer(lines, spaces)
     -- Loads a player from the given lines iterator
     lines()
     local res = recursiveLoad(spaces + DATA_SPACING, lines)
+    for i,k in ipairs(res) do
+        print(i .. ":"..k.."\n")
+    end
     player:load(res)
 end
 
@@ -130,6 +151,10 @@ function loadMap(lines, spaces)
             local block = Block:new(res.x, res.y, res.width, res.height)
             block:load(res)
             map:insert(block)
+        elseif res.type == "Block2" then
+            local block = Block2:new(res.x, res.y, res.width, res.height)
+            block:load(res)
+            map:insert(block)
         end
         line = lines()
     until line == nil
@@ -140,17 +165,16 @@ function loadEntities(lines, spaces)
     local line = lines()
     repeat
         local res = recursiveLoad(spaces + DATA_SPACING, lines)
-
         if res.name == "enemy" then
-            local enemy = Enemy(res.x, res.y)
-            enemy.load(res)
-            addEnemy(enemy)
+            local enemy = Enemy:new(res.x, res.y)
+            enemy:load(res)
+            map.enemies:addEnemy(enemy)
         elseif res.name == "enemy1" then 
             
-            local enemy = Enemy1(res.x, res.y)
+            local enemy = Enemy1:new(res.x, res.y)
 
-            enemy.load(res)
-            addEnemy(enemy)
+            enemy:load(res)
+            map.enemies:addEnemy(enemy)
         end
         line = lines()
     until line == nil
@@ -170,7 +194,7 @@ function recursiveSave(file, t, spaces)
 
     for key, val in pairs(t) do
         if allowed[type(val)] and allowed[type(key)] then
-            if type(val) == "table" then
+            if type(val) == "table" and key ~= "anim" and key ~= "animations" then
 
                 -- Making sure the table has a valueable information to store
                 local okay = false
@@ -192,11 +216,15 @@ function recursiveSave(file, t, spaces)
                     file:write(space .. tostring(key) .. ":" .. "\n")
                     recursiveSave(file, val, spaces + DATA_SPACING)
                 end
+            elseif type(val) == "table" then
             else
                 space = ""
                 -- Multiply spaces
                 for i=1 ,spaces do 
                     space = space .. " "
+                end
+                if val == "" then
+                    val = "\"\""
                 end
                 file:write(space .. tostring(key) .. ":" .. tostring(val) .. "\n")
             end
@@ -215,15 +243,25 @@ function recursiveLoad(spaces,lines)
         for match in matches do
             local content = string.gmatch(match, "([^:]+)")
             local key = tostring(content())
-            local val = content()
-
-            if val == nil then
+            local temp = content()
+            local val
+            
+            if temp == nil then
+                -- print("inside table "..tostring(key))
                 result[key] = recursiveLoad(spaces + DATA_SPACING,lines)
             else
-                if type(val) == "number" then
-                    val = tonumber(val)
-                elseif type(val) == "boolean" then
-                    val = toboolean(val)
+                if tonumber(temp) ~= nil then
+                    val = tonumber(temp)
+                    -- print("number "..tostring(val))
+                elseif temp == "true" then
+                    val = true
+                    -- print("bool "..tostring(val))
+                elseif temp == "false" then
+                    val = false
+                    -- print("bool "..tostring(val))
+                else
+                    val = tostring(temp)
+                    -- print("just str "..val)
                 end
                 result[key] = val
             end
@@ -235,6 +273,5 @@ function recursiveLoad(spaces,lines)
             line = nil
         end
     end
-
     return result
 end
