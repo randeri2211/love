@@ -9,6 +9,7 @@ function Block:new(x, y, width, height)
     self.__index = self
     block.width = width
     block.height = height
+    block.name = "Default Block"
     block.type = "Block"
     block.hpBar = HPBar(1, 1, 0)
     block.imagePath = "GRASS"

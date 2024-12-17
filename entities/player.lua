@@ -132,10 +132,19 @@ function Player:interact()
         -- Get mouse position
         local mx, my = love.mouse.getPosition()
         -- Convert mouse position from cameraCoords to loveCoords
-        mx, my = game_cam:cameraCoords(mx, my)
-        -- Convent mouse position from loveCoords to mapCoords
-        mx ,my = loveToMap(mx, my)
+        mx, my = game_cam:worldCoords(mx, my)
         print("mouse x "..mx.."\nmouse y "..my)
+        -- Convent mouse position from loveCoords to mapCoords
+        mx ,my = loveToWorld(mx, my)
+        mx = math.floor(mx)
+        my = math.floor(my) + 1
+        mx, my = worldToMap(mx, my)
+        if map.map[mx][my] ~= nil then
+            -- Check if the block implements the interact function
+            if type(map.map[mx][my].interact) == "function" then
+                map.map[mx][my]:interact()
+            end
+        end
     end
 end
 

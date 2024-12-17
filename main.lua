@@ -13,6 +13,7 @@ require "animations.animations"
 
 function love.load()
     initVars()
+    -- TODO: replace tempMap with a world generation sometime
     tempMap()
 
     -- saveScene()
@@ -63,25 +64,35 @@ function love.update(dt)
 end
 
 function love.draw()
-    -- Drawing everything in regard to the camera
     if debug then
         debugPrint()
     end
 
+    -- Drawing everything in regard to the camera
     game_cam:attach()
+        -- Map draws entities aswell
         map:draw() 
         player.anim.actor:Draw()
     game_cam:detach()
 end
 
 function love.keypressed(key)
-    if key == "escape" then
+    if key == EXIT then
         love.event.quit()
-    elseif key == "p" then 
-        player_control = not player_control
-    elseif key == SAVE_KEY then
-        saveScene()
-    elseif key == LOAD_KEY then
-        loadScene()
+    end
+
+    -- IN_WORLD State handling
+    if game_state == IN_WORLD then
+        -- Check pausing first
+        if key == PAUSE then 
+            paused = not paused
+            player_control = not paused
+        elseif not paused then
+            -- Save and load keys
+            elseif key == SAVE_KEY then
+                saveScene()
+            elseif key == LOAD_KEY then
+                loadScene()
+        end
     end
 end

@@ -1,6 +1,7 @@
 camera = require "libraries.hump.camera"
 require "world.map"
 require "blocks.block2"
+require "blocks.interactiveBlock"
 
 function initVars()
     game_state = IN_WORLD
@@ -95,7 +96,7 @@ end
 
 function tempMap()
     for i = 1, map.width do
-        for j = 0, 100 do
+        for j = 0, 2 do
             local block = Block:new((i - map.center.x - 1) * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             map:insert(block)
             -- local block1 = Block:new((i - map.center.x - 1) * TILE_SIZE,  (-3 -j) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
@@ -104,6 +105,8 @@ function tempMap()
     end
     local block = Block2:new(5 * TILE_SIZE, -1*TILE_SIZE, TILE_SIZE, TILE_SIZE / 2)
     map:insert(block)
+    local iblock = InteractiveBlock:new(6 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    map:insert(iblock)
     map.enemies:addEnemy(Enemy1:new(0,-200))
     map.enemies:addEnemy(Enemy1:new(200,-200))
     enemy1 = Enemy:new(-200,-200)
@@ -128,7 +131,7 @@ function debugPrint()
 end
 
 function printPosition()
-    local x, y = loveToWorld(player.body:getWorldCenter())
+    local x, y = loveToMap(player.body:getWorldCenter())
     love.graphics.print("pos:(" .. string.format("%.2f",tostring(x)) .. ","..string.format("%.2f",tostring(y)) .. ")",0,order * 10)
     order = order + 1
 end
