@@ -1,1 +1,5 @@
+# Ignore everything in the saves folder
 saves/*
+
+# But do not ignore the folder itself or a placeholder file
+!saves/.gitkeep
