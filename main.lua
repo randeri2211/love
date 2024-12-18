@@ -5,15 +5,12 @@ require "constants"
 require "keys"
 require "world.world"
 require "world.scene"
-require "entities.enemy"
-require "entities.enemy1"
-require "blocks.block"
 require "animations.animations"
-
+require "registry"
 
 function love.load()
     initVars()
-    registerBlocks()
+    registerAll()
     -- TODO: replace tempMap with a world generation sometime
     tempMap()
     -- saveScene()

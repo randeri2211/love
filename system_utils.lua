@@ -1,9 +1,6 @@
 camera = require "libraries.hump.camera"
 require "world.map"
-require "blocks.block2"
-require "blocks.interactiveBlock"
 
-BLOCK_REGISTRY = {}
 
 function initVars()
     game_state = IN_WORLD
@@ -22,13 +19,6 @@ function initVars()
 
     -- World collision callbacks
     p_world:setCallbacks(startCollisionCallback, finishCollisionCallback, nil, nil)
-end
-
-
-function registerBlocks()
-    BLOCK_REGISTRY["Block"] = Block
-    BLOCK_REGISTRY["Block2"] = Block2
-    BLOCK_REGISTRY["Interactive"] = InteractiveBlock
 end
 
 
@@ -87,10 +77,10 @@ function finishCollisionCallback(fixture1, fixture2, contact)
 end
 
 -- Ground Check Functions
-function groundRay()
-    player.grounded = false
-    local p_x, p_y = player.body:getWorldCenter()
-    p_world:rayCast(p_x, p_y + PLAYER_HEIGHT / 2, p_x, p_y + PLAYER_HEIGHT / 2 + 0.1, groundCallback)
+function groundRay(p)
+    p.grounded = false
+    local p_x, p_y = p.body:getWorldCenter()
+    p_world:rayCast(p_x, p_y + p.height / 2, p_x, p_y + p.height / 2 + 0.1, groundCallback)
 end
 
 function groundCallback(fixture, x, y, xn, yn, fraction)

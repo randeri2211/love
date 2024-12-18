@@ -1,6 +1,7 @@
 require "blocks.block"
-require "assets.assetLoader"
+
 Block2 = Block:new()
+registerBlock("Block2",Block2)
 
 function Block2:new(x, y, width, height)
     -- Block Variables

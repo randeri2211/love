@@ -1,6 +1,9 @@
 require "components.hpBar"
 require "assets.assetLoader"
+require "system_utils"
+
 Block = {}
+registerBlock("Block",Block)
 
 function Block:new(x, y, width, height)
     -- Block Variables

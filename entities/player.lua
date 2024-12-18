@@ -16,33 +16,13 @@ function Player:new(x, y)
     local player = Entity:new(x, y, 100, PLAYER_MOVE_SPEED, PLAYER_JUMP_HEIGHT)
     setmetatable(player,self)
     self.__index = self
-    player.radius = PLAYER_WIDTH / 2
-    player.body = love.physics.newBody(p_world, x - TILE_SIZE, y, "dynamic")
-    player.shapes = {}
     player.grounded = false
     player.jumping = false
-    player.shapes[1] = love.physics.newRectangleShape(PLAYER_WIDTH, PLAYER_HEIGHT - PLAYER_WIDTH)
-    player.shapes[2] = love.physics.newCircleShape(0, -(PLAYER_HEIGHT - PLAYER_WIDTH) / 2, player.radius)
-    player.shapes[3] = love.physics.newCircleShape(0, (PLAYER_HEIGHT - PLAYER_WIDTH) / 2, player.radius)
     player.direction = ""
     player.last_direction = player.direction
 
-    player.fixtures = {}
-    player.fixtures[1] = love.physics.newFixture(player.body, player.shapes[1], 1)
-    player.fixtures[1]:setCategory(PLAYER_CATEGORY)
-    player.fixtures[2] = love.physics.newFixture(player.body, player.shapes[2], 1)
-    player.fixtures[2]:setCategory(PLAYER_CATEGORY)
-    player.fixtures[3] = love.physics.newFixture(player.body, player.shapes[3], 1)
-    player.fixtures[3]:setCategory(PLAYER_CATEGORY)
-    player.fixture_check = {}
-    player.fixture_check[player.fixtures[1]] = true
-    player.fixture_check[player.fixtures[2]] = true
-    player.fixture_check[player.fixtures[3]] = true
-
-
-    -- player.movement = Movement(4 * TILE_SIZE, 4 * TILE_SIZE)
-
-    -- player.hpBar = HPBar(100, 100, 1)
+    player:setScale(1)
+    
     player.manaBar = ManaBar(100, 100, 10)
 
     -- Player Init
@@ -51,12 +31,42 @@ function Player:new(x, y)
     player.body:setFixedRotation(true)
     player.body:setLinearDamping(LINEAR_DAMPING)
     player.up = true
+    
     player:animationSetup()
 
     return player
 end
 
 -- Player Functions
+function Player:setBody()
+    self.body = love.physics.newBody(p_world, x, y, "dynamic")
+    
+    self.shapes = {}
+    self.shapes[1] = love.physics.newRectangleShape(self.height, self.height - self.width)
+    self.shapes[2] = love.physics.newCircleShape(0, -(self.height - self.width) / 2, self.radius)
+    self.shapes[3] = love.physics.newCircleShape(0, (self.height - self.width) / 2, self.radius)
+
+    self.fixtures = {}
+    self.fixtures[1] = love.physics.newFixture(self.body, self.shapes[1], 1)
+    self.fixtures[1]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[2] = love.physics.newFixture(self.body, self.shapes[2], 1)
+    self.fixtures[2]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[3] = love.physics.newFixture(self.body, self.shapes[3], 1)
+    self.fixtures[3]:setCategory(PLAYER_CATEGORY)
+    self.fixture_check = {}
+    self.fixture_check[self.fixtures[1]] = true
+    self.fixture_check[self.fixtures[2]] = true
+    self.fixture_check[self.fixtures[3]] = true
+end
+
+function Player:setScale(scale)
+    self.scale = scale
+    self.width = PLAYER_WIDTH * self.scale
+    self.height = PLAYER_HEIGHT * self.scale
+    self.radius = self.width / 2
+    self:setBody()
+end
+
 function Player:updateAnimation()
     if self.direction == 'right' then
         self.anim.bones['right_hand']:SetLayer(1)
@@ -148,9 +158,9 @@ end
 
 
 function Player:update()
-    player:move()
-    player:interact()
-    groundRay()
+    self:move()
+    self:interact()
+    groundRay(self)
 end
 
 
@@ -163,7 +173,7 @@ function Player:moveControl(moved)
         self.body:setLinearVelocity(0, y)
     end
     local x, y = self.body:getWorldCenter()
-    self.anim.actor:GetTransformer():GetRoot().translation = {x , y - PLAYER_HEIGHT / 2 + TILE_SIZE / 3}
+    self.anim.actor:GetTransformer():GetRoot().translation = {x , y - self.height / 3}
     
 end
 
@@ -221,17 +231,12 @@ end
 -- Animations
 
 function Player:animationSetup()
-    -- local path = "assets/paneling_small.png"
-    -- local imgData = love.image.newImageData(path)
-    -- local path2 = "assets/grass.png"
-    -- local imgData2 = love.image.newImageData(path2)
-
-    local headHeight = TILE_SIZE / 3
-    local headhWidth = TILE_SIZE / 3
-    local torsoHeight = TILE_SIZE 
-    local torsoWidth = TILE_SIZE / 2
-    local legHeight = PLAYER_HEIGHT - torsoHeight - headHeight
-    local legWidth = TILE_SIZE/ 3
+    local headHeight = self.height / 6
+    local headhWidth = self.height / 6
+    local torsoHeight = self.height / 2
+    local torsoWidth = self.height / 4
+    local legHeight = self.height - torsoHeight - headHeight
+    local legWidth = self.height / 6
     local handHeight = torsoHeight * 4 / 3
     local handWidth = legWidth
 
@@ -250,6 +255,7 @@ function Player:animationSetup()
     -- Adding all the bones
     self.anim:addBone("torso", nil, 2, {0, 0}, torsoWidth, torsoHeight)
     self.anim:addBone("head", "torso", 2,{-headHeight, 0}, headhWidth, headHeight)
+    print(legWidth.." "..legHeight)
     self.anim:addBone("right_leg", "torso", 1, {torsoHeight, 0}, legWidth, legHeight)
     self.anim:addBone("left_leg", "torso", 3, {torsoHeight, 0}, legWidth, legHeight)
     self.anim:addBone("right_hand", "torso", 1, {0, 0}, handWidth, handHeight, rightHandData)

@@ -150,7 +150,6 @@ function loadMap(lines, spaces)
     local line = lines()
     repeat
         local res = recursiveLoad(spaces + DATA_SPACING, lines)
-        
         local block = BLOCK_REGISTRY[res.name]:new(res.x, res.y, res.width, res.height)
         block:load(res)
         map:insert(block)

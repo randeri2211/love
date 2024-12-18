@@ -1,5 +1,7 @@
 require "blocks.block"
+
 InteractiveBlock = Block:new()
+registerBlock("Interactive",InteractiveBlock)
 
 function InteractiveBlock:new(x, y, width, height)
     -- Block Variables
