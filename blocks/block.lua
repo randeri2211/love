@@ -86,7 +86,6 @@ end
 
 function Block:prepSave()
     if self.tooltipText ~= nil then
-        print("in")
         self.tooltipText = "\"" .. self.tooltipText .. "\""
     end
 end
@@ -94,7 +93,6 @@ end
 function Block:afterSave()
     if self.tooltipText ~= nil then
         if #self.tooltipText > 2 then
-            print("out")
             self.tooltipText = string.sub(self.tooltipText, 2, -2)
         end
     end

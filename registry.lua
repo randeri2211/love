@@ -30,7 +30,6 @@ function registerFolder(folder)
         if file:match("%.lua$") then -- Check for .lua files
             local className = file:sub(1, -5) -- Remove the ".lua" extension
             local classPath = folder .. "." .. className -- Build the module path
-            print("requiring "..classPath)
             require(classPath) -- Load the module
         end
     end

@@ -38,6 +38,14 @@ function Player:new(x, y)
 end
 
 -- Player Functions
+function Player:debugDraw()
+    local bx, by = self.body:getWorldCenter()
+    local x, y = self.shapes[2]:getPoint()
+    love.graphics.circle("line", bx, by + y, self.radius)
+    local x, y = self.shapes[3]:getPoint()
+    love.graphics.circle("line", bx, by + y, self.radius)
+end
+
 function Player:setBody()
     self.body = love.physics.newBody(p_world, x, y, "dynamic")
     
@@ -64,6 +72,8 @@ function Player:setScale(scale)
     self.width = PLAYER_WIDTH * self.scale
     self.height = PLAYER_HEIGHT * self.scale
     self.radius = self.width / 2
+    print("width is "..self.width)
+    print("radius is "..self.radius)
     self:setBody()
 end
 
@@ -232,11 +242,11 @@ end
 
 function Player:animationSetup()
     local headHeight = self.height / 6
-    local headhWidth = self.height / 6
+    local headhWidth = self.width / 3
     local torsoHeight = self.height / 2
-    local torsoWidth = self.height / 4
+    local torsoWidth = self.width / 2
     local legHeight = self.height - torsoHeight - headHeight
-    local legWidth = self.height / 6
+    local legWidth = self.width / 3
     local handHeight = torsoHeight * 4 / 3
     local handWidth = legWidth
 
@@ -255,7 +265,6 @@ function Player:animationSetup()
     -- Adding all the bones
     self.anim:addBone("torso", nil, 2, {0, 0}, torsoWidth, torsoHeight)
     self.anim:addBone("head", "torso", 2,{-headHeight, 0}, headhWidth, headHeight)
-    print(legWidth.." "..legHeight)
     self.anim:addBone("right_leg", "torso", 1, {torsoHeight, 0}, legWidth, legHeight)
     self.anim:addBone("left_leg", "torso", 3, {torsoHeight, 0}, legWidth, legHeight)
     self.anim:addBone("right_hand", "torso", 1, {0, 0}, handWidth, handHeight, rightHandData)

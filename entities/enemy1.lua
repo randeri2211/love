@@ -1,13 +1,14 @@
 require "entities.enemy"
 
 Enemy1 = Enemy:new()
+registerEntity("Enemy1",Enemy1)
 
 function Enemy1:new(x, y)
     local enemy1 = Enemy:new(x, y)
     setmetatable(enemy1,self)
     self.__index = self
 
-    enemy1.name = "enemy1"
+    enemy1.name = "Enemy1"
     return enemy1
 end
 

@@ -2,6 +2,7 @@ require "components.hpBar"
 require "entities.entity"
 
 Enemy = Entity:new()
+registerEntity("Enemy",Enemy)
 
 function Enemy:new(x, y)
     -- Enemy Attributes
@@ -10,7 +11,7 @@ function Enemy:new(x, y)
     self.__index = self
     enemy.radius = 50
     enemy.hpBar = HPBar(50, 50, 0)
-    enemy.name = "enemy"
+    enemy.name = "Enemy"
 
     if x == nil or y == nil then
         return enemy

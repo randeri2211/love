@@ -13,10 +13,8 @@ function love.load()
     registerAll()
     -- TODO: replace tempMap with a world generation sometime
     tempMap()
-    -- saveScene()
-    -- loadScene()
+
     fpsTimer = love.timer.getTime()
-    debug = true
 end
 
 function love.update(dt)
@@ -66,9 +64,10 @@ function love.draw()
 
     -- Drawing everything in regard to the camera
     game_cam:attach()
-    -- Map draws entities aswell
-    map:draw() 
-    player.anim.actor:Draw()
+        -- Map draws entities aswell
+        map:draw() 
+        player.anim.actor:Draw()
+        -- player:debugDraw()
     game_cam:detach()
     tooltipDraw()
 end
