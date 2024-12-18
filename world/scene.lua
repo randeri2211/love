@@ -138,9 +138,6 @@ function loadPlayer(lines, spaces)
     -- Loads a player from the given lines iterator
     lines()
     local res = recursiveLoad(spaces + DATA_SPACING, lines)
-    for i,k in ipairs(res) do
-        print(i .. ":"..k.."\n")
-    end
     player:load(res)
 end
 
@@ -153,6 +150,7 @@ function loadMap(lines, spaces)
         local block = BLOCK_REGISTRY[res.name]:new(res.x, res.y, res.width, res.height)
         block:load(res)
         map:insert(block)
+
         line = lines()
     until line == nil
 end
@@ -162,17 +160,9 @@ function loadEntities(lines, spaces)
     local line = lines()
     repeat
         local res = recursiveLoad(spaces + DATA_SPACING, lines)
-        if res.name == "enemy" then
-            local enemy = Enemy:new(res.x, res.y)
-            enemy:load(res)
-            map.enemies:addEnemy(enemy)
-        elseif res.name == "enemy1" then 
-            
-            local enemy = Enemy1:new(res.x, res.y)
-
-            enemy:load(res)
-            map.enemies:addEnemy(enemy)
-        end
+        local entity = ENTITY_REGISTRY[res.name]:new(res.x, res.y)
+        entity:load(res)
+        map.enemies:addEnemy(entity)
         line = lines()
     until line == nil
 end
@@ -235,16 +225,14 @@ function recursiveLoad(spaces,lines)
     local result = {}
     local line = lines()
     while line ~= nil and #line > spaces and line:sub(spaces,spaces) == " " do
-        local matches = string.gmatch(line, "([^%s]+)")
+        local matches = string.gmatch(line, "([^%s]+[[%s]*[%S]+]*)")
 
         for match in matches do
             local content = string.gmatch(match, "([^:]+)")
             local key = tostring(content())
             local temp = content()
             local val
-            if key == "tooltipText" then
-                print(tostring(temp))
-            end
+
             if temp == nil then
                 -- print("inside table "..tostring(key))
                 result[key] = recursiveLoad(spaces + DATA_SPACING,lines)
@@ -260,7 +248,6 @@ function recursiveLoad(spaces,lines)
                     -- print("bool "..tostring(val))
                 else
                     val = tostring(temp)
-                    -- print("just str "..val)
                 end
                 result[key] = val
             end
