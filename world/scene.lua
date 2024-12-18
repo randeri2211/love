@@ -121,9 +121,15 @@ function saveMap(file, spaces)
             for j=1 ,spaces do 
                 space = space .. " "
             end
-
+            -- Prepares the block for saving("" on the tooltipText)
+            if block.prepSave ~= nil then
+                block:prepSave()
+            end
             file:write(space .. block.type .. ":\n")
             recursiveSave(file, block, spaces + DATA_SPACING)
+            if block.afterSave ~= nil then
+                block:afterSave()
+            end
         end
     end
 end
@@ -140,22 +146,14 @@ end
 
 function loadMap(lines, spaces)
     -- Loads all blocks into the map from the given lines iterator
+     
     local line = lines()
     repeat
-        -- print(tostring(line))
         local res = recursiveLoad(spaces + DATA_SPACING, lines)
-        -- for k, v in pairs(res) do
-        --     print(k..","..tostring(v))
-        -- end
-        if res.type == "Block" then
-            local block = Block:new(res.x, res.y, res.width, res.height)
-            block:load(res)
-            map:insert(block)
-        elseif res.type == "Block2" then
-            local block = Block2:new(res.x, res.y, res.width, res.height)
-            block:load(res)
-            map:insert(block)
-        end
+        
+        local block = BLOCK_REGISTRY[res.name]:new(res.x, res.y, res.width, res.height)
+        block:load(res)
+        map:insert(block)
         line = lines()
     until line == nil
 end
@@ -245,7 +243,9 @@ function recursiveLoad(spaces,lines)
             local key = tostring(content())
             local temp = content()
             local val
-            
+            if key == "tooltipText" then
+                print(tostring(temp))
+            end
             if temp == nil then
                 -- print("inside table "..tostring(key))
                 result[key] = recursiveLoad(spaces + DATA_SPACING,lines)

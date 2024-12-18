@@ -9,7 +9,7 @@ function Block:new(x, y, width, height)
     self.__index = self
     block.width = width
     block.height = height
-    block.name = "Default Block"
+    block.name = "Block"
     block.type = "Block"
     block.hpBar = HPBar(1, 1, 0)
     block.imagePath = "GRASS"
@@ -81,4 +81,18 @@ function Block:load(blockTable)
     -- self.image = BLOCK_IMG[self.imagePath]
 end
 
+function Block:prepSave()
+    if self.tooltipText ~= nil then
+        print("in")
+        self.tooltipText = "\"" .. self.tooltipText .. "\""
+    end
+end
 
+function Block:afterSave()
+    if self.tooltipText ~= nil then
+        if #self.tooltipText > 2 then
+            print("out")
+            self.tooltipText = string.sub(self.tooltipText, 2, -2)
+        end
+    end
+end

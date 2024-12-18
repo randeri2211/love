@@ -31,6 +31,6 @@ function Enemies:moveEnemies(x, y)
 end
 
 function Enemies:addEnemy(enemy)
-    local arrSize = table.getn(self.enemies)
+    local arrSize = #self.enemies
     self.enemies[arrSize + 1] = enemy
 end

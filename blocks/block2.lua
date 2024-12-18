@@ -11,6 +11,7 @@ function Block2:new(x, y, width, height)
     block2.imagePath = "PANELING_SMALL"
     block2.name = "Block2"
     block2.image = BLOCK_IMG[block2.imagePath]
+    block2.tooltipText = "Block2?"
 
     return block2
 end

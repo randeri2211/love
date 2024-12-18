@@ -26,6 +26,8 @@ SPAWN_Y = 0.1       -- Relative to world so on a scale of 0-1
 PLAYER_WIDTH = TILE_SIZE
 PLAYER_HEIGHT = 2 * TILE_SIZE
 
+INTERACT_DISTANCE = 5
+
 MAP_X = 1000
 MAP_Y = 5000
 

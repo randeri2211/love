@@ -5,6 +5,7 @@ require "components.manaBar"
 require "components.movement"
 require "entities.entity"
 require "keys"
+require "system_utils"
 
 Player = Entity:new()
 AS = 25
@@ -130,19 +131,16 @@ end
 function Player:interact()
     if love.keyboard.isDown(INTERACT_KEY) then
         -- Get mouse position
-        local mx, my = love.mouse.getPosition()
-        -- Convert mouse position from cameraCoords to loveCoords
-        mx, my = game_cam:worldCoords(mx, my)
-        print("mouse x "..mx.."\nmouse y "..my)
-        -- Convent mouse position from loveCoords to mapCoords
-        mx ,my = loveToWorld(mx, my)
-        mx = math.floor(mx)
-        my = math.floor(my) + 1
-        mx, my = worldToMap(mx, my)
-        if map.map[mx][my] ~= nil then
-            -- Check if the block implements the interact function
-            if type(map.map[mx][my].interact) == "function" then
-                map.map[mx][my]:interact()
+        local mx, my = mouseToWorld()
+        local px, py = loveToWorld(self.body:getWorldCenter())
+        print(distance(px, py, mx, my))
+        if distance(px, py, mx, my) < INTERACT_DISTANCE then
+            mx, my = worldToMap(mx, my)
+            if map.map[mx][my] ~= nil then
+                -- Check if the block implements the interact function
+                if type(map.map[mx][my].interact) == "function" then
+                    map.map[mx][my]:interact()
+                end
             end
         end
     end
@@ -151,7 +149,7 @@ end
 
 function Player:update()
     player:move()
-    player.interact()
+    player:interact()
     groundRay()
 end
 

@@ -3,11 +3,13 @@ require "world.map"
 require "blocks.block2"
 require "blocks.interactiveBlock"
 
+BLOCK_REGISTRY = {}
+
 function initVars()
     game_state = IN_WORLD
     player_control = true
     paused = false
-    
+
     game_cam = camera()
     map = Map:new(MAP_X, MAP_Y)
     map:emptyMap()
@@ -20,6 +22,13 @@ function initVars()
 
     -- World collision callbacks
     p_world:setCallbacks(startCollisionCallback, finishCollisionCallback, nil, nil)
+end
+
+
+function registerBlocks()
+    BLOCK_REGISTRY["Block"] = Block
+    BLOCK_REGISTRY["Block2"] = Block2
+    BLOCK_REGISTRY["Interactive"] = InteractiveBlock
 end
 
 
@@ -94,13 +103,34 @@ function groundCallback(fixture, x, y, xn, yn, fraction)
     return 0
 end
 
+
+function tooltipDraw()
+    -- Check if mouse is hovering
+    
+    local mx, my = mouseToMap()
+    if mx == nil or my == nil or mx <= 0 or mx > MAP_X or y <= 0 or y > MAP_Y then
+        return
+    end
+    
+    local block = map.map[mx][my]
+    if block ~= nil then
+        if block.tooltipText ~= nil then
+            -- Draw tooltip
+            mx, my = love.mouse.getPosition()
+            love.graphics.setColor(0, 0, 0, 0.7) -- Semi-transparent background
+            love.graphics.rectangle("fill", mx + 10, my + 10, 250, 20)
+            love.graphics.setColor(1, 1, 1, 1) -- White text
+            love.graphics.print(block.tooltipText, mx + 15, my + 15)
+            love.graphics.setColor(1, 1, 1, 1) -- Reset color
+        end
+    end
+end
+
 function tempMap()
     for i = 1, map.width do
         for j = 0, 2 do
             local block = Block:new((i - map.center.x - 1) * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             map:insert(block)
-            -- local block1 = Block:new((i - map.center.x - 1) * TILE_SIZE,  (-3 -j) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            -- map:insert(block1)
         end
     end
     local block = Block2:new(5 * TILE_SIZE, -1*TILE_SIZE, TILE_SIZE, TILE_SIZE / 2)

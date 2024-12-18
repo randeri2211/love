@@ -8,12 +8,17 @@ function InteractiveBlock:new(x, y, width, height)
     self.__index = self
 
     iblock.imagePath = "PANELING_SMALL"
-    iblock.name = "Interactive Block"
+    iblock.name = "Interactive"
     iblock.image = BLOCK_IMG[iblock.imagePath]
+    iblock.tooltipText = "Interactive block"  -- Default tooltip
 
     return iblock
 end
 
 function InteractiveBlock:interact()
     print("interacted "..self.x..","..self.y)
+end
+
+function InteractiveBlock:draw()
+    Block.draw(self)
 end

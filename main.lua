@@ -13,9 +13,9 @@ require "animations.animations"
 
 function love.load()
     initVars()
+    registerBlocks()
     -- TODO: replace tempMap with a world generation sometime
     tempMap()
-
     -- saveScene()
     -- loadScene()
     fpsTimer = love.timer.getTime()
@@ -29,7 +29,6 @@ function love.update(dt)
 
             -- Update physics
             manageHitbox()
-            map:update()
             p_world:update(dt)
             
             -- Movement update
@@ -70,10 +69,11 @@ function love.draw()
 
     -- Drawing everything in regard to the camera
     game_cam:attach()
-        -- Map draws entities aswell
-        map:draw() 
-        player.anim.actor:Draw()
+    -- Map draws entities aswell
+    map:draw() 
+    player.anim.actor:Draw()
     game_cam:detach()
+    tooltipDraw()
 end
 
 function love.keypressed(key)
@@ -85,14 +85,15 @@ function love.keypressed(key)
     if game_state == IN_WORLD then
         -- Check pausing first
         if key == PAUSE then 
-            paused = not paused
+            d = not paused
             player_control = not paused
         elseif not paused then
             -- Save and load keys
-            elseif key == SAVE_KEY then
+            if key == SAVE_KEY then
                 saveScene()
             elseif key == LOAD_KEY then
                 loadScene()
+            end
         end
     end
 end
