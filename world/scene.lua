@@ -225,9 +225,11 @@ function recursiveLoad(spaces,lines)
     local result = {}
     local line = lines()
     while line ~= nil and #line > spaces and line:sub(spaces,spaces) == " " do
+        -- "([^%s]+[[%s]*[%S]+]*)" matches every non whitespace sequence followed by possibly more sequences of whitespaces and not whitespaces
         local matches = string.gmatch(line, "([^%s]+[[%s]*[%S]+]*)")
 
         for match in matches do
+            -- "([^:]+)" Splits the string by the : delimeter
             local content = string.gmatch(match, "([^:]+)")
             local key = tostring(content())
             local temp = content()

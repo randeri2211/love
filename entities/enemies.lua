@@ -11,10 +11,8 @@ function Enemies:new()
 end
 
 
-function Enemies:drawEnemies()
+function Enemies:draw()
     for i, enemy in pairs(self.enemies) do
-        -- print(i)
-        -- print(tostring(enemy))
         local x, y = enemy.body:getWorldCenter()
         local x, y = game_cam:cameraCoords(x, y)
         if x > - CAMERA_RENDER_OFFSET and x < SCREEN_X + CAMERA_RENDER_OFFSET and y > - CAMERA_RENDER_OFFSET and y < SCREEN_Y + CAMERA_RENDER_OFFSET then
@@ -31,6 +29,15 @@ function Enemies:moveEnemies(x, y)
 end
 
 function Enemies:addEnemy(enemy)
-    local arrSize = #self.enemies
-    self.enemies[arrSize + 1] = enemy
+    table.insert(self.enemies, enemy)
+end
+
+function Enemies:removeEnemy(enemy)
+    for i, e in ipairs(self.enemies) do
+        if e == enemy then
+            table.remove(self.enemies, i)
+            return true
+        end
+    end
+    return false
 end

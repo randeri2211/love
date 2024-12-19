@@ -1,5 +1,6 @@
 camera = require "libraries.hump.camera"
 require "world.map"
+require "spells.spells"
 
 
 function initVars()
@@ -10,12 +11,13 @@ function initVars()
     game_cam = camera()
     map = Map:new(MAP_X, MAP_Y)
     map:emptyMap()
+    spells = Spells:new()
     -- Physics init
     love.physics.setMeter(1)
     p_world = love.physics.newWorld(0, GRAVITY, true)
 
     -- Player init
-    player = Player:new(TILE_SIZE, - TILE_SIZE)
+    player = Player:new(TILE_SIZE, - TILE_SIZE, "snaposaurus")
 
     -- World collision callbacks
     p_world:setCallbacks(startCollisionCallback, finishCollisionCallback, nil, nil)

@@ -8,11 +8,15 @@ require "world.scene"
 require "animations.animations"
 require "registry"
 
+require "spells.bullet1"
+
 function love.load()
     initVars()
     registerAll()
     -- TODO: replace tempMap with a world generation sometime
     tempMap()
+
+    spellTest = Spell:new(Bullet1)
 
     fpsTimer = love.timer.getTime()
 end
@@ -28,7 +32,7 @@ function love.update(dt)
             
             -- Movement update
             if player_control then
-                player:update()
+                player:update(dt)
             end
             
             -- Setting the camera to the player position
@@ -66,6 +70,7 @@ function love.draw()
     game_cam:attach()
         -- Map draws entities aswell
         map:draw() 
+        spells:draw()
         player.anim.actor:Draw()
         -- player:debugDraw()
     game_cam:detach()
@@ -89,6 +94,8 @@ function love.keypressed(key)
                 saveScene()
             elseif key == LOAD_KEY then
                 loadScene()
+            elseif key == "b" then
+                spellTest:shoot(player)
             end
         end
     end

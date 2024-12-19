@@ -12,10 +12,13 @@ AS = 25
 AD = 1
 -- AS / (self.movement.currentSpeed * AD) = 0.3
 
-function Player:new(x, y)
+function Player:new(x, y, name)
     local player = Entity:new(x, y, 100, PLAYER_MOVE_SPEED, PLAYER_JUMP_HEIGHT)
     setmetatable(player,self)
     self.__index = self
+
+    player.name = name
+
     player.grounded = false
     player.jumping = false
     player.direction = ""
@@ -57,14 +60,18 @@ function Player:setBody()
     self.fixtures = {}
     self.fixtures[1] = love.physics.newFixture(self.body, self.shapes[1], 1)
     self.fixtures[1]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[1]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
     self.fixtures[2] = love.physics.newFixture(self.body, self.shapes[2], 1)
     self.fixtures[2]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[2]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
     self.fixtures[3] = love.physics.newFixture(self.body, self.shapes[3], 1)
     self.fixtures[3]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[3]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
     self.fixture_check = {}
     self.fixture_check[self.fixtures[1]] = true
     self.fixture_check[self.fixtures[2]] = true
     self.fixture_check[self.fixtures[3]] = true
+
 end
 
 function Player:setScale(scale)
@@ -167,7 +174,8 @@ function Player:interact()
 end
 
 
-function Player:update()
+function Player:update(dt)
+    Entity.update(self, dt)
     self:move()
     self:interact()
     groundRay(self)

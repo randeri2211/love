@@ -50,6 +50,6 @@ function Map:draw()
         end
     end
 
-    map.enemies:drawEnemies()
+    map.enemies:draw()
 end
 

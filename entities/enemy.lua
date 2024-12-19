@@ -18,7 +18,8 @@ function Enemy:new(x, y)
     end
     enemy.shape = love.physics.newCircleShape(enemy.radius)
     enemy.fixture = love.physics.newFixture(enemy.body, enemy.shape, 1)
-
+    enemy.fixture:setCategory(ENEMY_CATEGORY)
+    
     -- Enemy Init
     enemy.body:setGravityScale(0)
     enemy.body:setSleepingAllowed(false)

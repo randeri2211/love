@@ -22,9 +22,14 @@ function worldToMap(w_x, w_y)
     return math.floor(w_x + map.center.x + 1.51), math.floor(w_y + map.center.y + 1.51)
 end
 
-function mouseToWorld()
+function mouseToLove()
     local mx, my = love.mouse.getPosition()
     mx, my = game_cam:worldCoords(mx, my)
+    return mx, my
+end
+
+function mouseToWorld()
+    local mx, my = mouseToLove()
     return loveToWorld(mx, my)
 end
 
