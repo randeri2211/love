@@ -1,4 +1,4 @@
-require "spells.form"
+require "forms.form"
 
 Bullet = Form:new()
 
@@ -18,27 +18,50 @@ function Bullet:new(player, speed, radius, imagePath)
     local mx, my = mouseToLove()
     bullet.direction = {mx - px, my - py}
     bullet.body = love.physics.newBody(p_world, px, py, "dynamic")
+    bullet.body:setBullet(true)
+    bullet.body:setGravityScale(0)
+    bullet.body:setLinearDamping(0)
+    bullet.body:setMass(0)
+
     bullet.shape = love.physics.newCircleShape(bullet.radius)
     bullet.fixture = love.physics.newFixture(bullet.body, bullet.shape, 1)
     bullet.fixture:setCategory(SPELLS_CATEGORY)
 
-    bullet.body:setLinearVelocity(bullet.direction[1] * bullet.speed, bullet.direction[2] * bullet.speed)
+    -- Normalize the direction vector and multiply by speed
+    bullet:updateVel()
 
+    local vx, vy = bullet.body:getLinearVelocity()
+    print("velx "..tostring(vx).."\nvely "..tostring(vy))
+    
     bullet.imagePath = imagePath
     bullet.image = BLOCK_IMG[bullet.imagePath]
     return bullet
 end
 
-function Bullet:update(dt)
 
+function Bullet:updateVel()
+    -- Normalize the direction vector and multiply by speed
+    local velSize = math.sqrt(self.direction[1]^2 + self.direction[2]^2)
+    self.vel = {self.direction[1] * self.speed / velSize, self.direction[2] * self.speed / velSize}
+    print("velx "..tostring(self.vel[1]).."\nvely "..tostring(self.vel[2]))
+    
+    self.body:setLinearVelocity(self.vel[1], self.vel[2])
 end
 
 
 function Bullet:draw()
     function circleStencil()
         local x, y = self.body:getWorldCenter()
-        love.graphics.circle("fill", x, y, self.radius)
+        local radius = self.shape:getRadius()
+        love.graphics.circle("fill", x, y, radius)
     end
+    local vx, vy = self.body:getLinearVelocity()
+    print("Initial Velocity X: " .. vx .. ", Y: " .. vy)
+    local s = math.sqrt(vx * vx + vy * vy)
+    print("actual velocity: "..tostring(s))
+    print("expected velocity: "..tostring(self.speed))
+    -- self.speed = self.speed + 1
+    -- self:updateVel()
     -- Apply the stencil
     love.graphics.stencil(circleStencil, "replace", 1)
     love.graphics.setStencilTest("greater", 0)

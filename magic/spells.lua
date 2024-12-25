@@ -1,4 +1,4 @@
-require "spells.spell"
+require "magic.spell"
 
 Spells = {}
 

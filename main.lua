@@ -8,7 +8,7 @@ require "world.scene"
 require "animations.animations"
 require "registry"
 
-require "spells.bullet1"
+require "magic.bullet1"
 
 function love.load()
     initVars()
@@ -16,7 +16,7 @@ function love.load()
     -- TODO: replace tempMap with a world generation sometime
     tempMap()
 
-    spellTest = Spell:new(Bullet1)
+    spellTest = Spell:new(Bullet1, 10)
 
     fpsTimer = love.timer.getTime()
 end

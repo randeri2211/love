@@ -79,8 +79,6 @@ function Player:setScale(scale)
     self.width = PLAYER_WIDTH * self.scale
     self.height = PLAYER_HEIGHT * self.scale
     self.radius = self.width / 2
-    print("width is "..self.width)
-    print("radius is "..self.radius)
     self:setBody()
 end
 

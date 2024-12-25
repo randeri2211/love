@@ -1,6 +1,6 @@
 camera = require "libraries.hump.camera"
 require "world.map"
-require "spells.spells"
+require "magic.spells"
 
 
 function initVars()
@@ -13,9 +13,9 @@ function initVars()
     map:emptyMap()
     spells = Spells:new()
     -- Physics init
-    love.physics.setMeter(1)
+    love.physics.setMeter(TILE_SIZE * TILES_PER_METER)
     p_world = love.physics.newWorld(0, GRAVITY, true)
-
+    
     -- Player init
     player = Player:new(TILE_SIZE, - TILE_SIZE, "snaposaurus")
 

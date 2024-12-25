@@ -1,18 +1,19 @@
 require "world.world"
-require "spells.bullet1"
+require "magic.bullet1"
 Spell = {}
 
-function Spell:new(form)
+function Spell:new(form, damage)
     local spell = {}
     setmetatable(spell,self)
     self.__index = self
+    spell.damage = damage
     spell.form = form
     return spell
 end
 
 function Spell:shoot(player)
-    print("form "..tostring(self.form.new))
-
     local spellShot = self.form:new(player)
-    table.insert(spells.spells, spellShot)
+    if spellShot ~= nil then
+        table.insert(spells.spells, spellShot)
+    end
 end
