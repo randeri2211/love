@@ -6,7 +6,7 @@ registerEntity("Enemy",Enemy)
 
 function Enemy:new(x, y)
     -- Enemy Attributes
-    local enemy = Entity:new(x, y, 10, 0, 0)
+    local enemy = Entity:new(x, y, 20, 0, 0)
     setmetatable(enemy,self)
     self.__index = self
 
@@ -15,7 +15,7 @@ function Enemy:new(x, y)
     end
 
     enemy.radius = 50
-    enemy.hpBar.regen = 0   -- Enemies do not regen health by default?
+    enemy.hpBar.regen = 1   -- Enemies do not regen health by default?
     enemy.name = "Enemy"
 
     enemy.shape = love.physics.newCircleShape(enemy.radius)

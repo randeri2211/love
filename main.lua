@@ -34,6 +34,9 @@ function love.update(dt)
             if player_control then
                 player:update(dt)
             end
+
+            map.enemies:update(dt)
+            spells:update(dt)
             
             -- Setting the camera to the player position
             local x,y = player.body:getWorldCenter()

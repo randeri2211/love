@@ -11,6 +11,13 @@ function Enemies:new()
 end
 
 
+function Enemies:update(dt)
+    for i, enemy in pairs(self.enemies) do
+        enemy:update(dt)
+    end
+end
+
+
 function Enemies:draw()
     for i, enemy in pairs(self.enemies) do
         local x, y = enemy.body:getWorldCenter()

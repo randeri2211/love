@@ -14,6 +14,7 @@ function Bullet:new(player, speed, radius, imagePath)
     bullet.form = "bullet"
     bullet.radius = radius
     bullet.speed = speed
+    bullet.lifetime = 2
 
     local px, py = player.body:getWorldCenter()
     local mx, my = mouseToLove()
@@ -44,6 +45,14 @@ function Bullet:updateVel()
     -- print("velx "..tostring(self.vel[1]).."\nvely "..tostring(self.vel[2]))
     
     self.body:setLinearVelocity(self.vel[1], self.vel[2])
+end
+
+
+function Bullet:update(dt)
+    self.lifetime = self.lifetime - dt
+    if self.lifetime <= 0 then
+        spells:destroy(self)
+    end
 end
 
 

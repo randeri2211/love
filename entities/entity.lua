@@ -32,11 +32,11 @@ function Entity:prepSave()
 end
 
 function Entity:regen(dt)
-    if self.hpBar ~= nil then
+    if self.hpBar ~= nil and self.hpBar.regen ~= 0 then
         self.hpBar.currentHP = math.min(self.hpBar.currentHP + self.hpBar.regen * dt,self.hpBar.maxHP)
     end
 
-    if self.manaBar ~= nil then
+    if self.manaBar ~= nil and self.manaBar.manaRegen ~= 0 then
         self.manaBar.currentMana = math.min(self.manaBar.currentMana + self.manaBar.manaRegen * dt,self.manaBar.maxMana)
     end
 end

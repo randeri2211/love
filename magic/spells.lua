@@ -11,11 +11,20 @@ function Spells:new()
     return spells
 end
 
+
+function Spells:update(dt)
+    for i, spell in pairs(self.spells) do
+        spell.instance:update(dt)
+    end
+end
+
+
 function Spells:draw()
     for i, spell in pairs(self.spells) do
         spell.instance:draw()
     end
 end
+
 
 function Spells:getSpellByFixture(fixture)
     for i, spell in pairs(self.spells) do
@@ -24,6 +33,7 @@ function Spells:getSpellByFixture(fixture)
         end
     end
 end
+
 
 function Spells:destroy(instance)
     for i, spell in pairs(self.spells) do
