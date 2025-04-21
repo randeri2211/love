@@ -82,7 +82,7 @@ end
 function groundRay(p)
     p.grounded = false
     local p_x, p_y = p.body:getWorldCenter()
-    p_world:rayCast(p_x, p_y + p.height / 2, p_x, p_y + p.height / 2 + 0.1, groundCallback)
+    p_world:rayCast(p_x, p_y + p.height / 2, p_x, p_y + p.height / 2 + 1, groundCallback)
 end
 
 function groundCallback(fixture, x, y, xn, yn, fraction)
@@ -100,7 +100,7 @@ function tooltipDraw()
     -- Check if mouse is hovering
     
     local mx, my = mouseToMap()
-    if mx == nil or my == nil or mx <= 0 or mx > MAP_X or y <= 0 or y > MAP_Y then
+    if mx == nil or my == nil or mx <= 0 or mx > MAP_X or my <= 0 or my > MAP_Y then
         return
     end
     
@@ -129,6 +129,8 @@ function tempMap()
     map:insert(block)
     local iblock = InteractiveBlock:new(6 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE)
     map:insert(iblock)
+    local iblock2 = InteractiveBlock:new(7 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    map:insert(iblock2)
     map.enemies:addEnemy(Enemy1:new(0,-200))
     map.enemies:addEnemy(Enemy1:new(200,-200))
     enemy1 = Enemy:new(-200,-200)
@@ -153,7 +155,7 @@ function debugPrint()
 end
 
 function printPosition()
-    local x, y = loveToMap(player.body:getWorldCenter())
+    local x, y = loveToMapSmooth(player.body:getWorldCenter())
     love.graphics.print("pos:(" .. string.format("%.2f",tostring(x)) .. ","..string.format("%.2f",tostring(y)) .. ")",0,order * 10)
     order = order + 1
 end

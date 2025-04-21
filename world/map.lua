@@ -30,7 +30,7 @@ end
 
 function Map:insert(block)
     -- Convert to map coordinates
-    x, y = loveToMap(block.x, block.y)
+    local x, y = loveToMap(block.x, block.y)
     self.map[x][y] = block
 end
 

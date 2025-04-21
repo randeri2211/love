@@ -155,12 +155,14 @@ end
 
 function Player:interact()
     if love.keyboard.isDown(INTERACT_KEY) then
-        -- Get mouse position
-        local mx, my = mouseToWorld()
-        local px, py = loveToWorld(self.body:getWorldCenter())
-        print(distance(px, py, mx, my))
+        -- Get mouse position in block coordinates
+        local mx, my = mouseToMap()
+        -- Get player position in world coordinates
+        local px, py = self:mapCenter()
+        py = py + 1
+        -- print(distance(px, py, mx, my))
         if distance(px, py, mx, my) < INTERACT_DISTANCE then
-            mx, my = worldToMap(mx, my)
+            print(mx..":"..my)
             if map.map[mx][my] ~= nil then
                 -- Check if the block implements the interact function
                 if type(map.map[mx][my].interact) == "function" then
@@ -213,7 +215,7 @@ end
 
 function Player:linearDamping(moved)
     -- Determines linear damping at every moment
-    if moved == false and Player.grounded == true then
+    if moved == false and self.grounded == true then
         self.body:setLinearDamping(2)
     else
         self.body:setLinearDamping(LINEAR_DAMPING)
@@ -223,7 +225,7 @@ end
 
 function Player:resetSmallVel()
     -- Resets small velocity values to stop flickering at low speeds
-    local x,y = self.body:getLinearVelocity()
+    local x, y = self.body:getLinearVelocity()
     if math.abs(x) < 0.001 then
         x = 0
     end
@@ -231,6 +233,12 @@ function Player:resetSmallVel()
         y = 0
     end
     self.body:setLinearVelocity(x, y)
+end
+
+
+function Player:mapCenter()
+    local x, y = self.body:getWorldCenter()
+    return loveToMap(x, y)
 end
 
 

@@ -85,6 +85,7 @@ function Block:load(blockTable)
 end
 
 function Block:prepSave()
+    -- Prevents crash
     if self.tooltipText ~= nil then
         self.tooltipText = "\"" .. self.tooltipText .. "\""
     end

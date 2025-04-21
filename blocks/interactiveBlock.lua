@@ -18,7 +18,7 @@ function InteractiveBlock:new(x, y, width, height)
 end
 
 function InteractiveBlock:interact()
-    print("interacted "..self.x..","..self.y)
+    print("interacted with interactiveBlock at "..self.x..","..self.y.." in love coordinates")
 end
 
 function InteractiveBlock:draw()
