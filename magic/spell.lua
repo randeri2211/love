@@ -13,7 +13,10 @@ end
 
 function Spell:shoot(player)
     local spellShot = self.form:new(player)
+    local t = {}
+    t.spell = self
+    t.instance = spellShot
     if spellShot ~= nil then
-        table.insert(spells.spells, spellShot)
+        table.insert(spells.spells, t)
     end
 end

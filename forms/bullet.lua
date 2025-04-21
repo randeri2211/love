@@ -11,6 +11,7 @@ function Bullet:new(player, speed, radius, imagePath)
         return bullet
     end
 
+    bullet.form = "bullet"
     bullet.radius = radius
     bullet.speed = speed
 
@@ -29,9 +30,6 @@ function Bullet:new(player, speed, radius, imagePath)
 
     -- Normalize the direction vector and multiply by speed
     bullet:updateVel()
-
-    local vx, vy = bullet.body:getLinearVelocity()
-    print("velx "..tostring(vx).."\nvely "..tostring(vy))
     
     bullet.imagePath = imagePath
     bullet.image = BLOCK_IMG[bullet.imagePath]
@@ -43,7 +41,7 @@ function Bullet:updateVel()
     -- Normalize the direction vector and multiply by speed
     local velSize = math.sqrt(self.direction[1]^2 + self.direction[2]^2)
     self.vel = {self.direction[1] * self.speed / velSize, self.direction[2] * self.speed / velSize}
-    print("velx "..tostring(self.vel[1]).."\nvely "..tostring(self.vel[2]))
+    -- print("velx "..tostring(self.vel[1]).."\nvely "..tostring(self.vel[2]))
     
     self.body:setLinearVelocity(self.vel[1], self.vel[2])
 end
@@ -56,12 +54,7 @@ function Bullet:draw()
         love.graphics.circle("fill", x, y, radius)
     end
     local vx, vy = self.body:getLinearVelocity()
-    print("Initial Velocity X: " .. vx .. ", Y: " .. vy)
     local s = math.sqrt(vx * vx + vy * vy)
-    print("actual velocity: "..tostring(s))
-    print("expected velocity: "..tostring(self.speed))
-    -- self.speed = self.speed + 1
-    -- self:updateVel()
     -- Apply the stencil
     love.graphics.stencil(circleStencil, "replace", 1)
     love.graphics.setStencilTest("greater", 0)
@@ -71,4 +64,14 @@ function Bullet:draw()
     love.graphics.draw(self.image, x - self.radius, y - self.radius, 0, self.radius * 2 / self.image:getWidth(), self.radius * 2 / self.image:getHeight())
     -- Remove the stencil
     love.graphics.setStencilTest()
+end
+
+
+function Bullet:isFixture(fixture)
+    return self.fixture == fixture
+end
+
+
+function Bullet:destroy()
+    self.body:destroy()
 end

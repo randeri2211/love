@@ -10,6 +10,11 @@ function Block:new(x, y, width, height)
     local block = {}
     setmetatable(block, self)
     self.__index = self
+
+    if x == nil then
+        return block
+    end
+
     block.width = width
     block.height = height
     block.name = "Block"
@@ -19,6 +24,8 @@ function Block:new(x, y, width, height)
     block.image = BLOCK_IMG[block.imagePath]
     block.x = x
     block.y = y
+
+    block.mx, block.my = loveToMap(x, y)
     
     if x == nil then
         return block
@@ -47,14 +54,14 @@ end
 function Block:damage(dmg)
     self.hpBar.currentHP = self.hpBar.currentHP - dmg
     if self.hpBar.currentHP <= 0 then
-        self = self.destroy()
+        self:destroy()
     end
 end
 
 
 function Block:destroy()
-    self = nil
-    return self
+    self:destroyBody()
+    map.map[self.mx][self.my] = nil
 end
 
 

@@ -20,7 +20,7 @@ function initVars()
     player = Player:new(TILE_SIZE, - TILE_SIZE, "snaposaurus")
 
     -- World collision callbacks
-    p_world:setCallbacks(startCollisionCallback, finishCollisionCallback, nil, nil)
+    p_world:setCallbacks(startCollisionCallback, finishCollisionCallback, preSolve, postSolve)
 end
 
 
@@ -39,7 +39,6 @@ function manageHitbox()
                     if x < p_x - x_diff or x > p_x +x_diff or y < p_y - y_diff or y > p_y + y_diff then
                         -- If outside of range, destroy the body
                         block:destroyBody()
-                        -- print("destroying")
                     -- In the body generate area
                     else
                         local bx, by = loveToMap(block.x, block.y)
@@ -60,22 +59,43 @@ end
 
 
 function startCollisionCallback(fixture1, fixture2, contact)
-    if fixture1 == player.fixture or fixture2 == player.fixture then
+    -- Spell hit section
+    if fixture1:getCategory() == SPELLS_CATEGORY or fixture2:getCategory() == SPELLS_CATEGORY then
+        -- Swap positions if fixture2 is the spell for simplicity going forward
+        if fixture2:getCategory() == SPELLS_CATEGORY then
+            fixture1, fixture2 = fixture2, fixture1
+        end
 
+        local spellPair = spells:getSpellByFixture(fixture1)
+        local entity = nil
+        if fixture2:getCategory() == BLOCKS_CATEGORY then
+            local x, y = loveToMap(fixture2:getBody():getWorldCenter())
+            entity = map.map[x][y]
+        end
+
+        if fixture2:getCategory() == ENEMY_CATEGORY then
+            entity = map.enemies:getEnemyByFixture(fixture2)
+        end
+
+        
+        if spellPair then
+            if entity ~= nil then
+                entity:damage(spellPair.spell.damage)
+            end
+
+            spells:destroy(spellPair.instance)
+        end
     end
-    -- print("fixture1: " .. tostring(fixture1))
-    -- print("fixture2: " .. tostring(fixture2))
-    -- print("contact: " .. tostring(contact))
 end
 
 
 function finishCollisionCallback(fixture1, fixture2, contact)
-    if player.fixture_check[fixture1] or player.fixture_check[fixture2] then
-        player.grounded = false
-    end
-    -- print("fixture1: " .. tostring(fixture1))
-    -- print("fixture2: " .. tostring(fixture2))
-    -- print("contact: " .. tostring(contact))
+end
+
+function preSolve(fixture1, fixture2, contact)
+end
+
+function postSolve(fixture1, fixture2, contact, normal, tangent)
 end
 
 -- Ground Check Functions

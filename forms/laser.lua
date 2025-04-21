@@ -7,7 +7,7 @@ function Laser:new(player, radius, bounces, reach, imagePath)
     setmetatable(laser,self)
     self.__index = self
 
-    
+    laser.form = "laser"
     if player == nil then
         return laser
     end

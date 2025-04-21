@@ -52,4 +52,3 @@ function Map:draw()
 
     map.enemies:draw()
 end
-

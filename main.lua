@@ -19,8 +19,6 @@ function love.load()
     spellTest = Spell:new(Bullet1, 10)
 
     fpsTimer = love.timer.getTime()
-    x, y = loveToMap(1001,501)
-    print("test"..x..":"..y)
 end
 
 function love.update(dt)

@@ -41,3 +41,12 @@ function Enemies:removeEnemy(enemy)
     end
     return false
 end
+
+
+function Enemies:getEnemyByFixture(fixture)
+    for i, enemy in pairs(self.enemies) do
+        if enemy:isFixture(fixture) then
+            return enemy
+        end
+    end
+end

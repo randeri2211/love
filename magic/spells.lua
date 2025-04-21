@@ -13,6 +13,25 @@ end
 
 function Spells:draw()
     for i, spell in pairs(self.spells) do
-        spell:draw()
+        spell.instance:draw()
     end
+end
+
+function Spells:getSpellByFixture(fixture)
+    for i, spell in pairs(self.spells) do
+        if spell.instance:isFixture(fixture) then
+            return spell
+        end
+    end
+end
+
+function Spells:destroy(instance)
+    for i, spell in pairs(self.spells) do
+        if spell.instance == instance then
+            spell.instance:destroy()
+            table.remove(self.spells, i)
+            return true
+        end
+    end
+    return false
 end

@@ -5,6 +5,9 @@ function Form:new(player)
     local form = {}
     setmetatable(form,self)
     self.__index = self
+
+    form.type = "Form"
+    form.form = nil
     if player == nil then
         return form
     end
@@ -14,5 +17,10 @@ function Form:new(player)
 end
 
 function Form:update(dt)
+end
 
+function Form:destroy()
+end
+
+function Form:isFixture(fixture)
 end

@@ -10,11 +10,15 @@ function Entity:new(x, y, maxHP, moveSpeed, jumpHeight)
     local entity = {}
     setmetatable(entity,self)
     self.__index = self
-    if x ~= nil then
-        entity.hpBar = HPBar(maxHP, maxHP, 1)
-        entity.movement = Movement(moveSpeed, jumpHeight)
-        entity.body = love.physics.newBody(p_world, x, y, "dynamic")
+
+    entity.type = "Entity"
+    if x == nil then
+        return entity
     end
+    entity.hpBar = HPBar(maxHP, maxHP, 1)
+    entity.movement = Movement(moveSpeed, jumpHeight)
+    entity.body = love.physics.newBody(p_world, x, y, "dynamic")
+
     return entity
 end
 
@@ -35,4 +39,18 @@ function Entity:regen(dt)
     if self.manaBar ~= nil then
         self.manaBar.currentMana = math.min(self.manaBar.currentMana + self.manaBar.manaRegen * dt,self.manaBar.maxMana)
     end
+end
+
+function Entity:damage(damage)
+    self.hpBar.currentHP = self.hpBar.currentHP - damage
+    if self.hpBar.currentHP <= 0 then
+        self:destroy()
+    end
+end
+
+function Entity:destroy()
+    self.body:destroy()
+end
+
+function Entity:isFixture(fixture)
 end

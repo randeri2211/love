@@ -160,9 +160,7 @@ function Player:interact()
         -- Get player position in world coordinates
         local px, py = self:mapCenter()
         py = py + 1
-        -- print(distance(px, py, mx, my))
         if distance(px, py, mx, my) < INTERACT_DISTANCE then
-            print(mx..":"..my)
             if map.map[mx][my] ~= nil then
                 -- Check if the block implements the interact function
                 if type(map.map[mx][my].interact) == "function" then
@@ -387,4 +385,7 @@ end
 
 function fullRed(x, y, r, g, b, a)
     return 255, 0, 0, 255
+end
+
+function Player:damage(damage)
 end

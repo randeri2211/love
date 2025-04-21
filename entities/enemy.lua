@@ -6,16 +6,18 @@ registerEntity("Enemy",Enemy)
 
 function Enemy:new(x, y)
     -- Enemy Attributes
-    local enemy = Entity:new(x, y, 100, 0, 0)
+    local enemy = Entity:new(x, y, 10, 0, 0)
     setmetatable(enemy,self)
     self.__index = self
-    enemy.radius = 50
-    enemy.hpBar = HPBar(50, 50, 0)
-    enemy.name = "Enemy"
 
     if x == nil or y == nil then
         return enemy
     end
+
+    enemy.radius = 50
+    enemy.hpBar.regen = 0   -- Enemies do not regen health by default?
+    enemy.name = "Enemy"
+
     enemy.shape = love.physics.newCircleShape(enemy.radius)
     enemy.fixture = love.physics.newFixture(enemy.body, enemy.shape, 1)
     enemy.fixture:setCategory(ENEMY_CATEGORY)
@@ -54,4 +56,11 @@ function Enemy:wakeUp()
 end
 
 
+function Enemy:isFixture(fixture)
+    return fixture == self.fixture
+end
 
+function Enemy:destroy()
+    Entity.destroy(self)
+    map.enemies:removeEnemy(self)
+end
