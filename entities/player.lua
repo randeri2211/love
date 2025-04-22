@@ -50,10 +50,11 @@ function Player:debugDraw()
 end
 
 function Player:setBody()
+    local x, y = self.body:getWorldCenter()
     self.body = love.physics.newBody(p_world, x, y, "dynamic")
     
     self.shapes = {}
-    self.shapes[1] = love.physics.newRectangleShape(self.height, self.height - self.width)
+    self.shapes[1] = love.physics.newRectangleShape(self.width * 0.9, self.height - self.radius * 2)
     self.shapes[2] = love.physics.newCircleShape(0, -(self.height - self.width) / 2, self.radius)
     self.shapes[3] = love.physics.newCircleShape(0, (self.height - self.width) / 2, self.radius)
 
@@ -67,8 +68,13 @@ function Player:setBody()
     self.fixtures[3] = love.physics.newFixture(self.body, self.shapes[3], 1)
     self.fixtures[3]:setCategory(PLAYER_CATEGORY)
     self.fixtures[3]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
+
+    for i, fixture in pairs(self.fixtures) do
+        fixture:setRestitution(0)
+    end
+
     self.fixture_check = {}
-    self.fixture_check[self.fixtures[1]] = true
+    -- self.fixture_check[self.fixtures[1]] = true
     self.fixture_check[self.fixtures[2]] = true
     self.fixture_check[self.fixtures[3]] = true
 

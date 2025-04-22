@@ -60,6 +60,8 @@ end
 
 function startCollisionCallback(fixture1, fixture2, contact)
     -- Spell hit section
+    print(fixture1)
+    print(fixture2)
     if fixture1:getCategory() == SPELLS_CATEGORY or fixture2:getCategory() == SPELLS_CATEGORY then
         -- Swap positions if fixture2 is the spell for simplicity going forward
         if fixture2:getCategory() == SPELLS_CATEGORY then
@@ -93,6 +95,23 @@ function finishCollisionCallback(fixture1, fixture2, contact)
 end
 
 function preSolve(fixture1, fixture2, contact)
+    if fixture1:getCategory() == PLAYER_CATEGORY or fixture2:getCategory() == PLAYER_CATEGORY then
+        -- Swap positions if fixture2 is the spell for simplicity going forward
+        if fixture2:getCategory() == PLAYER_CATEGORY then
+            fixture1, fixture2 = fixture2, fixture1
+        end
+
+        if fixture2:getCategory() == BLOCKS_CATEGORY then
+            -- Get the normal vector of the collision
+            local nx, ny = contact:getNormal()
+
+            -- Check if the contact is horizontal (wall), i.e., normal is mostly x
+            if math.abs(nx) > math.abs(ny) then
+                -- Disable friction for this contact
+                contact:setFriction(0)
+            end
+        end
+    end
 end
 
 function postSolve(fixture1, fixture2, contact, normal, tangent)
@@ -140,7 +159,7 @@ end
 
 function tempMap()
     for i = 1, map.width do
-        for j = 0, 2 do
+        for j = 0, 4 do
             local block = Block:new((i - map.center.x - 1) * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             map:insert(block)
         end

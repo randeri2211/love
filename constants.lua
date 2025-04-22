@@ -1,4 +1,4 @@
-debug = true
+debug = false
 
 SCREEN_X  = 1920
 SCREEN_Y  = 1080
@@ -8,7 +8,7 @@ TILES_PER_METER = 1
 
 GRAVITY = 9.8 * TILE_SIZE * TILES_PER_METER
 LINEAR_DAMPING = 0.2
-JUMP_GRAVITY_SCALE = 0.5
+JUMP_GRAVITY_SCALE = 0.4
 
 PLAYER_JUMP_HEIGHT = 6 * TILE_SIZE
 PLAYER_MOVE_SPEED = 4 * TILE_SIZE
@@ -25,8 +25,8 @@ SAVE_FOLDER = "saves"
 SPAWN_X = 0.5       -- Relative to world so on a scale of 0-1
 SPAWN_Y = 0.1       -- Relative to world so on a scale of 0-1
 
-PLAYER_WIDTH = TILE_SIZE
-PLAYER_HEIGHT = 2 * TILE_SIZE
+PLAYER_WIDTH = TILE_SIZE * 0.8
+PLAYER_HEIGHT = 2 * TILE_SIZE * 0.98
 
 INTERACT_DISTANCE = 5
 

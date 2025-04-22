@@ -7,7 +7,7 @@ require "world.world"
 require "world.scene"
 require "animations.animations"
 require "registry"
-
+debugWorldDraw = require("libraries.debugWorldDraw")
 require "magic.bullet1"
 
 function love.load()
@@ -75,7 +75,11 @@ function love.draw()
         map:draw() 
         spells:draw()
         player.anim.actor:Draw()
-        player:debugDraw()
+        if debug then
+            -- player:debugDraw()
+            local mx, my  = MAP_X * TILE_SIZE * TILES_PER_METER, MAP_Y * TILE_SIZE * TILES_PER_METER
+            debugWorldDraw(p_world, -mx / 2, -my / 2, mx, my)
+        end
     game_cam:detach()
     tooltipDraw()
 end
