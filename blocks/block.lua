@@ -70,6 +70,7 @@ function Block:generateBody()
         self.body:setSleepingAllowed(true)
         self.body:isAwake(false)
         self.fixture:setCategory(BLOCKS_CATEGORY)
+        self.fixture:setGroupIndex(-BLOCKS_CATEGORY)
     end
 end
 

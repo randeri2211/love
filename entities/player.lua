@@ -1,3 +1,4 @@
+-- require "constants"
 require "components.manaBar"
 require "entities.entity"
 
@@ -55,12 +56,15 @@ function Player:setBody()
     self.fixtures = {}
     self.fixtures[1] = love.physics.newFixture(self.body, self.shapes[1], 1)
     self.fixtures[1]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[1]:setGroupIndex(-PLAYER_CATEGORY)
     self.fixtures[1]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
     self.fixtures[2] = love.physics.newFixture(self.body, self.shapes[2], 1)
     self.fixtures[2]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[2]:setGroupIndex(-PLAYER_CATEGORY)
     self.fixtures[2]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
     self.fixtures[3] = love.physics.newFixture(self.body, self.shapes[3], 1)
     self.fixtures[3]:setCategory(PLAYER_CATEGORY)
+    self.fixtures[3]:setGroupIndex(-PLAYER_CATEGORY)
     self.fixtures[3]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
 
     for i, fixture in pairs(self.fixtures) do

@@ -7,10 +7,10 @@ require "world.world"
 require "world.scene"
 require "animations.animations"
 require "registry"
+require "magic.bullet1"
 local debugWorldDraw = require "libraries.debugWorldDraw"
 local Slab = require "libraries.Slab"
-
-local showWindow = false
+local ingameUI = require "ui.ingame"
 
 function love.load(args)
     Slab.Initialize(args)
@@ -22,6 +22,8 @@ function love.load(args)
     spellTest = Spell:new(Bullet1, 10)
 
     fpsTimer = love.timer.getTime()
+
+    uihandler = ingameUI:new()
 end
 
 function love.update(dt)
@@ -68,20 +70,7 @@ function love.update(dt)
         end
     end
 
-    if showWindow then
-        Slab.BeginWindow('InventoryWindow', {
-            Title = "Inventory",
-            AllowMove = true,
-            AutoSizeWindow = false,
-            W = 300,
-            H = 200
-        })
-
-        Slab.Text("You have 3 potions.")
-        Slab.Button("Use Potion")
-
-        Slab.EndWindow()
-    end
+    uihandler:update()
 end
 
 function love.draw()
@@ -106,15 +95,15 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    if key == EXIT then
+    if key == EXIT_KEY then
         love.event.quit()
     end
 
     -- IN_WORLD State handling
     if game_state == IN_WORLD then
         -- Check pausing first
-        if key == PAUSE then 
-            d = not paused
+        if key == PAUSE_KEY then 
+            paused = not paused
             player_control = not paused
         elseif not paused then
             -- Save and load keys
@@ -123,10 +112,11 @@ function love.keypressed(key)
             elseif key == LOAD_KEY then
                 loadScene()
             -- Shoot key
-            elseif key == SHOOT then
+            elseif key == SHOOT_KEY then
                 spellTest:shoot(player)
-            elseif key == WINDOW then
-                showWindow = not showWindow
+            -- TODO:temporary remove when ui is ok
+            else
+                uihandler:checkKey(key)
             end
         end
     end

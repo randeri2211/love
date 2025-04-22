@@ -135,7 +135,9 @@ end
 
 function tooltipDraw()
     -- Check if mouse is hovering
-    
+    if paused then
+        return
+    end
     local mx, my = mouseToMap()
     if mx == nil or my == nil or mx <= 0 or mx > MAP_X or my <= 0 or my > MAP_Y then
         return
