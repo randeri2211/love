@@ -1,5 +1,6 @@
-Animateable = {}
+local lovebone = require "libraries.love-bone.lovebone"
 
+Animateable = {}
 function Animateable:new()
     local anim = {}
     setmetatable(anim,self)

@@ -1,4 +1,4 @@
-debug = false
+DEBUG = false
 
 SCREEN_X  = 1920
 SCREEN_Y  = 1080

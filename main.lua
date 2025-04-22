@@ -1,16 +1,19 @@
 require "system_utils"
 
 require "entities.player"
-require "constants"
 require "keys"
+require "assets.assetLoader"
 require "world.world"
 require "world.scene"
 require "animations.animations"
 require "registry"
-debugWorldDraw = require("libraries.debugWorldDraw")
-require "magic.bullet1"
+local debugWorldDraw = require "libraries.debugWorldDraw"
+local Slab = require "libraries.Slab"
 
-function love.load()
+local showWindow = false
+
+function love.load(args)
+    Slab.Initialize(args)
     initVars()
     registerAll()
     -- TODO: replace tempMap with a world generation sometime
@@ -22,6 +25,8 @@ function love.load()
 end
 
 function love.update(dt)
+    Slab.Update(dt)
+
     if game_state == IN_WORLD then
         if not paused then
             player:updateAnimation()
@@ -54,7 +59,7 @@ function love.update(dt)
     end
     
     
-    if debug then
+    if DEBUG then
         -- Print the update fps to the console every second
         if love.timer.getTime() - fpsTimer > 1 then
             fpsTimer = love.timer.getTime()
@@ -62,10 +67,25 @@ function love.update(dt)
             print("body count: " .. p_world:getBodyCount())
         end
     end
+
+    if showWindow then
+        Slab.BeginWindow('InventoryWindow', {
+            Title = "Inventory",
+            AllowMove = true,
+            AutoSizeWindow = false,
+            W = 300,
+            H = 200
+        })
+
+        Slab.Text("You have 3 potions.")
+        Slab.Button("Use Potion")
+
+        Slab.EndWindow()
+    end
 end
 
 function love.draw()
-    if debug then
+    if DEBUG then
         debugPrint()
     end
 
@@ -75,13 +95,14 @@ function love.draw()
         map:draw() 
         spells:draw()
         player.anim.actor:Draw()
-        if debug then
+        if DEBUG then
             -- player:debugDraw()
             local mx, my  = MAP_X * TILE_SIZE * TILES_PER_METER, MAP_Y * TILE_SIZE * TILES_PER_METER
             debugWorldDraw(p_world, -mx / 2, -my / 2, mx, my)
         end
     game_cam:detach()
     tooltipDraw()
+    Slab.Draw()
 end
 
 function love.keypressed(key)
@@ -101,8 +122,11 @@ function love.keypressed(key)
                 saveScene()
             elseif key == LOAD_KEY then
                 loadScene()
-            elseif key == "b" then
+            -- Shoot key
+            elseif key == SHOOT then
                 spellTest:shoot(player)
+            elseif key == WINDOW then
+                showWindow = not showWindow
             end
         end
     end

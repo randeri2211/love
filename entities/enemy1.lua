@@ -1,5 +1,3 @@
-require "entities.enemy"
-
 Enemy1 = Enemy:new()
 registerEntity("Enemy1",Enemy1)
 

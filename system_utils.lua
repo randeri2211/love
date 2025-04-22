@@ -1,4 +1,4 @@
-camera = require "libraries.hump.camera"
+local camera = require "libraries.hump.camera"
 require "world.map"
 require "magic.spells"
 
@@ -60,8 +60,6 @@ end
 
 function startCollisionCallback(fixture1, fixture2, contact)
     -- Spell hit section
-    print(fixture1)
-    print(fixture2)
     if fixture1:getCategory() == SPELLS_CATEGORY or fixture2:getCategory() == SPELLS_CATEGORY then
         -- Swap positions if fixture2 is the spell for simplicity going forward
         if fixture2:getCategory() == SPELLS_CATEGORY then
@@ -156,6 +154,7 @@ function tooltipDraw()
         end
     end
 end
+
 
 function tempMap()
     for i = 1, map.width do

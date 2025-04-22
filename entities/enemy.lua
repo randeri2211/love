@@ -1,6 +1,3 @@
-require "components.hpBar"
-require "entities.entity"
-
 Enemy = Entity:new()
 registerEntity("Enemy",Enemy)
 

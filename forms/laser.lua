@@ -1,5 +1,3 @@
-require "forms.form"
-
 Laser = Form:new()
 
 function Laser:new(player, radius, bounces, reach, imagePath)

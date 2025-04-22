@@ -1,5 +1,3 @@
-require "constants"
-
 function loveToWorld(l_x, l_y)
     -- Converts love default coordinates into game world coordinates
     return l_x / TILE_SIZE / TILES_PER_METER, - l_y / TILE_SIZE / TILES_PER_METER

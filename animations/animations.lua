@@ -1,6 +1,6 @@
-lovebone = require "libraries.love-bone.lovebone"
-require "constants"
+local lovebone = require "libraries.love-bone.lovebone"
 require "animations.animateable"
+
 Animation = {}
 
 function Animation:new(skeleton)

@@ -1,6 +1,3 @@
-require "constants"
-
-
 -- Main Functions
 function saveScene()
     -- Saving Player

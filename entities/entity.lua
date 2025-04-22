@@ -1,7 +1,5 @@
 require "components.movement"
 require "components.hpBar"
-require "world.world"
-require "constants"
 
 
 Entity = {}

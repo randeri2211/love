@@ -1,11 +1,5 @@
-require "constants"
-require "world.world"
-require "components.hpBar"
 require "components.manaBar"
-require "components.movement"
 require "entities.entity"
-require "keys"
-require "system_utils"
 
 Player = Entity:new()
 AS = 25

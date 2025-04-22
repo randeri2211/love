@@ -1,5 +1,3 @@
-require "world.world"
-require "magic.bullet1"
 Spell = {}
 
 function Spell:new(form, damage)
