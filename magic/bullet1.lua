@@ -1,6 +1,6 @@
-require "forms.bullet"
+local Bullet = require "forms.bullet"
 
-Bullet1 = Bullet:new()
+local Bullet1 = Bullet:new()
 
 function Bullet1:new(player)
     local bullet1 = Bullet:new(player, 10 * TILE_SIZE * TILES_PER_METER, 10, "GRASS")
@@ -9,3 +9,5 @@ function Bullet1:new(player)
     bullet1:shoot()
     return bullet1
 end
+
+return Bullet1

@@ -1,7 +1,10 @@
 local camera = require "libraries.hump.camera"
-require "world.map"
-require "magic.spells"
-
+local Map = require "world.map"
+local Spells = require "magic.spells"
+local Player = require "entities.player"
+local Block = require "blocks.block"
+local Enemy = require "entities.enemy"
+local Enemy1 = require "entities.enemy1"
 
 function initVars()
     game_state = IN_WORLD

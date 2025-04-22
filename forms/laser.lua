@@ -1,4 +1,6 @@
-Laser = Form:new()
+local Form = require "forms.form"
+
+local Laser = Form:new()
 
 function Laser:new(player, radius, bounces, reach, imagePath)
     local laser = Form:new(player)
@@ -59,3 +61,5 @@ end
 function Laser:draw()
 
 end
+
+return Laser

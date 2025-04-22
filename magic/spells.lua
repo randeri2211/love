@@ -1,6 +1,4 @@
-require "magic.spell"
-
-Spells = {}
+local Spells = {}
 
 function Spells:new()
     local spells = {}
@@ -45,3 +43,5 @@ function Spells:destroy(instance)
     end
     return false
 end
+
+return Spells

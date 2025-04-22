@@ -1,4 +1,4 @@
-Block = {}
+local Block = {}
 registerBlock("Block",Block)
 
 function Block:new(x, y, width, height)
@@ -102,3 +102,5 @@ function Block:afterSave()
         end
     end
 end
+
+return Block

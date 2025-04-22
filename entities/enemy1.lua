@@ -1,4 +1,6 @@
-Enemy1 = Enemy:new()
+local Enemy = require "entities.enemy"
+
+local Enemy1 = Enemy:new()
 registerEntity("Enemy1",Enemy1)
 
 function Enemy1:new(x, y)
@@ -16,3 +18,5 @@ function Enemy1:draw()
     love.graphics.circle("fill",x, y,self.radius)
     love.graphics.setColor(1, 1, 1, 1)
 end
+
+return Enemy1

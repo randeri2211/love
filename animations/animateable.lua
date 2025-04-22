@@ -1,6 +1,6 @@
 local lovebone = require "libraries.love-bone.lovebone"
 
-Animateable = {}
+local Animateable = {}
 function Animateable:new()
     local anim = {}
     setmetatable(anim,self)
@@ -33,3 +33,5 @@ end
 function Animateable:newActor()
     self.actor = lovebone.newActor(self.skeleton)
 end
+
+return Animateable

@@ -2,7 +2,7 @@ require "components.movement"
 require "components.hpBar"
 
 
-Entity = {}
+local Entity = {}
 
 function Entity:new(x, y, maxHP, moveSpeed, jumpHeight)
     local entity = {}
@@ -52,3 +52,5 @@ end
 
 function Entity:isFixture(fixture)
 end
+
+return Entity

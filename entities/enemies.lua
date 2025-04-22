@@ -1,4 +1,4 @@
-Enemies = {}
+local Enemies = {}
 
 function Enemies:new()
     local enemies = {}
@@ -57,3 +57,5 @@ function Enemies:getEnemyByFixture(fixture)
         end
     end
 end
+
+return Enemies

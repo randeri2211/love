@@ -1,4 +1,6 @@
-Enemy = Entity:new()
+local Entity = require "entities.entity"
+
+local Enemy = Entity:new()
 registerEntity("Enemy",Enemy)
 
 function Enemy:new(x, y)
@@ -61,3 +63,5 @@ function Enemy:destroy()
     Entity.destroy(self)
     map.enemies:removeEnemy(self)
 end
+
+return Enemy

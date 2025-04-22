@@ -1,7 +1,6 @@
 local lovebone = require "libraries.love-bone.lovebone"
-require "animations.animateable"
 
-Animation = {}
+local Animation = {}
 
 function Animation:new(skeleton)
     local animation = {}
@@ -27,3 +26,5 @@ end
 function Animation:newAnimation()
     self.animation = lovebone.newAnimation(self.skeleton)
 end
+
+return Animation

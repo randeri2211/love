@@ -1,6 +1,6 @@
-require "forms.form"
+local Form = require "forms.form"
 
-Bullet = Form:new()
+local Bullet = Form:new()
 
 function Bullet:new(player, speed, radius, imagePath)
     local bullet = Form:new(player)
@@ -88,3 +88,5 @@ end
 function Bullet:destroy()
     self.body:destroy()
 end
+
+return Bullet

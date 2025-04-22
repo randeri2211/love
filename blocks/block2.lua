@@ -1,4 +1,4 @@
-require "blocks.block"
+local Block = require "blocks.block"
 
 Block2 = Block:new()
 registerBlock("Block2",Block2)
@@ -16,3 +16,5 @@ function Block2:new(x, y, width, height)
 
     return block2
 end
+
+return Block2

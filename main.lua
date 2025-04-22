@@ -1,16 +1,15 @@
+require "registry"
 require "system_utils"
 
-require "entities.player"
 require "keys"
 require "assets.assetLoader"
 require "world.world"
 require "world.scene"
-require "animations.animations"
-require "registry"
-require "magic.bullet1"
-local debugWorldDraw = require "libraries.debugWorldDraw"
 local Slab = require "libraries.Slab"
+local debugWorldDraw = require "libraries.debugWorldDraw"
+local Bullet1 = require "magic.bullet1"
 local ingameUI = require "ui.ingame"
+local Spell = require "magic.spell"
 
 function love.load(args)
     Slab.Initialize(args)

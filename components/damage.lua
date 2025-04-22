@@ -4,5 +4,5 @@ function Damage(base, baseMultiplier)
     damage.base = base
     damage.baseMultiplier = baseMultiplier
 
-    return hpBar
+    return damage
 end

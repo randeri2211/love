@@ -1,5 +1,5 @@
-require "entities.enemies"
-Map = {}
+local Enemies = require "entities.enemies"
+local Map = {}
 
 function Map:new(width,height)
     map = {}
@@ -52,3 +52,5 @@ function Map:draw()
 
     map.enemies:draw()
 end
+
+return Map

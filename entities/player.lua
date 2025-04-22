@@ -1,8 +1,9 @@
--- require "constants"
 require "components.manaBar"
-require "entities.entity"
+local Entity = require "entities.entity"
+local Animateable = require "animations.animateable"
+local Animation = require "animations.animation"
 
-Player = Entity:new()
+local Player = Entity:new()
 AS = 25
 AD = 1
 -- AS / (self.movement.currentSpeed * AD) = 0.3
@@ -393,3 +394,6 @@ end
 
 function Player:damage(damage)
 end
+
+
+return Player

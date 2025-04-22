@@ -1,4 +1,4 @@
-Spell = {}
+local Spell = {}
 
 function Spell:new(form, damage)
     local spell = {}
@@ -18,3 +18,5 @@ function Spell:shoot(player)
         table.insert(spells.spells, t)
     end
 end
+
+return Spell

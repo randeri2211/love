@@ -1,4 +1,4 @@
-require "blocks.block"
+local Block = require "blocks.block"
 
 InteractiveBlock = Block:new()
 registerBlock("Interactive",InteractiveBlock)
@@ -24,3 +24,5 @@ end
 function InteractiveBlock:draw()
     Block.draw(self)
 end
+
+return InteractiveBlock

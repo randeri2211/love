@@ -1,5 +1,5 @@
 
-Form = {}
+local Form = {}
 
 function Form:new(player)
     local form = {}
@@ -24,3 +24,5 @@ end
 
 function Form:isFixture(fixture)
 end
+
+return Form
