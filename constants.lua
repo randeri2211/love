@@ -1,4 +1,4 @@
-DEBUG = true
+DEBUG = false
 
 SCREEN_X  = 1920
 SCREEN_Y  = 1080
@@ -20,7 +20,7 @@ CAMERA_RENDER_OFFSET = 20
 PLAYER_FILENAME = "player"
 MAP_FILENAME = "map"
 ENTITIES_FILENAME = "entities_file"
-SAVE_FOLDER = "saves"
+SAVE_FOLDER = "world"
 
 SPAWN_X = 0.5       -- Relative to world so on a scale of 0-1
 SPAWN_Y = 0.1       -- Relative to world so on a scale of 0-1
@@ -38,4 +38,6 @@ BLOCKS_CATEGORY = 3
 SPELLS_CATEGORY = 4
 ENEMY_CATEGORY = 5
 
-IN_WORLD = "IN_WORLD"
+IN_WORLD_STATE = "IN_WORLD"
+PICK_WORKD_STATE = "PICK_WORLD"
+MENU_STATE = "MENU"

@@ -8,7 +8,7 @@ require "world.scene"
 local Slab = require "libraries.Slab"
 local debugWorldDraw = require "libraries.debugWorldDraw"
 local Bullet1 = require "magic.bullet1"
-local ingameUI = require "ui.ingame"
+local UIHandler = require "ui.uiHandler"
 local Spell = require "magic.spell"
 
 function love.load(args)
@@ -22,13 +22,13 @@ function love.load(args)
 
     fpsTimer = love.timer.getTime()
 
-    uihandler = ingameUI:new()
+    uihandler = UIHandler:new()
 end
 
 function love.update(dt)
     Slab.Update(dt)
 
-    if game_state == IN_WORLD then
+    if game_state == IN_WORLD_STATE then
         if not paused then
             player:updateAnimation()
 
@@ -54,8 +54,6 @@ function love.update(dt)
                 vars.time = vars.time + dt;
             end
             player.anim.actor:Update(dt);
-        else
-
         end
     end
     
@@ -73,23 +71,28 @@ function love.update(dt)
 end
 
 function love.draw()
-    if DEBUG then
-        debugPrint()
-    end
+    if game_state == MENU_STATE then
 
-    -- Drawing everything in regard to the camera
-    game_cam:attach()
-        -- Map draws entities aswell
-        map:draw() 
-        spells:draw()
-        player.anim.actor:Draw()
+    elseif game_state == IN_WORLD_STATE then
+        -- Drawing everything in regard to the camera
+        game_cam:attach()
+            -- Map draws entities aswell
+            map:draw() 
+            spells:draw()
+            player.anim.actor:Draw()
+            if DEBUG then
+                -- player:debugDraw()
+                local mx, my  = MAP_X * TILE_SIZE * TILES_PER_METER, MAP_Y * TILE_SIZE * TILES_PER_METER
+                debugWorldDraw(p_world, -mx / 2, -my / 2, mx, my)
+            end
+        game_cam:detach()
+        
+        tooltipDraw()
+        
         if DEBUG then
-            -- player:debugDraw()
-            local mx, my  = MAP_X * TILE_SIZE * TILES_PER_METER, MAP_Y * TILE_SIZE * TILES_PER_METER
-            debugWorldDraw(p_world, -mx / 2, -my / 2, mx, my)
+            debugPrint()
         end
-    game_cam:detach()
-    tooltipDraw()
+    end
     Slab.Draw()
 end
 
@@ -99,7 +102,7 @@ function love.keypressed(key)
     end
 
     -- IN_WORLD State handling
-    if game_state == IN_WORLD then
+    if game_state == IN_WORLD_STATE then
         -- Check pausing first
         if key == PAUSE_KEY then 
             paused = not paused

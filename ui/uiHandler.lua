@@ -1,3 +1,4 @@
+require "ui.menu"
 local Slab = require "libraries.Slab"
 
 local UIHandler = {}
@@ -7,7 +8,7 @@ function UIHandler:new()
     setmetatable(uihandler,self)
     self.__index = self
 
-    uihandler.showWindow = false
+    uihandler.showMap = false
 
     return uihandler
 end
@@ -15,14 +16,20 @@ end
 
 function UIHandler:checkKey(key)
     if key == MINIMAP_KEY then
-        self.showWindow = not self.showWindow
+        self.showMap = not self.showMap
     end
 end
 
 
 function UIHandler:update()
-    if self.showWindow then
-        self:map()
+    if game_state == MENU_STATE then
+        Menu()
+    elseif game_state == PICK_WORKD_STATE then
+        -- PickWorld()
+    elseif game_state == IN_WORLD_STATE then
+        if self.showMap then
+            self:map()
+        end
     end
 end
 
@@ -30,7 +37,7 @@ end
 function UIHandler:map()
     local w, h = love.graphics.getDimensions()
 
-    self.showWindow = Slab.BeginWindow('Minimap', {
+    self.showMap = Slab.BeginWindow('Minimap', {
         Title = "Minimap",
         AllowMove = false,
         AllowResize = false,
