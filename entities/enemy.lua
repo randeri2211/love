@@ -5,7 +5,7 @@ registerEntity("Enemy",Enemy)
 
 function Enemy:new(x, y)
     -- Enemy Attributes
-    local enemy = Entity:new(x, y, 20, 0, 0)
+    local enemy = Entity:new(x, y, 20, 2 * TILE_SIZE, 6 * TILE_SIZE)
     setmetatable(enemy,self)
     self.__index = self
 
@@ -14,8 +14,10 @@ function Enemy:new(x, y)
     end
 
     enemy.radius = 50
+    enemy.height = enemy.radius * 2
     enemy.hpBar.regen = 1   -- Enemies do not regen health by default?
     enemy.name = "Enemy"
+    enemy.lastPos = {x, y}
 
     enemy.shape = love.physics.newCircleShape(enemy.radius)
     enemy.fixture = love.physics.newFixture(enemy.body, enemy.shape, 1)
@@ -23,7 +25,7 @@ function Enemy:new(x, y)
     enemy.fixture:setGroupIndex(-ENEMY_CATEGORY)
     
     -- Enemy Init
-    enemy.body:setGravityScale(0)
+    enemy.body:setGravityScale(1)
     enemy.body:setSleepingAllowed(false)
     return enemy
 end
@@ -63,6 +65,33 @@ end
 function Enemy:destroy()
     Entity.destroy(self)
     map.enemies:removeEnemy(self)
+end
+
+function Enemy:update(dt)
+    Entity.update(self,dt)
+    groundRay(self)
+    
+    local vx, vy = self.body:getLinearVelocity()
+    local px, py = player.body:getWorldCenter()
+    local x, y = self.body:getWorldCenter()
+    
+    if px - x > 0 then
+        vx = self.movement.maxSpeed
+    else
+        vx = -self.movement.maxSpeed
+    end
+    print(y-py)
+    print("vy:"..vy)
+    if (y - py > TILE_SIZE * 2 and self.grounded) or -- Player too high and can jump
+    x == self.lastPos[1] then                        -- Havent moved,might be stuck on a block
+        vy = -self.movement.jumpHeight
+    end
+
+    self.body:setLinearVelocity(vx, vy)
+
+    self.lastPos = {x, y}
+
+
 end
 
 return Enemy

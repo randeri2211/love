@@ -143,7 +143,17 @@ function PickWorld()
         Slab.BeginLayout("CENTERED", {
             AlignX = "center",
             AlignY = "bottom",
+            Columns = 2,
         })
+            Slab.SetLayoutColumn(1)
+            if Slab.Button("New World") then
+                -- TODO:Make it create a world somehow
+                tempMap()
+
+                game_state = IN_WORLD_STATE
+            end
+
+            Slab.SetLayoutColumn(2)
             if Slab.Button("Back") then
                 game_state = MENU_STATE
             end

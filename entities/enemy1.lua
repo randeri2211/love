@@ -7,7 +7,7 @@ function Enemy1:new(x, y)
     local enemy1 = Enemy:new(x, y)
     setmetatable(enemy1,self)
     self.__index = self
-    enemy1.fixture:setMask(SPELLS_CATEGORY)
+    enemy1.fixture:setMask(SPELLS_CATEGORY, ENEMY_CATEGORY)
     enemy1.name = "Enemy1"
     return enemy1
 end

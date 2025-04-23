@@ -88,6 +88,23 @@ function startCollisionCallback(fixture1, fixture2, contact)
             spells:destroy(spellPair.instance)
         end
     end
+
+    -- Player enemy collision
+    if fixture1:getCategory() == PLAYER_CATEGORY or fixture2:getCategory() == PLAYER_CATEGORY then
+        -- Swap positions if fixture2 is the player for simplicity going forward
+        print("player collision")
+        if fixture2:getCategory() == PLAYER_CATEGORY then
+            fixture1, fixture2 = fixture2, fixture1
+        end
+
+        if fixture2:getCategory() == ENEMY_CATEGORY then
+            print("enemy player collision")
+        else
+            print("collision with category "..fixture2:getCategory())
+        end
+
+    end
+
 end
 
 
@@ -119,20 +136,23 @@ end
 
 -- Ground Check Functions
 function groundRay(p)
+    function groundCallback(fixture, x, y, xn, yn, fraction)
+        if p.fixtures ~= nil then
+            for i = 1, #p.fixtures do
+                if fixture == p.fixtures[i] then
+                    return 0
+                end
+            end
+        end
+        p.grounded = true
+        return 0
+    end
     p.grounded = false
     local p_x, p_y = p.body:getWorldCenter()
     p_world:rayCast(p_x, p_y + p.height / 2, p_x, p_y + p.height / 2 + 1, groundCallback)
 end
 
-function groundCallback(fixture, x, y, xn, yn, fraction)
-    for i = 1, #player.fixtures do
-        if fixture == player.fixture then
-            return 0
-        end
-    end
-    player.grounded = true
-    return 0
-end
+
 
 
 function tooltipDraw()
@@ -167,18 +187,15 @@ function tempMap()
             map:insert(block)
         end
     end
-    local block = Block2:new(5 * TILE_SIZE, -1*TILE_SIZE, TILE_SIZE, TILE_SIZE / 2)
-    map:insert(block)
-    local iblock = InteractiveBlock:new(6 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-    map:insert(iblock)
-    local iblock2 = InteractiveBlock:new(7 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-    map:insert(iblock2)
+    map:insert(Block2:new(5 * TILE_SIZE, -1*TILE_SIZE, TILE_SIZE, TILE_SIZE / 2))
+    map:insert(InteractiveBlock:new(6 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+    map:insert(InteractiveBlock:new(6 * TILE_SIZE, -2 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+    map:insert(InteractiveBlock:new(6 * TILE_SIZE, -3 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+    map:insert(InteractiveBlock:new(7 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
     map.enemies:addEnemy(Enemy1:new(0,-200))
-    map.enemies:addEnemy(Enemy1:new(200,-200))
-    enemy1 = Enemy:new(-200,-200)
-    enemy2 = Enemy1:new(300,-200)
-    map.enemies:addEnemy(enemy2)
-    map.enemies:addEnemy(enemy1)
+    -- map.enemies:addEnemy(Enemy1:new(200,-200))
+    -- map.enemies:addEnemy(Enemy1:new(300,-200))
+    -- map.enemies:addEnemy(Enemy:new(-200,-200))
     map.enemies:addEnemy(Enemy:new(-300,-200))
 end
 
