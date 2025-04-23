@@ -4,7 +4,8 @@ local Slab = require "libraries.Slab"
 function Menu()
     -- Main menu window
     local w, h = love.graphics.getDimensions()
-    local ww, wh = 300, 200
+    local ww, wh = 800, 800
+    local buttonAmount = 2
     Slab.BeginWindow("MainMenu", {
         -- Title = "Main Menu",
         AllowMove = false,
@@ -24,18 +25,36 @@ function Menu()
         })
             Slab.Text("Welcome to the Game!")
         Slab.EndLayout()
-        -- Slab.Separator() -- adds a line and spacing after title
 
         Slab.BeginLayout("CENTERED", {
             AlignX = "center",
             AlignY = "center",
         })
-            -- Slab.Text("Welcome to the Game!")
-            if Slab.Button("Start Game") then
+            local imgW, imgH = UI_IMG["singlePlayerButton"]:getDimensions()
+            local scale = math.min(ww / imgW, wh / imgH / buttonAmount / 2)
+            Slab.Image("SinglePlayerButton", {
+                Image = UI_IMG["singlePlayerButton"],
+                ReturnOnClick = true,
+                W = imgW * scale,
+                H = imgH * scale,
+            })
+            
+            -- Detect single player button click
+            if Slab.IsControlClicked() then
                 game_state = PICK_WORKD_STATE
             end
 
-            if Slab.Button("Quit") then
+            local imgW, imgH = UI_IMG["exitButton"]:getDimensions()
+            local scale = math.min(ww / imgW, wh / imgH / buttonAmount / 2)
+            Slab.Image("ExitButton", {
+                Image = UI_IMG["exitButton"],
+                ReturnOnClick = true,
+                W = imgW * scale,
+                H = imgH * scale,
+            })
+            
+            -- Detect exit button click
+            if Slab.IsControlClicked() then
                 love.event.quit()
             end
         Slab.EndLayout()
@@ -46,6 +65,8 @@ function PickWorld()
     -- Main menu window
     local w, h = love.graphics.getDimensions()
     local ww, wh = w * 0.8, h * 0.7
+    local cols = 4
+    local minRows = 4
     Slab.BeginWindow("PickWorld", {
         AllowMove = false,
         AllowResize = false,
@@ -64,18 +85,16 @@ function PickWorld()
         })
             Slab.Text("Choose a world")
         Slab.EndLayout()
-        -- Slab.Separator() -- adds a line and spacing after title
 
         Slab.BeginLayout("SavesLayout",{
             AlignX = "center",
             AlignY = "top",
             AlignRowY = "center",
-            Columns = 4, 
+            Columns = cols, 
         })
             local location = 1
             local saves = love.filesystem.getDirectoryItems(SAVE_FOLDER)
             for key, name in pairs(saves) do
-                print(key..":"..name)
                 local inSaves = love.filesystem.getDirectoryItems(SAVE_FOLDER.."/"..name)
                 local eFile, pFile, mFile = false, false, false
                 for key2, value2 in pairs(inSaves) do
@@ -91,27 +110,27 @@ function PickWorld()
                 -- Valid save directory
                 if eFile and pFile and mFile then
                     Slab.SetLayoutColumn(location)
+                    local button_id = "btn_" .. name
 
-                    local buttonOptions = {
-                        Image = {Path = "assets/button.png"},
-                        W = 120,
-                        H = 40,
-                        -- Tooltip = name,
-                        -- Invisible = true,
-                    }
-
-                    -- Slab.BeginLayout("SaveSlot_" .. name, { ExpandW = false, ExpandH = false, AlignX = "center" })
-
-                    if Slab.Button(name, buttonOptions) then
+                    local imgW, imgH = UI_IMG["button"]:getDimensions()
+                    local scale = math.min(ww / imgW / cols, wh / imgH / minRows)
+                    Slab.Image(button_id, {
+                        Image = UI_IMG["button"],
+                        ReturnOnClick = true,
+                        W = imgW * scale,
+                        H = imgH * scale,
+                    })
+                    
+                    -- Detect click
+                    if Slab.IsControlClicked() then
                         loadScene(name)
                         game_state = IN_WORLD_STATE
                     end
 
                     Slab.Text(name) -- Display text below the button
 
-                    -- Slab.EndLayout()
-
-                    if location >= 4 then
+                    -- Switch column
+                    if location >= cols then
                         location = 1 -- line up next button horizontally
                     else
                         location = location + 1
@@ -120,7 +139,7 @@ function PickWorld()
             end
         Slab.EndLayout()
 
-        -- This is the layout for the exit button
+        -- This is the layout for the back button
         Slab.BeginLayout("CENTERED", {
             AlignX = "center",
             AlignY = "bottom",
