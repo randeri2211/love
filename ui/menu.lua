@@ -12,6 +12,7 @@ function Menu()
         AutoSizeWindow = false,
         ShowMinimize = false,
         ConstrainPosition = true,
+        NoSavedSettings = true,
         W = ww,
         H = wh,
         X = w / 2 - ww / 2,
@@ -44,7 +45,7 @@ end
 function PickWorld()
     -- Main menu window
     local w, h = love.graphics.getDimensions()
-    local ww, wh = 300, 200
+    local ww, wh = w * 0.8, h * 0.7
     Slab.BeginWindow("PickWorld", {
         AllowMove = false,
         AllowResize = false,
@@ -55,6 +56,7 @@ function PickWorld()
         H = wh,
         X = w / 2 - ww / 2,
         Y = h / 2 - wh / 2,
+        NoSavedSettings = true,
     })
         -- Centered title at the top
         Slab.BeginLayout("TitleLayout", {
@@ -64,17 +66,67 @@ function PickWorld()
         Slab.EndLayout()
         -- Slab.Separator() -- adds a line and spacing after title
 
+        Slab.BeginLayout("SavesLayout",{
+            AlignX = "center",
+            AlignY = "top",
+            AlignRowY = "center",
+            Columns = 4, 
+        })
+            local location = 1
+            local saves = love.filesystem.getDirectoryItems(SAVE_FOLDER)
+            for key, name in pairs(saves) do
+                print(key..":"..name)
+                local inSaves = love.filesystem.getDirectoryItems(SAVE_FOLDER.."/"..name)
+                local eFile, pFile, mFile = false, false, false
+                for key2, value2 in pairs(inSaves) do
+                    if value2 == ENTITIES_FILENAME then
+                        eFile = true
+                    elseif value2 == MAP_FILENAME then
+                        mFile = true
+                    elseif value2 == PLAYER_FILENAME then
+                        pFile = true
+                    end
+                end
+                
+                -- Valid save directory
+                if eFile and pFile and mFile then
+                    Slab.SetLayoutColumn(location)
+
+                    local buttonOptions = {
+                        Image = {Path = "assets/button.png"},
+                        W = 120,
+                        H = 40,
+                        -- Tooltip = name,
+                        -- Invisible = true,
+                    }
+
+                    -- Slab.BeginLayout("SaveSlot_" .. name, { ExpandW = false, ExpandH = false, AlignX = "center" })
+
+                    if Slab.Button(name, buttonOptions) then
+                        loadScene(name)
+                        game_state = IN_WORLD_STATE
+                    end
+
+                    Slab.Text(name) -- Display text below the button
+
+                    -- Slab.EndLayout()
+
+                    if location >= 4 then
+                        location = 1 -- line up next button horizontally
+                    else
+                        location = location + 1
+                    end
+                end
+            end
+        Slab.EndLayout()
+
+        -- This is the layout for the exit button
         Slab.BeginLayout("CENTERED", {
             AlignX = "center",
-            AlignY = "center",
+            AlignY = "bottom",
         })
-            -- Slab.Text("Welcome to the Game!")
-            if Slab.Button("Start Game") then
-                game_state = IN_WORLD_STATE
-            end
-
-            if Slab.Button("Quit") then
-                love.event.quit()
+            if Slab.Button("Back") then
+                game_state = MENU_STATE
             end
         Slab.EndLayout()
     Slab.EndWindow()

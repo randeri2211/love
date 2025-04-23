@@ -1,5 +1,5 @@
 local camera = require "libraries.hump.camera"
-local Map = require "world.map"
+local Map = require "world_utils.map"
 local Spells = require "magic.spells"
 local Player = require "entities.player"
 local Block = require "blocks.block"

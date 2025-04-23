@@ -1,12 +1,12 @@
 -- Main Functions
-function saveScene()
+function saveScene(worldName)
     local dir = love.filesystem.getInfo(SAVE_FOLDER)
     if not dir or dir.size == 0 then
         love.filesystem.createDirectory(SAVE_FOLDER)
     end
 
     -- Saving Player
-    local playerPath = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
+    local playerPath = SAVE_FOLDER .. "/" .. worldName .. "/" .. PLAYER_FILENAME
 
     -- Open file in appending mode and add a player tag and recursively save the player
     playerFile = love.filesystem.newFile(playerPath)
@@ -18,7 +18,7 @@ function saveScene()
 
 
     -- Saving Entities
-    local entityPath = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
+    local entityPath = SAVE_FOLDER .. "/" .. worldName .. "/" .. ENTITIES_FILENAME
     local entityFile = love.filesystem.newFile(entityPath)
     entityFile:open("w")
     if entityFile ~= nil then
@@ -27,7 +27,7 @@ function saveScene()
     end
 
     -- -- Saving Map
-    local mapPath = SAVE_FOLDER .. "/" .. MAP_FILENAME
+    local mapPath = SAVE_FOLDER .. "/" .. worldName .. "/" .. MAP_FILENAME
     -- Clear the save file if it exists
     local mapFile = love.filesystem.newFile(mapPath)
     mapFile:open("w")
@@ -37,11 +37,11 @@ function saveScene()
     end
 end
 
-function loadScene()
+function loadScene(worldName)
     initVars()
 
     -- Load Player
-    local path = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
+    local path = SAVE_FOLDER .. "/" .. worldName .. "/" .. PLAYER_FILENAME
     local file = love.filesystem.newFile(path)
     file:open("r")
     if file ~= nil then
@@ -50,7 +50,7 @@ function loadScene()
     end
 
     -- Load Map
-    local path = SAVE_FOLDER .. "/" .. MAP_FILENAME
+    local path = SAVE_FOLDER .. "/" .. worldName .. "/" .. MAP_FILENAME
     local file = love.filesystem.newFile(path)
     file:open("r")
     if file ~= nil then
@@ -60,7 +60,7 @@ function loadScene()
     end
 
     -- Load Entities
-    local path = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
+    local path = SAVE_FOLDER .. "/" .. worldName .. "/" .. ENTITIES_FILENAME
     local file = love.filesystem.newFile(path)
     file:open("r")
     if file ~= nil then

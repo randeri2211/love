@@ -3,8 +3,8 @@ require "system_utils"
 
 require "keys"
 require "assets.assetLoader"
-require "world.world"
-require "world.scene"
+require "world_utils.world"
+require "world_utils.scene"
 local Slab = require "libraries.Slab"
 local debugWorldDraw = require "libraries.debugWorldDraw"
 local Bullet1 = require "magic.bullet1"
@@ -118,9 +118,9 @@ function love.keypressed(key)
         elseif not paused then
             -- Save and load keys
             if key == SAVE_KEY then
-                saveScene()
+                saveScene("world")
             elseif key == LOAD_KEY then
-                loadScene()
+                loadScene("world")
             -- Shoot key
             elseif key == SHOOT_KEY then
                 spellTest:shoot(player)
