@@ -7,7 +7,6 @@ local Enemy = require "entities.enemy"
 local Enemy1 = require "entities.enemy1"
 
 function initVars()
-    game_state = IN_WORLD_STATE
     player_control = true
     paused = false
 

@@ -10,8 +10,9 @@ local debugWorldDraw = require "libraries.debugWorldDraw"
 local Bullet1 = require "magic.bullet1"
 local UIHandler = require "ui.uiHandler"
 local Spell = require "magic.spell"
-
+local new_frame = false
 function love.load(args)
+    game_state = MENU_STATE
     Slab.Initialize(args)
     initVars()
     registerAll()
@@ -27,6 +28,7 @@ end
 
 function love.update(dt)
     Slab.Update(dt)
+    uihandler:update()
 
     if game_state == IN_WORLD_STATE then
         if not paused then
@@ -55,6 +57,8 @@ function love.update(dt)
             end
             player.anim.actor:Update(dt);
         end
+    else
+        new_frame = false
     end
     
     
@@ -66,8 +70,6 @@ function love.update(dt)
             print("body count: " .. p_world:getBodyCount())
         end
     end
-
-    uihandler:update()
 end
 
 function love.draw()
@@ -79,7 +81,13 @@ function love.draw()
             -- Map draws entities aswell
             map:draw() 
             spells:draw()
-            player.anim.actor:Draw()
+            
+            -- if new_frame then
+                player.anim.actor:Draw()
+            -- end
+            if not new_frame then
+                new_frame = true
+            end
             if DEBUG then
                 -- player:debugDraw()
                 local mx, my  = MAP_X * TILE_SIZE * TILES_PER_METER, MAP_Y * TILE_SIZE * TILES_PER_METER

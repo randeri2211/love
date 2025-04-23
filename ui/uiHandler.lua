@@ -25,7 +25,7 @@ function UIHandler:update()
     if game_state == MENU_STATE then
         Menu()
     elseif game_state == PICK_WORKD_STATE then
-        -- PickWorld()
+        PickWorld()
     elseif game_state == IN_WORLD_STATE then
         if self.showMap then
             self:map()
