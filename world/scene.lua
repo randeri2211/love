@@ -1,16 +1,16 @@
 -- Main Functions
 function saveScene()
-    -- Saving Player
-    local playerPath = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
-        -- Clear the save file if it exists
-    local playerFile = io.open(playerPath,"w")
-    if playerFile ~= nil then
-        playerFile:write("")
-        playerFile:close()
+    local dir = love.filesystem.getInfo(SAVE_FOLDER)
+    if not dir or dir.size == 0 then
+        love.filesystem.createDirectory(SAVE_FOLDER)
     end
 
-        -- Open file in appending mode and add a player tag and recursively save the player
-    playerFile = io.open(playerPath,"a")
+    -- Saving Player
+    local playerPath = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
+
+    -- Open file in appending mode and add a player tag and recursively save the player
+    playerFile = love.filesystem.newFile(playerPath)
+    playerFile:open("w")
     if playerFile ~= nil then
         savePlayer(playerFile, 0)
         playerFile:close()
@@ -19,29 +19,18 @@ function saveScene()
 
     -- Saving Entities
     local entityPath = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
-        -- Clear the save file if it exists
-    local entityFile = io.open(entityPath,"w")
-    if entityFile ~= nil then
-        entityFile:write("")
-        entityFile:close()
-    end
-
-    entityFile = io.open(entityPath,"a")
+    local entityFile = love.filesystem.newFile(entityPath)
+    entityFile:open("w")
     if entityFile ~= nil then
         saveEntities(entityFile, 0)
         entityFile:close()
     end
 
-    -- Saving Map
+    -- -- Saving Map
     local mapPath = SAVE_FOLDER .. "/" .. MAP_FILENAME
-        -- Clear the save file if it exists
-    local mapFile = io.open(mapPath,"w")
-    if mapFile ~= nil then
-        mapFile:write("")
-        mapFile:close()
-    end
-
-    mapFile = io.open(mapPath,"a")
+    -- Clear the save file if it exists
+    local mapFile = love.filesystem.newFile(mapPath)
+    mapFile:open("w")
     if mapFile ~= nil then
         saveMap(mapFile, 0)
         mapFile:close()
@@ -53,7 +42,8 @@ function loadScene()
 
     -- Load Player
     local path = SAVE_FOLDER .. "/" .. PLAYER_FILENAME
-    local file = io.open(path, "r")
+    local file = love.filesystem.newFile(path)
+    file:open("r")
     if file ~= nil then
         local lines = file:lines()
         loadPlayer(lines, 0)
@@ -61,7 +51,8 @@ function loadScene()
 
     -- Load Map
     local path = SAVE_FOLDER .. "/" .. MAP_FILENAME
-    local file = io.open(path, "r")
+    local file = love.filesystem.newFile(path)
+    file:open("r")
     if file ~= nil then
         local lines = file:lines()
         map:emptyMap()
@@ -70,7 +61,8 @@ function loadScene()
 
     -- Load Entities
     local path = SAVE_FOLDER .. "/" .. ENTITIES_FILENAME
-    local file = io.open(path, "r")
+    local file = love.filesystem.newFile(path)
+    file:open("r")
     if file ~= nil then
         local lines = file:lines()
     
