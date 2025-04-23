@@ -1,5 +1,6 @@
 
 local Slab = require "libraries.Slab"
+local UIOverride = require "ui.uiOverride"
 
 function Menu()
     -- Main menu window
@@ -57,6 +58,8 @@ function Menu()
             if Slab.IsControlClicked() then
                 love.event.quit()
             end
+
+            UIOverride:Button("test")
         Slab.EndLayout()
     Slab.EndWindow()
 end
