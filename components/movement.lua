@@ -1,4 +1,4 @@
-function Movement(maxSpeed, jumpHeight)
+local function Movement(maxSpeed, jumpHeight)
     local movement = {}
 
     movement.currentSpeed = maxSpeed or 0
@@ -7,3 +7,5 @@ function Movement(maxSpeed, jumpHeight)
 
     return movement
 end
+
+return Movement

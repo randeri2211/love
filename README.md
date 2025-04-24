@@ -2,26 +2,35 @@
 Some Magic Craft Game
 
 ## Ideas
-- Crafting stations(duh)
+- [ ] Crafting stations(duh)
 
-- Automation cost for each recipe(?)(need to learn how to automate a recipe)
+- [ ] Automation cost for each recipe(?)(need to learn how to automate a recipe)
 
-- Have a list of all craftable items,no need for a wiki
+- [ ] Have a list of all craftable items,no need for a wiki
 
 ## Mechanics
-- Spell creation(main feature)
+- [ ] Spell creation(main feature)
+    - [ ] Have the mechanic working
+    - [ ] Have the mechanic implemented in a game sense
 
-- ### Spell complexity: 
-    - Player has max complexity the spell cant exceed.
-    - Intelligence increases max capacity(stat system?)
+- [X] Make blocks only take damage from a certain threshold onward depending on hardness level
 
-- Spell cooldown
+### Spell complexity: 
+- [ ] Player has max complexity the spell cant exceed.
+- [ ] Intelligence increases max capacity(stat system?)
+- [ ] Stat system
 
-- Spell form(Laser/Projectile/Area/Trap)
+- [ ] Spell cooldown
 
-- Spell modifier(+DMG+Complexity,Gravity,Speed,Split,Size,Rebound,Trigger)
+- [ ] Spell form(Laser/Bullet/Area/Trap)
+    - [ ] Laser
+    - [X] Bullet
+    - [ ] Area
+    - [ ] Trap
 
-- Mana(On character?On wand?Both?)
+- [ ] Spell modifier(+DMG+Complexity,Gravity,Speed,Split,Size,Rebound,Trigger)
 
-- Spell packing(like a bag you can craft that has a max complexity with increasing tiers)
+- [X] Mana(On character)
+
+- [ ] Spell packing(like a bag you can craft that has a max complexity with increasing tiers)
 

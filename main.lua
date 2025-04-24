@@ -17,7 +17,7 @@ function love.load(args)
     initVars()
     registerAll()
     -- TODO: replace tempMap with a world generation sometime
-    tempMap()
+    -- tempMap()
 
     spellTest = Spell:new(Bullet1, 10)
 

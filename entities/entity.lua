@@ -1,6 +1,8 @@
-require "components.movement"
-require "components.hpBar"
-
+local Movement = require "components.movement"
+local HPBar = require "components.hpBar"
+local Stats = require "components.stats.stats"
+local CombatStats = require "components.stats.combatStats"
+local ManaBar = require "components.manaBar"
 
 local Entity = {}
 
@@ -13,15 +15,21 @@ function Entity:new(x, y, maxHP, moveSpeed, jumpHeight)
     if x == nil then
         return entity
     end
-    entity.hpBar = HPBar(maxHP, maxHP, 1)
+
+    entity.hpBar = HPBar(maxHP, maxHP, BASE_HP_REGEN)
+    entity.manaBar = ManaBar(BASE_MANA, BASE_MANA, BASE_MANA_REGEN)
     entity.movement = Movement(moveSpeed, jumpHeight)
+    entity.stats = Stats()
     entity.body = love.physics.newBody(p_world, x, y, "dynamic")
 
     return entity
 end
 
 function Entity:update(dt)
+    self.combatStats = CombatStats(self)    -- Update combat stats live
     self:regen(dt)
+    print("magic damage"..self.combatStats.magicDamage)
+    print("stats"..self.stats.concentration)
 end
 
 function Entity:prepSave()
@@ -48,6 +56,10 @@ end
 
 function Entity:destroy()
     self.body:destroy()
+end
+
+function Entity:applyStats()
+
 end
 
 function Entity:isFixture(fixture)

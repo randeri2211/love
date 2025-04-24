@@ -13,6 +13,7 @@ function Enemy:new(x, y)
         return enemy
     end
 
+    enemy.stats.swiftness = -100
     enemy.radius = 50
     enemy.height = enemy.radius * 2
     enemy.hpBar.regen = 1   -- Enemies do not regen health by default?
@@ -70,7 +71,8 @@ end
 function Enemy:update(dt)
     Entity.update(self,dt)
     groundRay(self)
-    
+    print("enemy swiftness"..self.stats.swiftness)
+    print("enemy movespeed"..self.movement.maxSpeed)
     local vx, vy = self.body:getLinearVelocity()
     local px, py = player.body:getWorldCenter()
     local x, y = self.body:getWorldCenter()
@@ -80,8 +82,7 @@ function Enemy:update(dt)
     else
         vx = -self.movement.maxSpeed
     end
-    print(y-py)
-    print("vy:"..vy)
+
     if (y - py > TILE_SIZE * 2 and self.grounded) or -- Player too high and can jump
     x == self.lastPos[1] then                        -- Havent moved,might be stuck on a block
         vy = -self.movement.jumpHeight

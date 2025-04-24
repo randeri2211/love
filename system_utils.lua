@@ -92,15 +92,15 @@ function startCollisionCallback(fixture1, fixture2, contact)
     -- Player enemy collision
     if fixture1:getCategory() == PLAYER_CATEGORY or fixture2:getCategory() == PLAYER_CATEGORY then
         -- Swap positions if fixture2 is the player for simplicity going forward
-        print("player collision")
+        -- print("player collision")
         if fixture2:getCategory() == PLAYER_CATEGORY then
             fixture1, fixture2 = fixture2, fixture1
         end
 
         if fixture2:getCategory() == ENEMY_CATEGORY then
-            print("enemy player collision")
+            -- print("enemy player collision")
         else
-            print("collision with category "..fixture2:getCategory())
+            -- print("collision with category "..fixture2:getCategory())
         end
 
     end

@@ -1,3 +1,4 @@
+local HPBar = require "components.hpBar"
 local Block = {}
 registerBlock("Block",Block)
 
@@ -20,6 +21,7 @@ function Block:new(x, y, width, height)
     block.image = BLOCK_IMG[block.imagePath]
     block.x = x
     block.y = y
+    block.damageThreshold = 10
 
     block.mx, block.my = loveToMap(x, y)
     
@@ -48,9 +50,11 @@ end
 
 
 function Block:damage(dmg)
-    self.hpBar.currentHP = self.hpBar.currentHP - dmg
-    if self.hpBar.currentHP <= 0 then
-        self:destroy()
+    if dmg > self.damageThreshold then
+        self.hpBar.currentHP = self.hpBar.currentHP - dmg
+        if self.hpBar.currentHP <= 0 then
+            self:destroy()
+        end
     end
 end
 

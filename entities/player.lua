@@ -1,4 +1,4 @@
-require "components.manaBar"
+local ManaBar = require "components.manaBar"
 local Entity = require "entities.entity"
 local Animateable = require "animations.animateable"
 local Animation = require "animations.animation"
@@ -9,7 +9,7 @@ AD = 1
 -- AS / (self.movement.currentSpeed * AD) = 0.3
 
 function Player:new(x, y, name)
-    local player = Entity:new(x, y, 100, PLAYER_MOVE_SPEED, PLAYER_JUMP_HEIGHT)
+    local player = Entity:new(x, y, BASE_HP, BASE_MOVE_SPEED, BASE_JUMP_HEIGHT)
     setmetatable(player,self)
     self.__index = self
 
@@ -106,7 +106,7 @@ function Player:move()
     local moved = false
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown(RIGHT_KEY) then
-        self.body:setLinearVelocity(self.movement.currentSpeed, y)
+        self.body:setLinearVelocity(self.movement.maxSpeed, y)
         moved = true
         if self.direction ~= 'right' then
             self.direction = 'right'
@@ -121,7 +121,7 @@ function Player:move()
     end
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown(LEFT_KEY) then
-        self.body:setLinearVelocity(-self.movement.currentSpeed, y)
+        self.body:setLinearVelocity(-self.movement.maxSpeed, y)
         moved = true
         if self.direction ~= 'left' then
             self.direction = 'left'
@@ -178,6 +178,7 @@ end
 
 
 function Player:update(dt)
+    self.stats.swiftness = 100
     Entity.update(self, dt)
     self:move()
     self:interact()
