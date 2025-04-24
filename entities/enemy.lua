@@ -5,7 +5,7 @@ registerEntity("Enemy",Enemy)
 
 function Enemy:new(x, y)
     -- Enemy Attributes
-    local enemy = Entity:new(x, y, 20, 2 * TILE_SIZE, 6 * TILE_SIZE)
+    local enemy = Entity:new(x, y, 20)
     setmetatable(enemy,self)
     self.__index = self
 
@@ -13,7 +13,6 @@ function Enemy:new(x, y)
         return enemy
     end
 
-    enemy.stats.swiftness = -100
     enemy.radius = 50
     enemy.height = enemy.radius * 2
     enemy.hpBar.regen = 1   -- Enemies do not regen health by default?
@@ -71,8 +70,6 @@ end
 function Enemy:update(dt)
     Entity.update(self,dt)
     groundRay(self)
-    print("enemy swiftness"..self.stats.swiftness)
-    print("enemy movespeed"..self.movement.maxSpeed)
     local vx, vy = self.body:getLinearVelocity()
     local px, py = player.body:getWorldCenter()
     local x, y = self.body:getWorldCenter()

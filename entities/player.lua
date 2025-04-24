@@ -9,7 +9,7 @@ AD = 1
 -- AS / (self.movement.currentSpeed * AD) = 0.3
 
 function Player:new(x, y, name)
-    local player = Entity:new(x, y, BASE_HP, BASE_MOVE_SPEED, BASE_JUMP_HEIGHT)
+    local player = Entity:new(x, y, BASE_HP)
     setmetatable(player,self)
     self.__index = self
 
@@ -159,18 +159,16 @@ function Player:move()
 end
 
 function Player:interact()
-    if love.keyboard.isDown(INTERACT_KEY) then
-        -- Get mouse position in block coordinates
-        local mx, my = mouseToMap()
-        -- Get player position in world coordinates
-        local px, py = self:mapCenter()
-        py = py + 1
-        if distance(px, py, mx, my) < INTERACT_DISTANCE then
-            if map.map[mx][my] ~= nil then
-                -- Check if the block implements the interact function
-                if type(map.map[mx][my].interact) == "function" then
-                    map.map[mx][my]:interact()
-                end
+    -- Get mouse position in block coordinates
+    local mx, my = mouseToMap()
+    -- Get player position in world coordinates
+    local px, py = self:mapCenter()
+    py = py + 1
+    if distance(px, py, mx, my) < INTERACT_DISTANCE then
+        if map.map[mx][my] ~= nil then
+            -- Check if the block implements the interact function
+            if type(map.map[mx][my].interact) == "function" then
+                map.map[mx][my]:interact()
             end
         end
     end
@@ -178,10 +176,8 @@ end
 
 
 function Player:update(dt)
-    self.stats.swiftness = 100
     Entity.update(self, dt)
     self:move()
-    self:interact()
     groundRay(self)
 end
 

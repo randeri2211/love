@@ -124,7 +124,12 @@ function love.keypressed(key)
             -- Shoot key
             elseif key == SHOOT_KEY then
                 spellTest:shoot(player)
-            -- TODO:temporary remove when ui is ok
+            elseif key == INTERACT_KEY then
+                player:interact()
+            elseif key == "y" then
+                player.stats.swiftness = player.stats.swiftness - 10
+            elseif key == "u" then
+                player.stats.swiftness = player.stats.swiftness + 10
             else
                 uihandler:checkKey(key)
             end

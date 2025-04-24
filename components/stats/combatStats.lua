@@ -7,7 +7,6 @@ local function combatStats(entity)
     -- Constitution - Gives max hp
 
     local combatStats = {}
-    print("entity swiftness"..entity.stats.swiftness)
     combatStats.cooldownReduction = 0
 
 

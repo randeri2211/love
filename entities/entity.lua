@@ -6,7 +6,7 @@ local ManaBar = require "components.manaBar"
 
 local Entity = {}
 
-function Entity:new(x, y, maxHP, moveSpeed, jumpHeight)
+function Entity:new(x, y, maxHP)
     local entity = {}
     setmetatable(entity,self)
     self.__index = self
@@ -18,7 +18,7 @@ function Entity:new(x, y, maxHP, moveSpeed, jumpHeight)
 
     entity.hpBar = HPBar(maxHP, maxHP, BASE_HP_REGEN)
     entity.manaBar = ManaBar(BASE_MANA, BASE_MANA, BASE_MANA_REGEN)
-    entity.movement = Movement(moveSpeed, jumpHeight)
+    entity.movement = Movement(BASE_MOVE_SPEED, BASE_JUMP_HEIGHT)
     entity.stats = Stats()
     entity.body = love.physics.newBody(p_world, x, y, "dynamic")
 
@@ -28,8 +28,6 @@ end
 function Entity:update(dt)
     self.combatStats = CombatStats(self)    -- Update combat stats live
     self:regen(dt)
-    print("magic damage"..self.combatStats.magicDamage)
-    print("stats"..self.stats.concentration)
 end
 
 function Entity:prepSave()
