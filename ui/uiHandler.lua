@@ -14,7 +14,8 @@ function UIHandler:new()
 end
 
 
-function UIHandler:checkKey(key)
+function UIHandler:checkKeyIngame(key)
+    -- This will handle things like opening inventory on pressing the inventory
     if key == MINIMAP_KEY then
         self.showMap = not self.showMap
     end

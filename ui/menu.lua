@@ -18,7 +18,9 @@ function Menu()
         W = ww,
         H = wh,
         X = w / 2 - ww / 2,
+        -- X = 10,
         Y = h / 2 - wh / 2,
+        -- Y = 0,
     })
         -- Centered title at the top
         Slab.BeginLayout("TitleLayout", {
@@ -30,36 +32,19 @@ function Menu()
         Slab.BeginLayout("CENTERED", {
             AlignX = "center",
             AlignY = "center",
-        })
-            local imgW, imgH = UI_IMG["singlePlayerButton"]:getDimensions()
-            local scale = math.min(ww / imgW, wh / imgH / buttonAmount / 2)
-            Slab.Image("SinglePlayerButton", {
-                Image = UI_IMG["singlePlayerButton"],
-                ReturnOnClick = true,
-                W = imgW * scale,
-                H = imgH * scale,
-            })
-            
-            -- Detect single player button click
-            if Slab.IsControlClicked() then
-                game_state = PICK_WORKD_STATE
-            end
-
-            local imgW, imgH = UI_IMG["exitButton"]:getDimensions()
-            local scale = math.min(ww / imgW, wh / imgH / buttonAmount / 2)
-            Slab.Image("ExitButton", {
-                Image = UI_IMG["exitButton"],
-                ReturnOnClick = true,
-                W = imgW * scale,
-                H = imgH * scale,
-            })
-            
+        })  
             -- Detect exit button click
             if Slab.IsControlClicked() then
                 love.event.quit()
             end
 
-            UIOverride:Button("test")
+            if UIOverride:Button("Single Player", {Center = true}) then
+                game_state = PICK_WORKD_STATE
+            end
+
+            if UIOverride:Button("Exit", {Center = true}) then
+                love.event.quit()
+            end
         Slab.EndLayout()
     Slab.EndWindow()
 end

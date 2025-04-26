@@ -131,7 +131,7 @@ function love.keypressed(key)
             elseif key == "u" then
                 player.stats.swiftness = player.stats.swiftness + 10
             else
-                uihandler:checkKey(key)
+                uihandler:checkKeyIngame(key)
             end
         end
     end
