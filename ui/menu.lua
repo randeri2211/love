@@ -24,7 +24,7 @@ function Menu()
     })
         -- Centered title at the top
         Slab.BeginLayout("TitleLayout", {
-            AlignX = "center"
+            AlignX = "center",
         })
             Slab.Text("Welcome to the Game!")
         Slab.EndLayout()
@@ -33,16 +33,21 @@ function Menu()
             AlignX = "center",
             AlignY = "center",
         })  
+            local buttonOptions = {
+                CenterX = true,
+                H = 100,
+                -- W = 300
+            }
             -- Detect exit button click
             if Slab.IsControlClicked() then
                 love.event.quit()
             end
 
-            if UIOverride:Button("Single Player", {Center = true}) then
+            if UIOverride:Button("Single Player", buttonOptions) then
                 game_state = PICK_WORKD_STATE
             end
 
-            if UIOverride:Button("Exit", {Center = true}) then
+            if UIOverride:Button("Exit", buttonOptions) then
                 love.event.quit()
             end
         Slab.EndLayout()

@@ -11,13 +11,14 @@ local Bullet1 = require "magic.bullet1"
 local UIHandler = require "ui.uiHandler"
 local Spell = require "magic.spell"
 local new_frame = false
+
 function love.load(args)
+    -- local font = love.graphics.newFont("assets/RamadhanMubarok-Regular.otf")
+    -- love.graphics.setFont(font)
     game_state = MENU_STATE
     Slab.Initialize(args)
     initVars()
     registerAll()
-    -- TODO: replace tempMap with a world generation sometime
-    -- tempMap()
 
     spellTest = Spell:new(Bullet1, 10)
 
