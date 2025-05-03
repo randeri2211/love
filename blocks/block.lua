@@ -21,7 +21,7 @@ function Block:new(x, y, width, height)
     block.image = BLOCK_IMG[block.imagePath]
     block.x = x
     block.y = y
-    block.damageThreshold = 10
+    block.damageThreshold = 1
 
     block.mx, block.my = loveToMap(x, y)
     

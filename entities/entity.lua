@@ -46,6 +46,8 @@ function Entity:regen(dt)
 end
 
 function Entity:damage(damage)
+    print(damage)
+    print(self.hpBar.currentHP)
     self.hpBar.currentHP = self.hpBar.currentHP - damage
     if self.hpBar.currentHP <= 0 then
         self:destroy()

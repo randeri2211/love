@@ -151,6 +151,7 @@ function loadEntities(lines, spaces)
         local res = recursiveLoad(spaces + DATA_SPACING, lines)
         local entity = ENTITY_REGISTRY[res.name]:new(res.x, res.y)
         entity:load(res)
+        print("loading entity"..res.name)
         map.enemies:addEnemy(entity)
         line = lines()
     until line == nil

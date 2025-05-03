@@ -12,7 +12,7 @@ function Enemy:new(x, y)
     if x == nil or y == nil then
         return enemy
     end
-
+    print("enemy")
     enemy.radius = 50
     enemy.height = enemy.radius * 2
     enemy.hpBar.regen = 1   -- Enemies do not regen health by default?
@@ -45,10 +45,6 @@ function Enemy:load(enemyTable)
     -- Loads the enemy from a loaded table
     self.hpBar = enemyTable.hpBar
     self.radius = enemyTable.radius
-    self.shape:setRadius(self.radius)
-    self.fixture:destroy()
-    self.fixture = love.physics.newFixture(self.body, self.shape, 1)
-    
 end
 
 function Enemy:wakeUp()

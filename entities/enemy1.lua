@@ -9,6 +9,7 @@ function Enemy1:new(x, y)
     self.__index = self
     enemy1.fixture:setMask(SPELLS_CATEGORY, ENEMY_CATEGORY)
     enemy1.name = "Enemy1"
+    print("enemy 1")
     return enemy1
 end
 

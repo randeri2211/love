@@ -38,10 +38,6 @@ function Menu()
                 H = 100,
                 -- W = 300
             }
-            -- Detect exit button click
-            if Slab.IsControlClicked() then
-                love.event.quit()
-            end
 
             if UIOverride:Button("Single Player", buttonOptions) then
                 game_state = PICK_WORKD_STATE
@@ -103,24 +99,29 @@ function PickWorld()
                 -- Valid save directory
                 if eFile and pFile and mFile then
                     Slab.SetLayoutColumn(location)
-                    local button_id = "btn_" .. name
+                    -- local button_id = "btn_" .. name
 
-                    local imgW, imgH = UI_IMG["button"]:getDimensions()
-                    local scale = math.min(ww / imgW / cols, wh / imgH / minRows)
-                    Slab.Image(button_id, {
-                        Image = UI_IMG["button"],
-                        ReturnOnClick = true,
-                        W = imgW * scale,
-                        H = imgH * scale,
-                    })
+                    -- local imgW, imgH = UI_IMG["button"]:getDimensions()
+                    -- local scale = math.min(ww / imgW / cols, wh / imgH / minRows)
+                    -- Slab.Image(button_id, {
+                    --     Image = UI_IMG["button"],
+                    --     ReturnOnClick = true,
+                    --     W = imgW * scale,
+                    --     H = imgH * scale,
+                    -- })
                     
-                    -- Detect click
-                    if Slab.IsControlClicked() then
+                    -- -- Detect click
+                    -- if Slab.IsControlClicked() then
+                    --     loadScene(name)
+                    --     game_state = IN_WORLD_STATE
+                    -- end
+
+                    -- Slab.Text(name) -- Display text below the button
+                    
+                    if UIOverride:Button(name) then
                         loadScene(name)
                         game_state = IN_WORLD_STATE
                     end
-
-                    Slab.Text(name) -- Display text below the button
 
                     -- Switch column
                     if location >= cols then

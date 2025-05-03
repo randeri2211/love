@@ -67,6 +67,7 @@ function startCollisionCallback(fixture1, fixture2, contact)
         if fixture2:getCategory() == SPELLS_CATEGORY then
             fixture1, fixture2 = fixture2, fixture1
         end
+        print("spell collision"..fixture2:getCategory())
 
         local spellPair = spells:getSpellByFixture(fixture1)
         local entity = nil
