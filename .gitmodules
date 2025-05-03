@@ -1,0 +1,12 @@
+[submodule "libraries/binser"]
+	path = libraries/binser
+	url = https://github.com/bakpakin/binser.git
+[submodule "libraries/hump"]
+	path = libraries/hump
+	url = git@github.com:vrld/hump.git
+[submodule "libraries/love-bone"]
+	path = libraries/love-bone
+	url = git@github.com:sbseltzer/love-bone.git
+[submodule "libraries/Slab"]
+	path = libraries/Slab
+	url = git@github.com:flamendless/Slab.git
