@@ -7,6 +7,12 @@ local Animation = require "animations.animation"
 local Player = Entity:new()
 AS = 25
 AD = 1
+
+-- Cast pose(see Player:castAt)
+CAST_HAND_BONES = {"right_hand", "left_hand"}
+CAST_HAND_SPREAD = math.rad(8)  -- Small angle between the two hands so they dont draw on top of each other
+CAST_POSE_HOLD = 0.3            -- Seconds the hands stay up after the last cast
+CAST_POSE_OUT_SPEED = 4         -- How fast it blends back to the walk
 -- AS / (self.movement.currentSpeed * AD) = 0.3
 
 function Player:new(x, y, name)
@@ -188,6 +194,7 @@ function Player:update(dt)
     Entity.update(self, dt)
     self:move()
     groundRay(self)
+    self:updateCastPose(dt)
 end
 
 
@@ -278,6 +285,7 @@ function Player:animationSetup()
     local legHeight = self.height - torsoHeight - headHeight
     local legWidth = self.width / 3
     local handHeight = torsoHeight * 4 / 3
+    self.handLength = handHeight    -- Spells start at the hand tips(see castOrigin)
     local handWidth = legWidth
 
     -- Creating a table to hold all the animations
@@ -326,6 +334,9 @@ function Player:animationSetup()
 
     -- Choosing animation to display
     self.anim.actor:GetTransformer():SetTransform("player", self.animations["left"].animation)
+
+    -- Cast pose on top of the walk
+    self:castSetup()
 end
 
 
@@ -393,35 +404,53 @@ function Player:leftAnimation()
 end
 
 
-function Player:castAnimation()
-    self.animations["left"]:newAnimation()
-    self.animations["left"]:AddKeyFrame("head", 0, math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("torso", 0, math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_hand", 0, math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_hand", 0, math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_leg", 0, math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_leg", 0, math.rad(0), nil, nil)
+-- Cast Pose
+function Player:castSetup()
+    -- Hands point where the spell goes, layered over the walk on the hand bones only
+    local transformer = self.anim.actor:GetTransformer()
+    self.castPose = {right_hand = {rotation = 0}, left_hand = {rotation = 0}}
+    transformer:SetTransform("cast", self.castPose, CAST_HAND_BONES)
+    -- Higher priority than the walk("player") on the hands, so the cast takes them over as it blends in
+    transformer:SetPriority("cast", 1, CAST_HAND_BONES)
+    self.castPower = 0      -- How much of the cast pose shows, 0 to 1
+    self.castHold = 0       -- Seconds the pose stays up after the last cast
+end
 
-    self.animations["left"]:AddKeyFrame("head", 1 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("torso", 1 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_hand", 1 * AS / (self.movement.currentSpeed * AD), math.rad(-45), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_hand", 1 * AS / (self.movement.currentSpeed * AD), math.rad(45), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_leg", 1 * AS / (self.movement.currentSpeed * AD), math.rad(30), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_leg", 1 * AS / (self.movement.currentSpeed * AD), math.rad(-30), nil, nil)
 
-    self.animations["left"]:AddKeyFrame("head", 3 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("torso", 3 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_hand", 3 * AS / (self.movement.currentSpeed * AD), math.rad(45), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_hand", 3* AS / (self.movement.currentSpeed * AD), math.rad(-45), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_leg", 3 * AS / (self.movement.currentSpeed * AD), math.rad(-30), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_leg", 3 * AS / (self.movement.currentSpeed * AD), math.rad(30), nil, nil)
+function Player:castAt(dirX, dirY)
+    -- Called for every cast the player makes, aims both hands along the cast direction
+    -- Bone angle 0 points down because the skeleton root is rotated 90 degrees
+    local angle = math.atan2(dirY, dirX) - math.pi / 2
+    -- Shortest way round from hanging down, so aiming up and left doesnt swing the hands all the way around
+    if angle < -math.pi then
+        angle = angle + 2 * math.pi
+    end
+    self.castPose.right_hand.rotation = angle - CAST_HAND_SPREAD
+    self.castPose.left_hand.rotation = angle + CAST_HAND_SPREAD
+    self.castHold = CAST_POSE_HOLD
+    -- Hands snap up right away, so the spell comes out of them on the first frame(blending out stays smooth)
+    self.castPower = 1
+    self.anim.actor:GetTransformer():SetPower("cast", 1)
+end
 
-    self.animations["left"]:AddKeyFrame("head", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("torso", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_hand", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_hand", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("right_leg", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
-    self.animations["left"]:AddKeyFrame("left_leg", 4 * AS / (self.movement.currentSpeed * AD), math.rad(0), nil, nil)
+
+function Player:castOrigin(dirX, dirY)
+    -- Where spells start: at the hand tips along the cast direction, between the two raised hands
+    -- Worked out from the pose instead of read from the animation, which is still blending in on the first cast
+    local x, y = self.body:getWorldCenter()
+    local shoulderY = y - self.height / 3      -- Hands hang from the top of the torso(see moveControl)
+    return x + dirX * self.handLength, shoulderY + dirY * self.handLength
+end
+
+
+function Player:updateCastPose(dt)
+    -- Keeps the pose up while casting and blends it out after the last cast, the walk takes the hands back
+    if self.castHold > 0 then
+        self.castHold = self.castHold - dt
+    else
+        self.castPower = math.max(0, self.castPower - CAST_POSE_OUT_SPEED * dt)
+    end
+    self.anim.actor:GetTransformer():SetPower("cast", self.castPower)
 end
 
 

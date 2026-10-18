@@ -181,7 +181,7 @@ end
 function Spell:cooldownLeft()
     -- Seconds until the spell can be cast again, in game time so pausing freezes it
     -- Loading a world makes a new spells clock, cooldowns from the old one dont count
-    if self.cooldownClock ~= spells then
+    if self.cooldownClock ~= spells or self.cooldownEnd == nil then
         return 0
     end
     return math.max(0, self.cooldownEnd - spells.time)
@@ -224,7 +224,8 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
     caster.manaBar.currentMana = caster.manaBar.currentMana - params.manaCost
 
     -- Default origin and direction
-    if x == nil or y == nil then
+    local defaultOrigin = x == nil or y == nil
+    if defaultOrigin then
         x, y = caster.body:getWorldCenter()
     end
     if dirX == nil or dirY == nil then
@@ -234,7 +235,17 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
     local dirSize = math.sqrt(dirX^2 + dirY^2)
     dirX, dirY = dirX / dirSize, dirY / dirSize
 
+    -- Casters with hands cast from between them instead of their center(triggered children keep their hit point)
+    if defaultOrigin and caster.castOrigin ~= nil then
+        x, y = caster:castOrigin(dirX, dirY)
+    end
+
     spells:addCircle(self, x, y, dirX, dirY)
+
+    -- The caster raises their hands toward the cast(only for casts they make, not triggered children)
+    if not triggered and caster.castAt ~= nil then
+        caster:castAt(dirX, dirY)
+    end
 
     -- Recoil pushes the caster away from the aim, only for casts the caster makes(not triggered children)
     -- Rapid fire forms push less per cast so holding them pushes about as hard
