@@ -250,6 +250,7 @@ function Player:load(playerTable)
     self.last_direction = playerTable.last_direction
     self.hpBar = playerTable.hpBar
     self.manaBar = playerTable.manaBar
+    self.statsDirty = true  -- Recalculate combat stats with the loaded values
 end
 
 -- Animations

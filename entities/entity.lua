@@ -20,14 +20,25 @@ function Entity:new(x, y, maxHP)
     entity.manaBar = ManaBar(BASE_MANA, BASE_MANA, BASE_MANA_REGEN)
     entity.movement = Movement(BASE_MOVE_SPEED, BASE_JUMP_HEIGHT)
     entity.stats = Stats()
+    entity.statsDirty = true    -- Calculate combat stats on the first update
     entity.body = love.physics.newBody(p_world, x, y, "dynamic")
 
     return entity
 end
 
 function Entity:update(dt)
-    self.combatStats = CombatStats(self)    -- Update combat stats live
+    -- Recalculate combat stats only when a stat changed
+    if self.statsDirty then
+        self.combatStats = CombatStats(self)
+        self.statsDirty = false
+    end
     self:regen(dt)
+end
+
+function Entity:addStat(stat, amount)
+    -- Changes a stat(negative amounts allowed) and marks combat stats for recalculation
+    self.stats[stat] = self.stats[stat] + amount
+    self.statsDirty = true
 end
 
 function Entity:prepSave()

@@ -128,9 +128,9 @@ function love.keypressed(key)
             elseif key == INTERACT_KEY then
                 player:interact()
             elseif key == "y" then
-                player.stats.swiftness = player.stats.swiftness - 10
+                player:addStat("swiftness", -10)
             elseif key == "u" then
-                player.stats.swiftness = player.stats.swiftness + 10
+                player:addStat("swiftness", 10)
             else
                 uihandler:checkKeyIngame(key)
             end

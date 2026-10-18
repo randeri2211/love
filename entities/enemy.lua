@@ -45,6 +45,7 @@ function Enemy:load(enemyTable)
     -- Loads the enemy from a loaded table
     self.hpBar = enemyTable.hpBar
     self.radius = enemyTable.radius
+    self.statsDirty = true  -- Recalculate combat stats with the loaded values
 end
 
 function Enemy:wakeUp()

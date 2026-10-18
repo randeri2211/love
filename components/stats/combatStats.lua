@@ -9,6 +9,18 @@ local function combatStats(entity)
     local combatStats = {}
     combatStats.cooldownReduction = 0
 
+    -- Fallback for saves made before base values existed
+    entity.hpBar.baseMaxHP = entity.hpBar.baseMaxHP or BASE_HP
+    entity.hpBar.baseRegen = entity.hpBar.baseRegen or entity.hpBar.regen
+    entity.manaBar.baseMaxMana = entity.manaBar.baseMaxMana or BASE_MANA
+    entity.manaBar.baseManaRegen = entity.manaBar.baseManaRegen or BASE_MANA_REGEN
+    entity.movement.baseMaxSpeed = entity.movement.baseMaxSpeed or BASE_MOVE_SPEED
+    entity.movement.baseJumpHeight = entity.movement.baseJumpHeight or BASE_JUMP_HEIGHT
+
+    -- Remember hp and mana percentages so changing the max keeps the same ratio
+    local hpPercent = entity.hpBar.currentHP / entity.hpBar.maxHP
+    local manaPercent = entity.manaBar.currentMana / entity.manaBar.maxMana
+
 
     -- Strength
     local strengthContactModifier = 1
@@ -20,36 +32,41 @@ local function combatStats(entity)
 
     -- Wisdom
     local wisdomMaxManaModifier = 1
-    local percent = entity.manaBar.currentMana / entity.manaBar.maxMana
-    entity.manaBar.maxMana = BASE_MANA + wisdomMaxManaModifier * entity.stats.wisdom
-    entity.manaBar.currentMana = percent * entity.manaBar.maxMana
+    entity.manaBar.maxMana = entity.manaBar.baseMaxMana + wisdomMaxManaModifier * entity.stats.wisdom
 
     local wisdomCooldownReductionModifier = 0.01
     combatStats.cooldownReduction = combatStats.cooldownReduction + wisdomCooldownReductionModifier * entity.stats.wisdom
 
     -- Concentration
     local concentrationManaRegenModifier = 1
-    entity.manaBar.manaRegen = BASE_MANA_REGEN + concentrationManaRegenModifier * entity.stats.concentration
+    entity.manaBar.manaRegen = entity.manaBar.baseManaRegen + concentrationManaRegenModifier * entity.stats.concentration
 
     local concentrationCooldownReductionModifier = 0.01
     combatStats.cooldownReduction = combatStats.cooldownReduction + concentrationCooldownReductionModifier * entity.stats.concentration
-    
+
     -- Swiftness
     local swiftnessMovespeedModifier = TILE_SIZE * 0.1
-    entity.movement.maxSpeed = BASE_MOVE_SPEED + swiftnessMovespeedModifier * entity.stats.swiftness
-    
+    entity.movement.maxSpeed = entity.movement.baseMaxSpeed + swiftnessMovespeedModifier * entity.stats.swiftness
+
     local swiftnessJumpHeightModifier = TILE_SIZE * 0.1
-    entity.movement.jumpHeight = BASE_JUMP_HEIGHT + swiftnessJumpHeightModifier * entity.stats.swiftness
+    entity.movement.jumpHeight = entity.movement.baseJumpHeight + swiftnessJumpHeightModifier * entity.stats.swiftness
 
     -- Constitution
     local constitutionMaxHPModifier = 1
-    local percent = entity.hpBar.currentHP / entity.hpBar.maxHP
-    entity.hpBar.maxHP = BASE_HP + constitutionMaxHPModifier * entity.stats.constitution
-    entity.manaBar.currentMana = percent * entity.hpBar.maxHP
+    entity.hpBar.maxHP = entity.hpBar.baseMaxHP + constitutionMaxHPModifier * entity.stats.constitution
 
-    -- Clamp values
+    -- Clamp values(negative stats can only lower values down to these minimums)
     combatStats.cooldownReduction = math.min(combatStats.cooldownReduction, MAX_COOLDOWN_REDUCTION)
-    entity.movement.maxSpeed = math.max(entity.movement.maxSpeed, 0)
+    entity.hpBar.regen = math.max(entity.hpBar.regen, 0)
+    entity.manaBar.manaRegen = math.max(entity.manaBar.manaRegen, 0)
+    entity.hpBar.maxHP = math.max(entity.hpBar.maxHP, 1)
+    entity.manaBar.maxMana = math.max(entity.manaBar.maxMana, 1)
+    entity.movement.maxSpeed = math.max(entity.movement.maxSpeed, entity.movement.baseMaxSpeed / 10)
+    entity.movement.jumpHeight = math.max(entity.movement.jumpHeight, entity.movement.baseJumpHeight / 10)
+
+    -- Apply the remembered percentages to the new max values
+    entity.hpBar.currentHP = hpPercent * entity.hpBar.maxHP
+    entity.manaBar.currentMana = manaPercent * entity.manaBar.maxMana
 
     return combatStats
 end
