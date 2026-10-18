@@ -21,8 +21,12 @@ function Area:new(caster, params, x, y, dirX, dirY)
     area.pull = params.pull                 -- Gravity, pulls enemies toward the center
     area.color = params.color
 
-    -- Appears in front of the cast point, Split copies spread further out
-    local dist = params.areaRadius * (1 + 0.6 * (params.count - 1))
+    -- Cast directly it appears in front of the cast point, from a trigger it centers on the hit point
+    -- Split copies spread further out either way
+    local dist = params.areaRadius * 0.6 * (params.count - 1)
+    if not params.triggered then
+        dist = dist + params.areaRadius
+    end
     area.x, area.y = x + dirX * dist, y + dirY * dist
     area.direction = {dirX, dirY}
     area.time = 0

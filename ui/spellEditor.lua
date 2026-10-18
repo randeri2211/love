@@ -1,10 +1,12 @@
 local Slab = require "libraries.Slab"
 local Spell = require "magic.spell"
 local MagicCircle = require "magic.magicCircle"
+local Spellbooks = require "magic.spellbooks"
 
 local SpellEditor = {}
 
 -- Window sizes
+local SPELLS_W = 240
 local PALETTE_W = 260
 local CANVAS_W = 640
 local INFO_W = 300
@@ -38,22 +40,47 @@ local function windowOptions(title, x, y, w, h)
 end
 
 
-function SpellEditor:new(spell)
+function SpellEditor:new(book)
+    -- Edits the spells of a spellbook component, the selected spell is the one being edited
     local editor = {}
     setmetatable(editor, self)
     self.__index = self
 
-    editor.spell = spell            -- Root spell being edited
+    editor.book = book
     editor.selectedRune = nil       -- Rune name picked in the palette
     editor.targets = {}             -- Clickable parts of the circle, rebuilt every frame
     editor.circleTargets = {}       -- Every circle(main and children) as a click area, rebuilt every frame
-    editor.inspected = spell        -- Circle the stats panel shows, picked by clicking inside a circle
+    editor.bindingKey = false       -- True while waiting for a key to bind to the spell
     editor.closed = false
-    editor.openTime = love.timer.getTime()  -- The circle draws itself in from this moment
-    editor.circleCanvas = nil               -- Created on first draw with the window size
-    editor:fillSlots(spell)
+    editor.circleCanvas = nil       -- Created on first draw with the window size
+    editor:openSpell(Spellbooks.selectedEntry(book))
 
     return editor
+end
+
+
+function SpellEditor:openSpell(entry)
+    -- Edits this spellbook entry, it also becomes the spell the shoot key casts
+    self.entry = entry
+    self.spell = entry.spell        -- Root spell being edited
+    self.inspected = entry.spell    -- Circle the stats panel shows, picked by clicking inside a circle
+    self.bindingKey = false
+    self.openTime = love.timer.getTime()    -- The circle draws itself in from this moment
+    Spellbooks.select(self.book, entry.id)
+    self:fillSlots(entry.spell)
+end
+
+
+function SpellEditor:handleKey(key)
+    -- Keys the editor uses while open, true when the key was used
+    if self.bindingKey then
+        if key:match("^%d$") then
+            Spellbooks.bind(self.book, key, self.entry.id)
+            self.bindingKey = false
+        end
+        return true     -- Other keys are ignored while binding
+    end
+    return false
 end
 
 
@@ -70,14 +97,66 @@ end
 
 
 function SpellEditor:update()
-    -- Draws all 3 editor windows centered on the screen
+    -- Draws all 4 editor windows centered on the screen
     local w, h = love.graphics.getDimensions()
-    local x = w / 2 - (PALETTE_W + CANVAS_W + INFO_W + GAP * 2) / 2
+    local x = w / 2 - (SPELLS_W + PALETTE_W + CANVAS_W + INFO_W + GAP * 3) / 2
     local y = h / 2 - EDITOR_H / 2
 
+    self:spellList(x, y)
+    x = x + SPELLS_W + GAP
     self:palette(x, y)
     self:canvas(x + PALETTE_W + GAP, y)
     self:info(x + PALETTE_W + CANVAS_W + GAP * 2, y)
+end
+
+
+-- Spell List Window
+function SpellEditor:spellList(x, y)
+    -- Every spell in the spellbook with its key, and buttons to manage them
+    Slab.BeginWindow("SpellList", windowOptions("Spells", x, y, SPELLS_W, EDITOR_H))
+        for i, entry in ipairs(self.book.spells) do
+            local key = Spellbooks.keyFor(self.book, entry.id)
+            local label = "[" .. (key or " ") .. "]  " .. entry.name
+            Slab.Text(label, {IsSelectable = true, IsSelected = entry == self.entry})
+            if Slab.IsControlClicked() and entry ~= self.entry then
+                self:openSpell(entry)
+            end
+        end
+        Slab.NewLine()
+        Slab.Separator()
+
+        -- Name of the open spell(Id per spell so switching spells shows the right name)
+        Slab.Text("Name")
+        if Slab.Input("SpellName" .. self.entry.id, {Text = self.entry.name, ReturnOnText = true, W = SPELLS_W - 20}) then
+            self.entry.name = Slab.GetInputText()
+        end
+        Slab.NewLine()
+
+        -- Three buttons in a row fit the list window
+        local buttonW = (SPELLS_W - 30) / 3
+        if Slab.Button("New", {W = buttonW}) then
+            self:openSpell(Spellbooks.add(self.book, "Spell " .. self.book.nextId, Spell:new("Bullet", {})))
+        end
+        Slab.SameLine()
+        if Slab.Button("Copy", {W = buttonW}) then
+            self:openSpell(Spellbooks.duplicate(self.book, self.entry.id))
+        end
+        Slab.SameLine()
+        -- The last spell cant be deleted
+        if Slab.Button("Delete", {W = buttonW, Disabled = #self.book.spells <= 1}) then
+            if Spellbooks.remove(self.book, self.entry.id) then
+                self:openSpell(Spellbooks.selectedEntry(self.book))
+            end
+        end
+
+        Slab.NewLine()
+        if self.bindingKey then
+            Slab.Text("Press 0-9 to bind", {Color = HOVER_COLOR})
+            Slab.Text("Esc to cancel", {Color = HINT_COLOR})
+        elseif Slab.Button("Bind key") then
+            self.bindingKey = true
+        end
+    Slab.EndWindow()
 end
 
 

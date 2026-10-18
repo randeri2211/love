@@ -1,255 +1,165 @@
+local binser = require "libraries.binser.binser"
+local Spellbooks = require "magic.spellbooks"
+
+-- Saves are written with binser, which keeps numbers, booleans, strings and nested tables exactly
+local SAVEABLE = {string = true, number = true, boolean = true, table = true}
+-- Fields that are rebuilt by code instead of saved(animations, and the spellbook which has its own file)
+local SKIP_KEYS = {anim = true, animations = true, spellbook = true, __index = true}
+
+
+currentWorld = "world"     -- Name of the open world, save and load use it
+
+
 -- Main Functions
+function newWorldName()
+    -- First "World N" that doesnt have a save folder yet
+    local n = 1
+    while love.filesystem.getInfo(SAVE_FOLDER .. "/World " .. n) ~= nil do
+        n = n + 1
+    end
+    return "World " .. n
+end
+
+function hasSave(worldName)
+    return love.filesystem.getInfo(SAVE_FOLDER .. "/" .. worldName .. "/" .. PLAYER_FILENAME) ~= nil
+end
+
 function saveScene(worldName)
-    local dir = love.filesystem.getInfo(SAVE_FOLDER)
-    if not dir or dir.size == 0 then
-        love.filesystem.createDirectory(SAVE_FOLDER)
-    end
+    -- Creates the world folder too(saves/<world>), not only the saves folder
+    local folder = SAVE_FOLDER .. "/" .. worldName
+    love.filesystem.createDirectory(folder)
 
-    -- Saving Player
-    local playerPath = SAVE_FOLDER .. "/" .. worldName .. "/" .. PLAYER_FILENAME
-
-    -- Open file in appending mode and add a player tag and recursively save the player
-    playerFile = love.filesystem.newFile(playerPath)
-    playerFile:open("w")
-    if playerFile ~= nil then
-        savePlayer(playerFile, 0)
-        playerFile:close()
-    end
-
-
-    -- Saving Entities
-    local entityPath = SAVE_FOLDER .. "/" .. worldName .. "/" .. ENTITIES_FILENAME
-    local entityFile = love.filesystem.newFile(entityPath)
-    entityFile:open("w")
-    if entityFile ~= nil then
-        saveEntities(entityFile, 0)
-        entityFile:close()
-    end
-
-    -- -- Saving Map
-    local mapPath = SAVE_FOLDER .. "/" .. worldName .. "/" .. MAP_FILENAME
-    -- Clear the save file if it exists
-    local mapFile = love.filesystem.newFile(mapPath)
-    mapFile:open("w")
-    if mapFile ~= nil then
-        saveMap(mapFile, 0)
-        mapFile:close()
-    end
+    writeData(folder .. "/" .. PLAYER_FILENAME, savePlayer())
+    writeData(folder .. "/" .. ENTITIES_FILENAME, saveEntities())
+    writeData(folder .. "/" .. MAP_FILENAME, saveMap())
+    writeData(folder .. "/" .. SPELLS_FILENAME, Spellbooks.toData(player.spellbook))
 end
 
 function loadScene(worldName)
     initVars()
+    local folder = SAVE_FOLDER .. "/" .. worldName
 
-    -- Load Player
-    local path = SAVE_FOLDER .. "/" .. worldName .. "/" .. PLAYER_FILENAME
-    local file = love.filesystem.newFile(path)
-    file:open("r")
-    if file ~= nil then
-        local lines = file:lines()
-        loadPlayer(lines, 0)
+    local playerData = readData(folder .. "/" .. PLAYER_FILENAME)
+    if playerData ~= nil then
+        loadPlayer(playerData)
     end
 
-    -- Load Map
-    local path = SAVE_FOLDER .. "/" .. worldName .. "/" .. MAP_FILENAME
-    local file = love.filesystem.newFile(path)
-    file:open("r")
-    if file ~= nil then
-        local lines = file:lines()
+    local mapData = readData(folder .. "/" .. MAP_FILENAME)
+    if mapData ~= nil then
         map:emptyMap()
-        loadMap(lines, 0)
+        loadMap(mapData)
     end
 
-    -- Load Entities
-    local path = SAVE_FOLDER .. "/" .. worldName .. "/" .. ENTITIES_FILENAME
-    local file = love.filesystem.newFile(path)
-    file:open("r")
-    if file ~= nil then
-        local lines = file:lines()
-    
-        loadEntities(lines, 0)
+    local entityData = readData(folder .. "/" .. ENTITIES_FILENAME)
+    if entityData ~= nil then
+        loadEntities(entityData)
     end
 
+    -- Worlds without a spells file keep the default spells the new player starts with
+    local spellData = readData(folder .. "/" .. SPELLS_FILENAME)
+    if spellData ~= nil then
+        player.spellbook = Spellbooks.fromData(spellData)
+    end
 end
+
+
+-- File Functions
+function writeData(path, data)
+    love.filesystem.write(path, binser.serialize(data))
+end
+
+function readData(path)
+    -- The saved table, or nil when the file is missing or isnt a binser save
+    if love.filesystem.getInfo(path) == nil then
+        return nil
+    end
+    local contents = love.filesystem.read(path)
+    local ok, results = pcall(binser.deserialize, contents)
+    -- Old text saves and broken files are skipped instead of crashing the load
+    if not ok or type(results) ~= "table" or type(results[1]) ~= "table" then
+        print("Couldnt read save file " .. path)
+        return nil
+    end
+    return results[1]
+end
+
+function plainCopy(value, seen)
+    -- Copy of a table with only saveable data(no physics bodies, images, functions or classes)
+    seen = seen or {}
+    if seen[value] then
+        return nil      -- Already copied higher up, skips loops like a class pointing at itself
+    end
+    seen[value] = true
+
+    local copy = {}
+    for key, val in pairs(value) do
+        local keyType = type(key)
+        if (keyType == "string" or keyType == "number") and SAVEABLE[type(val)] and not SKIP_KEYS[key] then
+            if type(val) == "table" then
+                copy[key] = plainCopy(val, seen)
+            else
+                copy[key] = val
+            end
+        end
+    end
+    seen[value] = nil
+    return copy
+end
+
 
 -- Helper Functions
-function savePlayer(file, spaces)
-    -- Saves a player to a given file within the spaces
+function savePlayer()
+    -- Plain data of the player
     player:prepSave()
-
-    space = ""
-    --multiply spaces
-    for i=1 ,spaces do 
-        space = space .. " "
-    end
-
-    file:write(space .. "player:\n")
-    recursiveSave(file, player, spaces + DATA_SPACING)
+    return plainCopy(player)
 end
 
 
-function saveEntities(file, spaces)
-    -- Save all entities in the world
+function saveEntities()
+    -- Plain data of every entity in the world
+    local data = {}
     for i, entity in pairs(map.enemies.enemies) do
         entity:prepSave()
-        space = ""
-        --multiply spaces
-        for j=1 ,spaces do 
-            space = space .. " "
-        end
-
-        file:write(space .. entity.name .. ":\n")
-        recursiveSave(file, entity, spaces + DATA_SPACING)
+        table.insert(data, plainCopy(entity))
     end
+    return data
 end
 
-function saveMap(file, spaces)
+function saveMap()
+    -- Plain data of every block in the map
+    local data = {}
     for x, col in pairs(map.map) do
         for y, block in pairs(col) do
-            space = ""
-            --multiply spaces
-            for j=1 ,spaces do 
-                space = space .. " "
-            end
-            -- Prepares the block for saving("" on the tooltipText)
-            if block.prepSave ~= nil then
-                block:prepSave()
-            end
-            file:write(space .. block.type .. ":\n")
-            recursiveSave(file, block, spaces + DATA_SPACING)
-            if block.afterSave ~= nil then
-                block:afterSave()
-            end
+            table.insert(data, plainCopy(block))
+        end
+    end
+    return data
+end
+
+function loadPlayer(playerData)
+    player:load(playerData)
+end
+
+function loadMap(mapData)
+    -- Rebuilds every block through the block registry
+    for i, blockData in ipairs(mapData) do
+        local blockClass = BLOCK_REGISTRY[blockData.name]
+        if blockClass ~= nil then
+            local block = blockClass:new(blockData.x, blockData.y, blockData.width, blockData.height)
+            block:load(blockData)
+            map:insert(block)
         end
     end
 end
 
-function loadPlayer(lines, spaces)
-    -- Loads a player from the given lines iterator
-    lines()
-    local res = recursiveLoad(spaces + DATA_SPACING, lines)
-    player:load(res)
-end
-
-function loadMap(lines, spaces)
-    -- Loads all blocks into the map from the given lines iterator
-     
-    local line = lines()
-    repeat
-        local res = recursiveLoad(spaces + DATA_SPACING, lines)
-        local block = BLOCK_REGISTRY[res.name]:new(res.x, res.y, res.width, res.height)
-        block:load(res)
-        map:insert(block)
-
-        line = lines()
-    until line == nil
-end
-
-function loadEntities(lines, spaces)
-    -- Loads all blocks into the map from the given lines iterator
-    local line = lines()
-    repeat
-        local res = recursiveLoad(spaces + DATA_SPACING, lines)
-        local entity = ENTITY_REGISTRY[res.name]:new(res.x, res.y)
-        entity:load(res)
-        print("loading entity"..res.name)
-        map.enemies:addEnemy(entity)
-        line = lines()
-    until line == nil
-end
-
-
-function recursiveSave(file, t, spaces)
-    local allowed = {}
-    allowed["nil"] = true
-    allowed["string"] = true
-    allowed["number"] = true
-    allowed["boolean"] = true
-    -- allowed["userdata"] = true
-    allowed["table"] = true
-    
-
-
-    for key, val in pairs(t) do
-        if allowed[type(val)] and allowed[type(key)] then
-            if type(val) == "table" and key ~= "anim" and key ~= "animations" then
-
-                -- Making sure the table has a valueable information to store
-                local okay = false
-                for o_key, o_val in pairs(val) do
-
-                    if allowed[type(o_key)] and allowed[type(o_val)] then
-                        okay = true
-                        break
-                    end
-                end
-
-                -- As long as we have save worthy data,go inside
-                if okay == true then
-                    space = ""
-                    --multiply spaces
-                    for i=1 ,spaces do 
-                        space = space .. " "
-                    end
-                    file:write(space .. tostring(key) .. ":" .. "\n")
-                    recursiveSave(file, val, spaces + DATA_SPACING)
-                end
-            elseif type(val) == "table" then
-            else
-                space = ""
-                -- Multiply spaces
-                for i=1 ,spaces do 
-                    space = space .. " "
-                end
-                if val == "" then
-                    val = "\"\""
-                end
-                file:write(space .. tostring(key) .. ":" .. tostring(val) .. "\n")
-            end
+function loadEntities(entityData)
+    -- Rebuilds every entity through the entity registry
+    for i, data in ipairs(entityData) do
+        local entityClass = ENTITY_REGISTRY[data.name]
+        if entityClass ~= nil then
+            local entity = entityClass:new(data.x, data.y)
+            entity:load(data)
+            map.enemies:addEnemy(entity)
         end
     end
-    file:write("\n")
-end
-
-
-function recursiveLoad(spaces,lines)
-    local result = {}
-    local line = lines()
-    while line ~= nil and #line > spaces and line:sub(spaces,spaces) == " " do
-        -- "([^%s]+[[%s]*[%S]+]*)" matches every non whitespace sequence followed by possibly more sequences of whitespaces and not whitespaces
-        local matches = string.gmatch(line, "([^%s]+[[%s]*[%S]+]*)")
-
-        for match in matches do
-            -- "([^:]+)" Splits the string by the : delimeter
-            local content = string.gmatch(match, "([^:]+)")
-            local key = tostring(content())
-            local temp = content()
-            local val
-
-            if temp == nil then
-                -- print("inside table "..tostring(key))
-                result[key] = recursiveLoad(spaces + DATA_SPACING,lines)
-            else
-                if tonumber(temp) ~= nil then
-                    val = tonumber(temp)
-                    -- print("number "..tostring(val))
-                elseif temp == "true" then
-                    val = true
-                    -- print("bool "..tostring(val))
-                elseif temp == "false" then
-                    val = false
-                    -- print("bool "..tostring(val))
-                else
-                    val = tostring(temp)
-                end
-                result[key] = val
-            end
-        end
-
-        if lines ~= nil then
-            line = lines()
-        else
-            line = nil
-        end
-    end
-    return result
 end

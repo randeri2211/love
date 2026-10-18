@@ -8,7 +8,7 @@ require "world_utils.scene"
 local Slab = require "libraries.Slab"
 local debugWorldDraw = require "libraries.debugWorldDraw"
 local UIHandler = require "ui.uiHandler"
-local Spell = require "magic.spell"
+local Spellbooks = require "magic.spellbooks"
 local new_frame = false
 
 function love.load(args)
@@ -18,17 +18,6 @@ function love.load(args)
     Slab.Initialize(args)
     initVars()
     registerAll()
-
-    -- Test spells, number keys pick which one the shoot key casts and the editor edits
-    spellPresets = {
-        Spell:new("Bullet", {"Speed", {"OnHit", Spell:new("Bullet", {"Split", "Split"})}}),     -- 1 Bullet bursting into a shotgun
-        Spell:new("Bullet", {"Speed", {"OnHit", Spell:new("Area", {"Size"})}}),                 -- 2 Exploding bullet
-        Spell:new("Laser", {"Rebound", "Damage"}),                                              -- 3 Bouncing laser
-        Spell:new("Area", {"Gravity", "Size"}),                                                 -- 4 Gravity well
-        Spell:new("Trap", {"Split", "Split"}),                                                  -- 5 Minefield
-        Spell:new("Bullet", {"Split", "Gravity", "Rebound"}),                                   -- 6 Bouncing arcs
-    }
-    spellTest = spellPresets[1]
 
     fpsTimer = love.timer.getTime()
 
@@ -52,8 +41,9 @@ function love.update(dt)
                 player:update(dt)
 
                 -- Holding the shoot key keeps casting, the spell cooldown sets the fire rate
-                if love.keyboard.isDown(SHOOT_KEY) then
-                    spellTest:shoot(player)
+                local spell = Spellbooks.selectedSpell(player.spellbook)
+                if spell ~= nil and love.keyboard.isDown(SHOOT_KEY) then
+                    spell:shoot(player)
                 end
             end
 
@@ -126,8 +116,18 @@ function love.keypressed(key)
         return
     end
 
-    -- Other keys do nothing while the quit confirmation is open
-    if uihandler.showQuitConfirm then
+    -- Other keys do nothing while the quit confirmation or the pause menu is open
+    if uihandler.showQuitConfirm or uihandler.showPauseMenu then
+        return
+    end
+
+    -- Typing in a text box(like a spell name) shouldnt trigger game keys
+    if Slab.IsAnyInputFocused() then
+        return
+    end
+
+    -- The spell editor gets keys first while it is open(binding a key to a spell)
+    if uihandler.spellEditor ~= nil and uihandler.spellEditor:handleKey(key) then
         return
     end
 
@@ -140,21 +140,22 @@ function love.keypressed(key)
         -- Spell editor key works while paused so the editor can be closed
         elseif key == SPELL_EDITOR_KEY then
             uihandler:toggleSpellEditor()
+        -- Save and load the open world, saving while paused is fine
+        elseif key == SAVE_KEY then
+            saveScene(currentWorld)
+        elseif key == LOAD_KEY then
+            if hasSave(currentWorld) then
+                loadScene(currentWorld)
+            end
         elseif not paused then
-            -- Save and load keys
-            if key == SAVE_KEY then
-                saveScene("world")
-            elseif key == LOAD_KEY then
-                loadScene("world")
-            elseif key == INTERACT_KEY then
+            if key == INTERACT_KEY then
                 player:interact()
             elseif key == "y" then
                 player:addStat("swiftness", -10)
             elseif key == "u" then
                 player:addStat("swiftness", 10)
-            -- Number keys pick a test spell
-            elseif tonumber(key) ~= nil and spellPresets[tonumber(key)] ~= nil then
-                spellTest = spellPresets[tonumber(key)]
+            -- Keys bound in the spell editor pick a spell
+            elseif Spellbooks.selectByKey(player.spellbook, key) then
             else
                 uihandler:checkKeyIngame(key)
             end

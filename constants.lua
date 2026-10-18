@@ -70,6 +70,7 @@ CAMERA_RENDER_OFFSET = 20
 PLAYER_FILENAME = "player"
 MAP_FILENAME = "map"
 ENTITIES_FILENAME = "entities_file"
+SPELLS_FILENAME = "spells"
 SAVE_FOLDER = "saves"
 
 SPAWN_X = 0.5       -- Relative to world so on a scale of 0-1

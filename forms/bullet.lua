@@ -87,7 +87,11 @@ function Bullet:onContact(fixture, entity, contact)
     local dx, dy = self:getDirection()
     local nx, ny = contact:getNormal()
     local dot = dx * nx + dy * ny
-    local x, y = self.body:getWorldCenter()
+    -- Children start at the contact point, the bullet center is up to a radius away from it
+    local x, y = contact:getPositions()
+    if x == nil then
+        x, y = self.body:getWorldCenter()
+    end
     self:hit(entity, x, y, dx - 2 * dot * nx, dy - 2 * dot * ny)
 
     if self.bounces > 0 then

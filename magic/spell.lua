@@ -100,6 +100,58 @@ function Spell:getParams()
 end
 
 
+function Spell:toData()
+    -- Plain data for saving: rune names only, triggers hold their child circle data
+    local slots = {}
+    for i = 1, SPELL_SLOTS do
+        local runeName, childSpell = self:readSlot(self.slots[i])
+        if not runeName then
+            slots[i] = false
+        elseif childSpell ~= nil then
+            slots[i] = {runeName, childSpell:toData()}
+        else
+            slots[i] = runeName
+        end
+    end
+    return {core = self.core, slots = slots}
+end
+
+
+function Spell.fromData(data, depth)
+    -- Rebuilds a spell from saved data, checking every name against the rune registry
+    -- so runes that dont exist anymore become empty slots and an unknown form becomes a Bullet
+    depth = depth or 1
+    local core = data.core
+    if RUNE_REGISTRY[core] == nil or RUNE_REGISTRY[core].kind ~= "form" then
+        core = "Bullet"
+    end
+
+    local slots = {}
+    for i = 1, SPELL_SLOTS do
+        local slot = data.slots and data.slots[i]
+        local runeName, childData = slot, nil
+        if type(slot) == "table" then
+            runeName, childData = slot[1], slot[2]
+        end
+        local rune = type(runeName) == "string" and RUNE_REGISTRY[runeName] or nil
+
+        if rune == nil or rune.kind == "form" then
+            slots[i] = false
+        elseif rune.kind == "trigger" then
+            -- Triggers need their child circle, and nesting stops at the depth limit
+            if type(childData) == "table" and depth < MAX_SPELL_DEPTH then
+                slots[i] = {runeName, Spell.fromData(childData, depth + 1)}
+            else
+                slots[i] = false
+            end
+        else
+            slots[i] = runeName
+        end
+    end
+    return Spell:new(core, slots)
+end
+
+
 function Spell:setSlots(slots)
     -- Changes the ring runes and marks the spell for recompiling
     self.slots = slots
@@ -197,7 +249,8 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
         magicDamage = caster.combatStats.magicDamage
     end
     -- Params for this cast only, reads everything else from the compiled params
-    local castParams = setmetatable({damage = params.damage * magicDamage}, {__index = params})
+    -- triggered tells forms the cast came from a trigger(like an Area centering on the hit point)
+    local castParams = setmetatable({damage = params.damage * magicDamage, triggered = triggered == true}, {__index = params})
 
     -- Spawn every projectile
     for i = 1, params.count do

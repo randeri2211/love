@@ -2,6 +2,7 @@ require "ui.menu"
 local Slab = require "libraries.Slab"
 local SpellEditor = require "ui.spellEditor"
 local Hud = require "ui.hud"
+local Spellbooks = require "magic.spellbooks"
 
 local UIHandler = {}
 
@@ -14,24 +15,99 @@ function UIHandler:new()
     uihandler.spellEditor = nil     -- Open spell editor, nil when closed
     uihandler.showQuitConfirm = false
     uihandler.wasPaused = false     -- Pause state to go back to when the quit confirmation is cancelled
+    uihandler.showPauseMenu = false
+    uihandler.pauseMessage = nil    -- Feedback line in the pause menu, like "Saved"
 
     return uihandler
 end
 
 
 function UIHandler:escape()
-    -- Closes the top open menu, if nothing is open asks to quit the game
+    -- Closes the top open menu, if nothing is open opens the pause menu in a world or asks to quit
     if self.showQuitConfirm then
         self:closeQuitConfirm()
+    elseif self.showPauseMenu then
+        self:closePauseMenu()
     elseif self.spellEditor ~= nil then
-        self:toggleSpellEditor()
+        -- Escape cancels binding a key first, then closes the editor
+        if self.spellEditor.bindingKey then
+            self.spellEditor.bindingKey = false
+        else
+            self:toggleSpellEditor()
+        end
     elseif self.showMap then
         self.showMap = false
     elseif game_state == PICK_WORKD_STATE then
         game_state = MENU_STATE
+    elseif game_state == IN_WORLD_STATE then
+        self:openPauseMenu()
     else
         self:openQuitConfirm()
     end
+end
+
+
+function UIHandler:openPauseMenu()
+    self.showPauseMenu = true
+    self.pauseMessage = nil
+    paused = true
+    player_control = false
+end
+
+
+function UIHandler:closePauseMenu()
+    self.showPauseMenu = false
+    paused = false
+    player_control = true
+end
+
+
+function UIHandler:pauseMenu()
+    -- Escape menu in a world: resume, save, load the last save or quit
+    local w, h = love.graphics.getDimensions()
+    local ww, wh = 260, 230
+    local buttonW = ww - 40
+
+    Slab.BeginWindow("PauseMenu", {
+        Title = "Paused",
+        AllowMove = false,
+        AllowResize = false,
+        AutoSizeWindow = false,
+        ShowMinimize = false,
+        NoSavedSettings = true,
+        X = w / 2 - ww / 2,
+        Y = h / 2 - wh / 2,
+        W = ww,
+        H = wh,
+    })
+        Slab.BeginLayout("PauseMenuLayout", {
+            AlignX = "center",
+        })
+            Slab.Text(currentWorld)
+            Slab.NewLine()
+
+            if Slab.Button("Resume", {W = buttonW}) then
+                self:closePauseMenu()
+            end
+            if Slab.Button("Save", {W = buttonW}) then
+                saveScene(currentWorld)
+                self.pauseMessage = "Saved"
+            end
+            -- Load goes back to the last save, a world that was never saved has nothing to load
+            if Slab.Button("Load last save", {W = buttonW, Disabled = not hasSave(currentWorld)}) then
+                loadScene(currentWorld)
+                self:closePauseMenu()
+            end
+            if Slab.Button("Quit game", {W = buttonW}) then
+                self:openQuitConfirm()
+            end
+
+            if self.pauseMessage ~= nil then
+                Slab.NewLine()
+                Slab.Text(self.pauseMessage, {Color = {0.6, 1, 0.6, 1}})
+            end
+        Slab.EndLayout()
+    Slab.EndWindow()
 end
 
 
@@ -52,12 +128,12 @@ end
 
 
 function UIHandler:toggleSpellEditor()
-    -- Opens the editor on the test spell and pauses the game while editing
-    if self.showQuitConfirm then
+    -- Opens the editor on the player spellbook and pauses the game while editing
+    if self.showQuitConfirm or self.showPauseMenu then
         return
     end
     if self.spellEditor == nil then
-        self.spellEditor = SpellEditor:new(spellTest)
+        self.spellEditor = SpellEditor:new(player.spellbook)
         paused = true
     else
         self.spellEditor = nil
@@ -93,6 +169,10 @@ function UIHandler:update()
         end
     end
 
+    if self.showPauseMenu then
+        self:pauseMenu()
+    end
+
     -- Drawn last so it sits on top of every other menu
     if self.showQuitConfirm then
         self:quitConfirm()
@@ -107,7 +187,7 @@ function UIHandler:draw()
         if self.hud == nil or self.hud.entity ~= player then
             self.hud = Hud:new(player)
         end
-        self.hud:draw(spellTest)
+        self.hud:draw(Spellbooks.selectedEntry(player.spellbook))
     end
 end
 

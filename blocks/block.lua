@@ -95,19 +95,4 @@ function Block:load(blockTable)
     -- self.image = BLOCK_IMG[self.imagePath]
 end
 
-function Block:prepSave()
-    -- Prevents crash
-    if self.tooltipText ~= nil then
-        self.tooltipText = "\"" .. self.tooltipText .. "\""
-    end
-end
-
-function Block:afterSave()
-    if self.tooltipText ~= nil then
-        if #self.tooltipText > 2 then
-            self.tooltipText = string.sub(self.tooltipText, 2, -2)
-        end
-    end
-end
-
 return Block

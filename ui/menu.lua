@@ -119,6 +119,7 @@ function PickWorld()
                     -- Slab.Text(name) -- Display text below the button
                     
                     if UIOverride:Button(name) then
+                        currentWorld = name
                         loadScene(name)
                         game_state = IN_WORLD_STATE
                     end
@@ -142,6 +143,7 @@ function PickWorld()
             Slab.SetLayoutColumn(1)
             if Slab.Button("New World") then
                 -- TODO:Make it create a world somehow
+                currentWorld = newWorldName()
                 tempMap()
 
                 game_state = IN_WORLD_STATE

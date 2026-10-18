@@ -1,3 +1,5 @@
+local Spellbooks = require "magic.spellbooks"
+
 local Hud = {}
 
 -- Layout
@@ -93,12 +95,13 @@ function Hud:drawCooldown(x, y, spell, caster)
 end
 
 
-function Hud:draw(spell)
-    -- Drawn in screen space after the camera, spell is the one the entity casts(optional)
+function Hud:draw(spellEntry)
+    -- Drawn in screen space after the camera, spellEntry is the spellbook entry the entity casts(optional)
     local entity = self.entity
     if entity == nil then
         return
     end
+    local spell = spellEntry and spellEntry.spell
     love.graphics.push("all")
     love.graphics.origin()
 
@@ -120,6 +123,17 @@ function Hud:draw(spell)
 
     if spell ~= nil then
         self:drawCooldown(x, y, spell, entity)
+
+        -- Name of the spell and the key it is bound to
+        local label = spellEntry.name
+        if entity.spellbook ~= nil then
+            local key = Spellbooks.keyFor(entity.spellbook, spellEntry.id)
+            if key ~= nil then
+                label = "[" .. key .. "] " .. label
+            end
+        end
+        love.graphics.setColor(TEXT_COLOR)
+        love.graphics.print(label, x, y + COOLDOWN_H + 4)
     end
 
     love.graphics.pop()
