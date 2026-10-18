@@ -19,6 +19,8 @@ function Block:new(x, y, width, height)
     block.hpBar = HPBar(BASE_BLOCK_HP, BASE_BLOCK_HP, 0)
     block.imagePath = "GRASS"
     block.image = BLOCK_IMG[block.imagePath]
+    block.tile = nil        -- Name in BLOCK_TILES, when set the block draws that part of the tilesheet instead of its image
+    block.tint = nil        -- Color multiplied into the tile, lets one tile serve several blocks
     block.x = x
     block.y = y
     block.damageThreshold = 1
@@ -45,7 +47,18 @@ end
 
 -- Block Functions
 function Block:draw()
-    love.graphics.draw(self.image, self.x, self.y, 0, self.width / self.image:getWidth(), self.height / self.image:getHeight())
+    if self.tile ~= nil then
+        -- Part of the tilesheet stretched over the block, tinted if the block has a tint
+        local quad = BLOCK_TILES[self.tile]
+        local _, _, qw, qh = quad:getViewport()
+        if self.tint ~= nil then
+            love.graphics.setColor(self.tint)
+        end
+        love.graphics.draw(TILESHEET, quad, self.x, self.y, 0, self.width / qw, self.height / qh)
+        love.graphics.setColor(1, 1, 1, 1)
+    else
+        love.graphics.draw(self.image, self.x, self.y, 0, self.width / self.image:getWidth(), self.height / self.image:getHeight())
+    end
 end
 
 
@@ -62,9 +75,16 @@ function Block:damage(dmg, power)
 end
 
 
+function Block:hasOwnState()
+    -- True when saving only the block type would lose something, then the map saves the whole block
+    -- Block types with more state(like a chest) should add their own check here
+    return self.hpBar.currentHP < self.hpBar.maxHP or self.width ~= TILE_SIZE or self.height ~= TILE_SIZE
+end
+
+
 function Block:destroy()
     self:destroyBody()
-    map.map[self.mx][self.my] = nil
+    map:set(self.mx, self.my, nil)
 end
 
 

@@ -94,8 +94,9 @@ function love.draw()
             end
             if DEBUG then
                 -- player:debugDraw()
-                local mx, my  = MAP_X * TILE_SIZE * TILES_PER_METER, MAP_Y * TILE_SIZE * TILES_PER_METER
-                debugWorldDraw(p_world, -mx / 2, -my / 2, mx, my)
+                -- Physics shapes around the player(the world is infinite sideways)
+                local px, py = player.body:getWorldCenter()
+                debugWorldDraw(p_world, px - SCREEN_X / 2, py - SCREEN_Y / 2, SCREEN_X, SCREEN_Y)
             end
         game_cam:detach()
 

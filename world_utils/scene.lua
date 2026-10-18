@@ -92,7 +92,6 @@ function loadScene(worldName)
 
     local mapData = readData(folder .. "/" .. MAP_FILENAME)
     if mapData ~= nil then
-        map:emptyMap()
         loadMap(mapData)
     end
 
@@ -172,14 +171,8 @@ function saveEntities()
 end
 
 function saveMap()
-    -- Plain data of every block in the map
-    local data = {}
-    for x, col in pairs(map.map) do
-        for y, block in pairs(col) do
-            table.insert(data, plainCopy(block))
-        end
-    end
-    return data
+    -- The world seed and only the blocks the player changed, the rest regenerates from the seed
+    return map:toData()
 end
 
 function loadPlayer(playerData)
@@ -187,15 +180,12 @@ function loadPlayer(playerData)
 end
 
 function loadMap(mapData)
-    -- Rebuilds every block through the block registry
-    for i, blockData in ipairs(mapData) do
-        local blockClass = BLOCK_REGISTRY[blockData.name]
-        if blockClass ~= nil then
-            local block = blockClass:new(blockData.x, blockData.y, blockData.width, blockData.height)
-            block:load(blockData)
-            map:insert(block)
-        end
+    -- Maps saved before world generation have no seed, they are skipped
+    if mapData.seed == nil then
+        print("Map save has no seed, it was made before world generation")
+        return
     end
+    map:loadData(mapData)
 end
 
 function loadEntities(entityData)

@@ -81,8 +81,18 @@ PLAYER_HEIGHT = 2 * TILE_SIZE * 0.98
 
 INTERACT_DISTANCE = 5
 
-MAP_X = 1000
-MAP_Y = 5000
+MAP_X = 1000        -- The world is infinite sideways, this only sets where column 0 sits in map coordinates
+MAP_Y = 5000        -- Height of the world in tiles, bedrock at the bottom
+
+-- World generation(tile rows grow downward, row 0 is the old flat ground)
+CHUNK_SIZE = 32         -- Map cells per chunk side, chunks generate the first time they are needed
+SURFACE_ROW = 0         -- Lowest the ground surface goes, hills rise above it
+HILL_HEIGHT = 14        -- How many tiles hills rise above SURFACE_ROW
+DIRT_DEPTH = 4          -- Dirt layers under the grass before the stone starts
+CAVE_START_DEPTH = 10   -- No caves this close to the surface
+ORE_START_DEPTH = 20    -- Ore only this deep under the surface
+ORE_THRESHOLD = 0.74    -- Noise above this is ore, 0.74 is about 2% of the deep stone(0.70 is about 5%)
+BEDROCK_ROWS = 3        -- Unbreakable rows at the bottom of the world
 
 PLAYER_CATEGORY = 2
 BLOCKS_CATEGORY = 3

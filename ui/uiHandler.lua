@@ -141,6 +141,8 @@ function UIHandler:toggleSpellEditor()
     else
         self.spellEditor = nil
         paused = false
+        -- The spell name box goes away with the editor, so it cant keep the keyboard focus
+        Slab.SetInputFocus(nil)
     end
     player_control = not paused
 end
@@ -155,6 +157,12 @@ end
 
 
 function UIHandler:update()
+    -- Safety net: a text box can only keep keyboard focus while a window that has one is open,
+    -- a stale focus blocks every game key and crashes Slab when a key is typed into a box that isnt drawn
+    if Slab.IsAnyInputFocused() and self.spellEditor == nil and not worldNameOpen() then
+        Slab.SetInputFocus(nil)
+    end
+
     if game_state == MENU_STATE then
         Menu()
     elseif game_state == PICK_WORKD_STATE then

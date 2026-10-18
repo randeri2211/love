@@ -175,11 +175,10 @@ function Player:interact()
     local px, py = self:mapCenter()
     py = py + 1
     if distance(px, py, mx, my) < INTERACT_DISTANCE then
-        if map.map[mx][my] ~= nil then
-            -- Check if the block implements the interact function
-            if type(map.map[mx][my].interact) == "function" then
-                map.map[mx][my]:interact()
-            end
+        local block = map:get(mx, my)
+        -- Check if the block implements the interact function
+        if block ~= nil and type(block.interact) == "function" then
+            block:interact()
         end
     end
 end
@@ -256,6 +255,9 @@ function Player:load(playerTable)
     -- Gets a table with all the values from the recursiveLoad and sets the player with them
     self.body:setPosition(playerTable.x, playerTable.y)
     self.movement = playerTable.movement
+    -- The spawn point is where the world first put the player, on its surface
+    self.spawnX = playerTable.spawnX or self.spawnX
+    self.spawnY = playerTable.spawnY or self.spawnY
     -- Player base movement comes from the constants, so saves made with older values get the current ones
     self.movement.baseMaxSpeed = BASE_MOVE_SPEED
     self.movement.baseJumpHeight = BASE_JUMP_HEIGHT

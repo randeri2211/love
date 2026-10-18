@@ -6,15 +6,29 @@ local UIOverride = require "ui.uiOverride"
 local worldToDelete = nil       -- World waiting for the delete confirmation
 local creatingWorld = false     -- New world name window is open
 local newWorldText = ""         -- Name typed for the new world
+local focusNameBox = false      -- Gives the name box keyboard focus on the first frame of the new world window
 
 local ERROR_COLOR = {1, 0.4, 0.4, 1}
+
+
+function worldNameOpen()
+    -- True while the new world name box is showing(text boxes keep keyboard focus)
+    return creatingWorld
+end
+
+
+local function closeNewWorld()
+    -- Closing the name box also takes its keyboard focus away, or game keys would stay blocked
+    creatingWorld = false
+    Slab.SetInputFocus(nil)
+end
 
 
 function closeWorldDialogs()
     -- Closes the delete confirmation or the new world window, true when one was open
     if worldToDelete ~= nil or creatingWorld then
         worldToDelete = nil
-        creatingWorld = false
+        closeNewWorld()
         return true
     end
     return false
@@ -64,7 +78,14 @@ local function newWorldDialog()
     Slab.BeginWindow("NewWorld", dialogOptions("New world", 340, 150))
         Slab.BeginLayout("NewWorldLayout", {AlignX = "center"})
             Slab.Text("World name")
-            if Slab.Input("NewWorldName", {Text = newWorldText, ReturnOnText = true, W = 280}) then
+            -- Focus has to be set inside the window the box is in, Slab looks the box up in the current window
+            if focusNameBox then
+                Slab.SetInputFocus("NewWorldName")
+                Slab.SetInputCursorPos(#newWorldText)   -- Cursor after the suggested name, so typing adds to it
+                focusNameBox = false
+            end
+            -- SelectOnFocus selects the suggested name, so typing replaces it
+            if Slab.Input("NewWorldName", {Text = newWorldText, ReturnOnText = true, SelectOnFocus = true, W = 280}) then
                 newWorldText = Slab.GetInputText()
             end
 
@@ -77,14 +98,13 @@ local function newWorldDialog()
 
             if Slab.Button("Create", {Disabled = problem ~= nil}) then
                 -- Builds and saves the world, then stays in the world list where it now shows up
-                creatingWorld = false
-                initVars()
-                tempMap()
+                closeNewWorld()
+                initVars()      -- New random seed, the generator builds the terrain from it
                 saveScene(newWorldText)
             end
             Slab.SameLine()
             if Slab.Button("Cancel") then
-                creatingWorld = false
+                closeNewWorld()
             end
         Slab.EndLayout()
     Slab.EndWindow()
@@ -209,7 +229,7 @@ function PickWorld()
                 -- Opens the name window, starting with the next free "World N"
                 creatingWorld = true
                 newWorldText = newWorldName()
-                Slab.SetInputFocus("NewWorldName")
+                focusNameBox = true
             end
 
             Slab.SetLayoutColumn(2)

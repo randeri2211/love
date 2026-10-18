@@ -11,15 +11,15 @@ function initVars()
     paused = false
 
     game_cam = camera()
-    map = Map:new(MAP_X, MAP_Y)
-    map:emptyMap()
+    -- New random seed, loading a world replaces it with the saved one
+    map = Map:new(MAP_Y)
     spells = Spells:new()
     -- Physics init
     love.physics.setMeter(TILE_SIZE * TILES_PER_METER)
     p_world = love.physics.newWorld(0, GRAVITY, true)
-    
-    -- Player init
-    player = Player:new(TILE_SIZE, - TILE_SIZE, "snaposaurus")
+
+    -- Player init, standing on the ground of column 1
+    player = Player:new(TILE_SIZE, map:surfaceY(1) - PLAYER_HEIGHT - TILE_SIZE, "snaposaurus")
 
     -- World collision callbacks
     p_world:setCallbacks(startCollisionCallback, finishCollisionCallback, preSolve, postSolve)
@@ -30,28 +30,25 @@ function manageHitbox()
     local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2) + CAMERA_RENDER_OFFSET)
     local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2) + CAMERA_RENDER_OFFSET)
     local p_x,p_y = loveToMap(player.body:getWorldCenter())
-    local destroyDistance = 3    
-    for x = math.max(p_x - x_diff - destroyDistance, 1), math.min(p_x + x_diff + destroyDistance, map.width) do
+    local destroyDistance = 3
+    -- The map is infinite sideways, only the top and bottom have an edge
+    for x = p_x - x_diff - destroyDistance, p_x + x_diff + destroyDistance do
         for y = math.max(p_y - y_diff - destroyDistance, 1),math.min(p_y + y_diff + destroyDistance, map.height) do
-            -- Making sure were only checking within map bounds (might be redundant)
-            if x > 0 and x <= map.width and y > 0 and y <= map.height then
-                local block = map.map[x][y]
-                if block ~= nil then
-                    -- In the body destroy area
-                    if x < p_x - x_diff or x > p_x +x_diff or y < p_y - y_diff or y > p_y + y_diff then
-                        -- If outside of range, destroy the body
-                        block:destroyBody()
-                    -- In the body generate area
-                    else
-                        local bx, by = loveToMap(block.x, block.y)
-                        -- If in range, and one of the neighbors is not a block,or at the edge of the map, generate a body
-                        if bx > 1 and bx < map.width and by > 1 and by < map.height then
-                            if map.map[x - 1][y] == nil or map.map[x + 1][y] == nil or map.map[x][y - 1] == nil or map.map[x][y + 1] == nil then
-                                block:generateBody()
-                            end
-                        else
+            local block = map:get(x, y)
+            if block ~= nil then
+                -- In the body destroy area
+                if x < p_x - x_diff or x > p_x +x_diff or y < p_y - y_diff or y > p_y + y_diff then
+                    -- If outside of range, destroy the body
+                    block:destroyBody()
+                -- In the body generate area
+                else
+                    -- If in range, and one of the neighbors is not a block,or at the top or bottom edge, generate a body
+                    if y > 1 and y < map.height then
+                        if map:get(x - 1, y) == nil or map:get(x + 1, y) == nil or map:get(x, y - 1) == nil or map:get(x, y + 1) == nil then
                             block:generateBody()
                         end
+                    else
+                        block:generateBody()
                     end
                 end
             end
@@ -64,9 +61,7 @@ function getEntityFromFixture(fixture)
     -- Block or enemy that owns a fixture, nil for anything else
     if fixture:getCategory() == BLOCKS_CATEGORY then
         local x, y = loveToMap(fixture:getBody():getWorldCenter())
-        if map.map[x] ~= nil then
-            return map.map[x][y]
-        end
+        return map:get(x, y)
     elseif fixture:getCategory() == ENEMY_CATEGORY then
         return map.enemies:getEnemyByFixture(fixture)
     end
@@ -162,11 +157,11 @@ function tooltipDraw()
         return
     end
     local mx, my = mouseToMap()
-    if mx == nil or my == nil or mx <= 0 or mx > MAP_X or my <= 0 or my > MAP_Y then
+    if mx == nil or my == nil then
         return
     end
-    
-    local block = map.map[mx][my]
+
+    local block = map:get(mx, my)
     if block ~= nil then
         if block.tooltipText ~= nil then
             -- Draw tooltip
@@ -181,25 +176,6 @@ function tooltipDraw()
 end
 
 
-function tempMap()
-    for i = 1, map.width do
-        for j = 0, 4 do
-            local block = Block:new((i - map.center.x - 1) * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            map:insert(block)
-        end
-    end
-    map:insert(Block2:new(5 * TILE_SIZE, -1*TILE_SIZE, TILE_SIZE, TILE_SIZE / 2))
-    map:insert(InteractiveBlock:new(6 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-    map:insert(InteractiveBlock:new(6 * TILE_SIZE, -2 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-    map:insert(InteractiveBlock:new(6 * TILE_SIZE, -3 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-    map:insert(InteractiveBlock:new(7 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-    -- Enemies are off in new worlds until they get worked on
-    -- map.enemies:addEnemy(Enemy1:new(0,-200))
-    -- map.enemies:addEnemy(Enemy1:new(200,-200))
-    -- map.enemies:addEnemy(Enemy1:new(300,-200))
-    -- map.enemies:addEnemy(Enemy:new(-200,-200))
-    -- map.enemies:addEnemy(Enemy:new(-300,-200))
-end
 
 -- Debug Util Functions
 local order = 0
