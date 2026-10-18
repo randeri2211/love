@@ -18,6 +18,22 @@ BASE_MANA = 100
 BASE_MANA_REGEN = 1
 MAX_COOLDOWN_REDUCTION = 0.9
 
+MAX_SPELL_DEPTH = 3     -- How many circles deep triggers can nest(the main circle counts as 1)
+SPELL_SLOTS = 6         -- Rune slots in the ring of every magic circle
+
+-- Magic circle shown in the world when a spell is cast
+CAST_CIRCLE_SCALE = 0.2         -- Size compared to the editor circle
+CAST_CIRCLE_TIME = 1.0          -- Seconds until it fades out
+CAST_DRAW_IN_TIME = 0.4         -- Seconds for the circle to draw itself
+CAST_CIRCLE_OFFSET = TILE_SIZE  -- Distance in front of the cast point, toward the aim
+
+-- Mana added to the parent spell cost for each trigger it has, by trigger event
+-- The child spell pays its own cost when the trigger happens
+TRIGGER_CHAIN_COST = {
+    onHit = 3,
+    onExpire = 2,
+}
+
 
 DATA_SPACING = 4
 

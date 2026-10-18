@@ -1,10 +1,12 @@
 BLOCK_REGISTRY = {}
 ENTITY_REGISTRY = {}
+RUNE_REGISTRY = {}
 
 
 function registerAll()
     registerFolder("blocks")
     registerFolder("entities")
+    registerFolder("runes")
 end
 
 
@@ -21,6 +23,14 @@ function registerEntity(entityName, entity)
         ENTITY_REGISTRY = {}
     end
     ENTITY_REGISTRY[entityName] = entity
+end
+
+
+function registerRune(runeName, rune)
+    if RUNE_REGISTRY == nil then
+        RUNE_REGISTRY = {}
+    end
+    RUNE_REGISTRY[runeName] = rune
 end
 
 

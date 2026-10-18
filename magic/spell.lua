@@ -1,21 +1,150 @@
 local Spell = {}
 
-function Spell:new(form, damage)
+function Spell:new(core, slots)
+    -- A spell is a magic circle, the core is the form rune name in the center
+    -- and slots are the rune names in the ring around it(clockwise from the top)
     local spell = {}
     setmetatable(spell,self)
     self.__index = self
-    spell.damage = damage
-    spell.form = form
+    spell.core = core
+    spell.slots = slots or {}
+    spell.dirty = true      -- Compile on first use
     return spell
 end
 
-function Spell:shoot(player)
-    local spellShot = self.form:new(player)
-    local t = {}
-    t.spell = self
-    t.instance = spellShot
-    if spellShot ~= nil then
-        table.insert(spells.spells, t)
+
+function Spell.isBlocked(formName, runeName)
+    -- True when the rune has no effect for this form(see Rune:worksWith)
+    local rune = RUNE_REGISTRY[runeName]
+    return rune ~= nil and not rune:worksWith(formName)
+end
+
+
+function Spell:readSlot(slot)
+    -- A slot is either a rune name("Speed") or a trigger with its child circle({"OnHit", childSpell})
+    if type(slot) == "table" then
+        return slot[1], slot[2]
+    end
+    return slot, nil
+end
+
+
+function Spell:compile(depth)
+    -- Turns the circle into a flat params table the form can use
+    depth = depth or 1
+    local formRune = RUNE_REGISTRY[self.core]
+    local params = formRune:defaults()
+    params.form = formRune.form
+    params.complexity = formRune.complexity
+    params.manaCost = formRune.manaCost
+    params.triggers = {}    -- Child spells by event name, e.g. triggers.onHit = {childSpell}
+    local colors = {formRune.color}
+
+    -- Apply every rune in the ring(empty slots are false)
+    for i, slot in ipairs(self.slots) do
+        local runeName, childSpell = self:readSlot(slot)
+        local rune = runeName and RUNE_REGISTRY[runeName]
+        -- Runes the form blocks stay in the circle but do nothing and cost nothing
+        if rune and not Spell.isBlocked(self.core, runeName) then
+            if rune.kind == "modifier" then
+                rune:apply(params, self.core)
+            elseif rune.kind == "trigger" and childSpell ~= nil then
+                if depth < MAX_SPELL_DEPTH then
+                    -- Child complexity counts toward this spell, the child mana is paid when the trigger happens
+                    local childParams = childSpell:compile(depth + 1)
+                    params.complexity = params.complexity + childParams.complexity
+                    params.triggers[rune.event] = params.triggers[rune.event] or {}
+                    table.insert(params.triggers[rune.event], childSpell)
+                else
+                    print("Spell too deep, ignoring "..runeName.." trigger")
+                end
+            end
+            params.complexity = params.complexity + rune.complexity
+            params.manaCost = params.manaCost + rune.manaCost
+            table.insert(colors, rune.color)
+        end
+    end
+
+    -- Blend all rune colors into the spell color
+    params.color = {0, 0, 0, 1}
+    for i, color in ipairs(colors) do
+        for c = 1, 3 do
+            params.color[c] = params.color[c] + color[c] / #colors
+        end
+    end
+
+    self.params = params
+    self.dirty = false
+    return params
+end
+
+
+function Spell:getParams()
+    -- Only recompile when the circle changed
+    if self.dirty then
+        self:compile()
+    end
+    return self.params
+end
+
+
+function Spell:setSlots(slots)
+    -- Changes the ring runes and marks the spell for recompiling
+    self.slots = slots
+    self.dirty = true
+end
+
+
+function Spell:shoot(caster, x, y, dirX, dirY)
+    -- Casts the spell from x, y in the dirX, dirY direction(defaults to the caster aiming at the mouse)
+    local params = self:getParams()
+
+    -- Mana check(triggered child spells pay their own cost too, and fizzle without enough mana)
+    if caster.manaBar.currentMana < params.manaCost then
+        return
+    end
+    caster.manaBar.currentMana = caster.manaBar.currentMana - params.manaCost
+
+    -- Default origin and direction
+    if x == nil or y == nil then
+        x, y = caster.body:getWorldCenter()
+    end
+    if dirX == nil or dirY == nil then
+        local mx, my = mouseToLove()
+        dirX, dirY = mx - x, my - y
+    end
+    local dirSize = math.sqrt(dirX^2 + dirY^2)
+    dirX, dirY = dirX / dirSize, dirY / dirSize
+
+    spells:addCircle(self, x, y, dirX, dirY)
+
+    -- Magic damage bonus from the caster stats
+    local magicDamage = 1
+    if caster.combatStats ~= nil then
+        magicDamage = caster.combatStats.magicDamage
+    end
+
+    -- Spawn every projectile
+    for i = 1, params.count do
+        -- Spread is the total fan width, projectiles are spaced evenly from one edge to the other
+        local angle = 0
+        if params.count > 1 then
+            angle = -params.spread / 2 + (i - 1) * params.spread / (params.count - 1)
+        end
+
+        -- Rotate the aim direction by the angle
+        local dx = dirX * math.cos(angle) - dirY * math.sin(angle)
+        local dy = dirX * math.sin(angle) + dirY * math.cos(angle)
+
+        local instance = params.form:new(caster, params, x, y, dx, dy)
+        if instance ~= nil then
+            instance.damage = instance.damage * magicDamage
+            instance.spell = self   -- So triggers can find their child spells
+            local t = {}
+            t.spell = self
+            t.instance = instance
+            table.insert(spells.spells, t)
+        end
     end
 end
 

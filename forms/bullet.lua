@@ -2,22 +2,27 @@ local Form = require "forms.form"
 
 local Bullet = Form:new()
 
-function Bullet:new(player, speed, radius, imagePath)
-    local bullet = Form:new(player)
+function Bullet:new(caster, params, x, y, dirX, dirY)
+    local bullet = Form:new(caster)
     setmetatable(bullet,self)
     self.__index = self
 
-    if player == nil then
+    if caster == nil then
         return bullet
     end
 
+    -- Values from the compiled spell params
     bullet.mass = 1
     bullet.form = "bullet"
-    bullet.radius = radius
-    bullet.speed = speed
-    bullet.lifetime = 2
-    bullet.imagePath = imagePath
+    bullet.radius = params.radius
+    bullet.speed = params.speed
+    bullet.lifetime = params.lifetime
+    bullet.damage = params.damage
+    bullet.color = params.color
+    bullet.imagePath = params.imagePath
     bullet.image = BLOCK_IMG[bullet.imagePath]
+
+    bullet:shoot(x, y, dirX, dirY)
     return bullet
 end
 
@@ -30,13 +35,10 @@ function Bullet:updateVel()
 end
 
 
-function Bullet:shoot()
-    local px, py = player.body:getWorldCenter()
-    local mx, my = mouseToLove()
-    self.direction = {mx - px, my - py}
-    local velSize = math.sqrt(self.direction[1]^2 + self.direction[2]^2)
-    self.direction = {self.direction[1] / velSize, self.direction[2] / velSize}
-    self.body = love.physics.newBody(p_world, px + self.radius * self.direction[1], py + self.radius * self.direction[2], "dynamic")
+function Bullet:shoot(x, y, dirX, dirY)
+    -- Direction comes normalized from the spell
+    self.direction = {dirX, dirY}
+    self.body = love.physics.newBody(p_world, x + self.radius * self.direction[1], y + self.radius * self.direction[2], "dynamic")
     self.body:setBullet(true)
     self.body:setGravityScale(0)
     self.body:setLinearDamping(0)
@@ -47,7 +49,7 @@ function Bullet:shoot()
     self.fixture:setCategory(SPELLS_CATEGORY)
     self.fixture:setGroupIndex(-SPELLS_CATEGORY)
 
-    -- Normalize the direction vector and multiply by speed
+    -- Multiply the direction by speed
     self:updateVel()
 end
 
@@ -55,6 +57,7 @@ end
 function Bullet:update(dt)
     self.lifetime = self.lifetime - dt
     if self.lifetime <= 0 then
+        spells:trigger(self, "onExpire")
         spells:destroy(self)
     end
 end
@@ -73,8 +76,10 @@ function Bullet:draw()
     love.graphics.setStencilTest("greater", 0)
 
     local x, y = self.body:getWorldCenter()
-    -- Draw the square image
+    -- Draw the square image tinted with the spell color
+    love.graphics.setColor(self.color)
     love.graphics.draw(self.image, x - self.radius, y - self.radius, 0, self.radius * 2 / self.image:getWidth(), self.radius * 2 / self.image:getHeight())
+    love.graphics.setColor(1, 1, 1, 1)
     -- Remove the stencil
     love.graphics.setStencilTest()
 end

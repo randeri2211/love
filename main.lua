@@ -7,7 +7,6 @@ require "world_utils.world"
 require "world_utils.scene"
 local Slab = require "libraries.Slab"
 local debugWorldDraw = require "libraries.debugWorldDraw"
-local Bullet1 = require "magic.bullet1"
 local UIHandler = require "ui.uiHandler"
 local Spell = require "magic.spell"
 local new_frame = false
@@ -20,7 +19,8 @@ function love.load(args)
     initVars()
     registerAll()
 
-    spellTest = Spell:new(Bullet1, 10)
+    -- Hand written magic circle until the spell editor exists
+    spellTest = Spell:new("Bullet", {"Speed", {"OnHit", Spell:new("Bullet", {"Split", "Split"})}})
 
     fpsTimer = love.timer.getTime()
 

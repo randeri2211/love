@@ -83,9 +83,17 @@ function startCollisionCallback(fixture1, fixture2, contact)
         
         if spellPair then
             if entity ~= nil then
-                entity:damage(spellPair.spell.damage)
+                entity:damage(spellPair.instance.damage)
             end
 
+            -- Direction the onHit child spells fly in
+            local dx, dy = spellPair.instance.direction[1], spellPair.instance.direction[2]
+            local nx, ny = contact:getNormal()
+            -- Bounce off the hit surface(reflect the direction across the normal, works for either normal sign)
+            local dot = dx * nx + dy * ny
+            dx, dy = dx - 2 * dot * nx, dy - 2 * dot * ny
+
+            spells:trigger(spellPair.instance, "onHit", dx, dy)
             spells:destroy(spellPair.instance)
         end
     end
