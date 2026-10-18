@@ -14,6 +14,7 @@ function Player:new(x, y, name)
     self.__index = self
 
     player.name = name
+    player.spawnX, player.spawnY = x, y     -- Where the player comes back after dying
 
     player.grounded = false
     player.jumping = false
@@ -423,6 +424,19 @@ function fullRed(x, y, r, g, b, a)
 end
 
 function Player:damage(damage)
+    -- Takes damage like any entity, but dying respawns instead of destroying the body
+    self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage)
+    if self.hpBar.currentHP <= 0 then
+        self:die()
+    end
+end
+
+function Player:die()
+    -- Back to the spawn with full hp and mana, nothing else is lost for now
+    self.body:setPosition(self.spawnX, self.spawnY)
+    self.body:setLinearVelocity(0, 0)
+    self.hpBar.currentHP = self.hpBar.maxHP
+    self.manaBar.currentMana = self.manaBar.maxMana
 end
 
 

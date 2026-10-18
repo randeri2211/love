@@ -193,11 +193,12 @@ function tempMap()
     map:insert(InteractiveBlock:new(6 * TILE_SIZE, -2 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
     map:insert(InteractiveBlock:new(6 * TILE_SIZE, -3 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
     map:insert(InteractiveBlock:new(7 * TILE_SIZE, -1 * TILE_SIZE, TILE_SIZE, TILE_SIZE))
-    map.enemies:addEnemy(Enemy1:new(0,-200))
+    -- Enemies are off in new worlds until they get worked on
+    -- map.enemies:addEnemy(Enemy1:new(0,-200))
     -- map.enemies:addEnemy(Enemy1:new(200,-200))
     -- map.enemies:addEnemy(Enemy1:new(300,-200))
     -- map.enemies:addEnemy(Enemy:new(-200,-200))
-    map.enemies:addEnemy(Enemy:new(-300,-200))
+    -- map.enemies:addEnemy(Enemy:new(-300,-200))
 end
 
 -- Debug Util Functions

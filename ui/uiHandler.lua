@@ -1,6 +1,7 @@
 require "ui.menu"
 local Slab = require "libraries.Slab"
 local SpellEditor = require "ui.spellEditor"
+local Hud = require "ui.hud"
 
 local UIHandler = {}
 
@@ -95,6 +96,18 @@ function UIHandler:update()
     -- Drawn last so it sits on top of every other menu
     if self.showQuitConfirm then
         self:quitConfirm()
+    end
+end
+
+
+function UIHandler:draw()
+    -- In world screen space drawing, called from love.draw after the camera
+    if game_state == IN_WORLD_STATE then
+        -- Loading a world makes a new player, so the hud follows it
+        if self.hud == nil or self.hud.entity ~= player then
+            self.hud = Hud:new(player)
+        end
+        self.hud:draw(spellTest)
     end
 end
 

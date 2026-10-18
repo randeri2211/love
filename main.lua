@@ -108,8 +108,9 @@ function love.draw()
                 debugWorldDraw(p_world, -mx / 2, -my / 2, mx, my)
             end
         game_cam:detach()
-        
+
         tooltipDraw()
+        uihandler:draw()    -- HP and mana bars
         
         if DEBUG then
             debugPrint()
