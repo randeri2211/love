@@ -154,6 +154,13 @@ function Player:move()
     end
 
     self:moveControl(moved)
+
+    -- Knockback(like spell recoil) on top of walking
+    if self.movement.pushX ~= nil and self.movement.pushX ~= 0 then
+        local vx, vy = self.body:getLinearVelocity()
+        self.body:setLinearVelocity(vx + self.movement.pushX, vy)
+    end
+
     self:upDown()
     -- self:linearDamping(moved)
     self:resetSmallVel()
@@ -247,6 +254,9 @@ function Player:load(playerTable)
     -- Gets a table with all the values from the recursiveLoad and sets the player with them
     self.body:setPosition(playerTable.x, playerTable.y)
     self.movement = playerTable.movement
+    -- Player base movement comes from the constants, so saves made with older values get the current ones
+    self.movement.baseMaxSpeed = BASE_MOVE_SPEED
+    self.movement.baseJumpHeight = BASE_JUMP_HEIGHT
     self.direction = playerTable.last_direction
     self.last_direction = playerTable.last_direction
     self.hpBar = playerTable.hpBar

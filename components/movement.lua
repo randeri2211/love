@@ -9,6 +9,9 @@ local function Movement(maxSpeed, jumpHeight)
     movement.baseMaxSpeed = movement.maxSpeed
     movement.baseJumpHeight = movement.jumpHeight
 
+    -- Horizontal knockback added on top of walking, fades out over time(see Entity:push)
+    movement.pushX = 0
+
     return movement
 end
 

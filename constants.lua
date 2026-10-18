@@ -6,11 +6,15 @@ SCREEN_Y  = 1080
 TILE_SIZE = 32
 TILES_PER_METER = 1
 
-GRAVITY = 9.8 * TILE_SIZE * TILES_PER_METER
+GRAVITY_MULTIPLIER = 2.5       -- Real world gravity felt too floaty, this makes falling snappier
+GRAVITY = 9.8 * TILE_SIZE * TILES_PER_METER * GRAVITY_MULTIPLIER
+MAX_FALL_SPEED = 20 * TILE_SIZE -- Gravity stops speeding entities up past this, other pushes can still go faster
 LINEAR_DAMPING = 0.2
-JUMP_GRAVITY_SCALE = 0.4
+JUMP_GRAVITY_SCALE = 0.4        -- Gravity while rising with the jump key held
 
-BASE_JUMP_HEIGHT = 6 * TILE_SIZE
+-- Jump launch speed, worked out from how high a held jump should go so changing gravity keeps the height
+JUMP_TILES = 4.5
+BASE_JUMP_HEIGHT = math.sqrt(2 * JUMP_GRAVITY_SCALE * GRAVITY * JUMP_TILES * TILE_SIZE)
 BASE_MOVE_SPEED = 4 * TILE_SIZE
 BASE_HP = 100
 BASE_BLOCK_HP = 5           -- Spells only deal terrainDamage of their damage to blocks
@@ -34,9 +38,14 @@ BASE_SPELL_PARAMS = {
     count = 1,                  -- Projectiles per cast, Split multiplies it
     spread = math.rad(30),      -- Fan angle used when count > 1
     terrainDamage = 0.1,        -- Part of the damage blocks take, Dig rune raises it
-    manaScale = 1,              -- Multiplies the whole spell mana cost(cheap rapid fire forms lower it)
+    manaScale = 1,              -- Multiplies the whole spell mana cost(cheap rapid fire forms and weakening runes lower it)
+    complexityScale = 1,        -- Multiplies the whole spell complexity(weakening runes lower it)
     cooldownScale = 1,          -- Multiplies the cooldown(rapid fire forms lower it)
+    recoil = 0,                 -- Pushes the caster away from the aim, Recoil rune raises it
 }
+
+RECOIL_SPEED = 6 * TILE_SIZE * math.sqrt(GRAVITY_MULTIPLIER)    -- Push speed of one Recoil rune on a normal cast(scaled so rocket jumps keep their height)
+PUSH_DECAY = 6                  -- How fast horizontal knockback fades(per second)
 
 AREA_PULL_SPEED = 120           -- Pixels per second a gravity Area pulls enemies toward its center
 

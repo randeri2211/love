@@ -33,6 +33,32 @@ function Entity:update(dt)
         self.statsDirty = false
     end
     self:regen(dt)
+
+    -- Horizontal knockback fades out(old saves dont have pushX)
+    local pushX = self.movement.pushX or 0
+    pushX = pushX * math.exp(-PUSH_DECAY * dt)
+    if math.abs(pushX) < 1 then
+        pushX = 0
+    end
+    self.movement.pushX = pushX
+
+    -- Terminal velocity for gravity only: above MAX_FALL_SPEED the speed gravity added this step is taken back,
+    -- so spells and effects can still push an entity into a faster fall, gravity just wont speed it up further
+    if self.body ~= nil and not self.body:isDestroyed() then
+        local vx, vy = self.body:getLinearVelocity()
+        if vy > MAX_FALL_SPEED then
+            local gravityAdded = GRAVITY * self.body:getGravityScale() * dt
+            self.body:setLinearVelocity(vx, math.max(MAX_FALL_SPEED, vy - gravityAdded))
+        end
+    end
+end
+
+function Entity:push(vx, vy)
+    -- Knockback, vertical goes straight into the body and gravity slows it,
+    -- horizontal goes into the movement component since movement code sets the horizontal velocity every frame
+    self.movement.pushX = (self.movement.pushX or 0) + vx
+    local x, y = self.body:getLinearVelocity()
+    self.body:setLinearVelocity(x, y + vy)
 end
 
 function Entity:addStat(stat, amount)

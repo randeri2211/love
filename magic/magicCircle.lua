@@ -20,7 +20,7 @@ local TOP = -math.pi / 2
 function MagicCircle.layout(spell, cx, cy, scale, depth, drawer)
     -- Walks a magic circle and its trigger children, handing every part to the drawer
     -- Every drawer function is optional:
-    -- drawer.ring(x, y, radius, scale, depth)
+    -- drawer.ring(x, y, radius, scale, depth, spell)
     -- drawer.signature(slots, x, y, scale, depth)     slots = {x, y, dx, dy, rune, blocked, index}, drawn under the slots
     -- drawer.flow(slots, x, y, radius, scale, depth)    along the ring, drawn under the slots
     -- drawer.spoke(x1, y1, x2, y2, slot, scale, depth)
@@ -51,7 +51,7 @@ function MagicCircle.layout(spell, cx, cy, scale, depth, drawer)
         }
     end
 
-    if drawer.ring then drawer.ring(cx, cy, ring, scale, depth) end
+    if drawer.ring then drawer.ring(cx, cy, ring, scale, depth, spell) end
     if drawer.signature then drawer.signature(slots, cx, cy, scale, depth) end
     if drawer.flow then drawer.flow(slots, cx, cy, ring, scale, depth) end
 

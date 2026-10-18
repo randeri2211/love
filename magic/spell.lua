@@ -72,8 +72,10 @@ function Spell:compile(depth)
         end
     end
 
-    -- Form wide mana scale(rounded so the editor shows a clean number)
+    -- Form and rune scales on the totals(rounded so the editor shows clean numbers)
+    -- Child complexity is already inside the total, so a discount here covers the children too
     params.manaCost = math.floor(params.manaCost * params.manaScale * 10 + 0.5) / 10
+    params.complexity = math.floor(params.complexity * params.complexityScale + 0.5)
 
     -- Blend all rune colors into the spell color
     params.color = {0, 0, 0, 1}
@@ -181,6 +183,13 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
     dirX, dirY = dirX / dirSize, dirY / dirSize
 
     spells:addCircle(self, x, y, dirX, dirY)
+
+    -- Recoil pushes the caster away from the aim, only for casts the caster makes(not triggered children)
+    -- Rapid fire forms push less per cast so holding them pushes about as hard
+    if not triggered and params.recoil > 0 and caster.push ~= nil then
+        local strength = params.recoil * RECOIL_SPEED * params.cooldownScale
+        caster:push(-dirX * strength, -dirY * strength)
+    end
 
     -- Magic damage bonus from the caster stats
     local magicDamage = 1
