@@ -67,16 +67,14 @@ function Wrapper:Button(id, options)
             end
 
             local font = Wrapper.FontCache[fontKey]
-            Slab.PushFont(font)
-            local font = love.graphics.getFont()
             if type(options) == "table" and options.font then
                 font = options.font
             end
-
-
+            -- Measure with the same font the text is drawn with(love.graphics.getFont is still Slab default font here)
+            Slab.PushFont(font)
 
             local textW = font:getWidth(id)
-            local textH = font:getHeight(id)
+            local textH = font:getHeight()
 
             -- Move back over image
             local textX = centerX + (w / 2) - (textW / 2)

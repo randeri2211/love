@@ -38,7 +38,10 @@ function UIHandler:escape()
     elseif self.showMap then
         self.showMap = false
     elseif game_state == PICK_WORKD_STATE then
-        game_state = MENU_STATE
+        -- Escape closes an open world dialog first, then goes back to the main menu
+        if not closeWorldDialogs() then
+            game_state = MENU_STATE
+        end
     elseif game_state == IN_WORLD_STATE then
         self:openPauseMenu()
     else

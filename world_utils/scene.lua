@@ -24,6 +24,52 @@ function hasSave(worldName)
     return love.filesystem.getInfo(SAVE_FOLDER .. "/" .. worldName .. "/" .. PLAYER_FILENAME) ~= nil
 end
 
+function worldNameProblem(name)
+    -- Why a new world cant use this name, nil when the name is fine
+    if name:match("^%s*$") then
+        return "Enter a name"
+    end
+    if #name > 32 then
+        return "Name is too long"
+    end
+    if name:find('[\\/:%*%?"<>|]') then
+        return 'Names cant use \\ / : * ? " < > |'
+    end
+    if name:match("^%s") or name:match("%s$") or name:match("%.$") then
+        return "Name cant start or end with a space or end with a dot"
+    end
+    if love.filesystem.getInfo(SAVE_FOLDER .. "/" .. name) ~= nil then
+        return "A world with that name already exists"
+    end
+    return nil
+end
+
+local function deleteFolder(path)
+    -- love.filesystem.remove only removes empty folders, so files and subfolders go first
+    for i, item in ipairs(love.filesystem.getDirectoryItems(path)) do
+        local itemPath = path .. "/" .. item
+        if love.filesystem.getInfo(itemPath, "directory") ~= nil then
+            deleteFolder(itemPath)
+        else
+            love.filesystem.remove(itemPath)
+        end
+    end
+    love.filesystem.remove(path)
+end
+
+function deleteWorld(worldName)
+    -- Never with an empty name or a path, that could remove the whole saves folder
+    if worldName == nil or worldName:match("^%s*$") or worldName:find("[/\\]") or worldName:find("%.%.") then
+        return false
+    end
+    local path = SAVE_FOLDER .. "/" .. worldName
+    if love.filesystem.getInfo(path, "directory") == nil then
+        return false
+    end
+    deleteFolder(path)
+    return true
+end
+
 function saveScene(worldName)
     -- Creates the world folder too(saves/<world>), not only the saves folder
     local folder = SAVE_FOLDER .. "/" .. worldName
