@@ -18,7 +18,10 @@ function Bullet:new(caster, params, x, y, dirX, dirY)
     bullet.speed = params.speed
     bullet.lifetime = params.lifetime
     bullet.damage = params.damage
+    bullet.terrainDamage = params.terrainDamage
     bullet.color = params.color
+    bullet.gravityScale = params.gravityScale   -- Gravity makes the bullet fall in an arc
+    bullet.bounces = params.bounces             -- Rebound, contacts left before the bullet breaks
     bullet.imagePath = params.imagePath
     bullet.image = BLOCK_IMG[bullet.imagePath]
 
@@ -40,7 +43,7 @@ function Bullet:shoot(x, y, dirX, dirY)
     self.direction = {dirX, dirY}
     self.body = love.physics.newBody(p_world, x + self.radius * self.direction[1], y + self.radius * self.direction[2], "dynamic")
     self.body:setBullet(true)
-    self.body:setGravityScale(0)
+    self.body:setGravityScale(self.gravityScale)
     self.body:setLinearDamping(0)
     self.body:setMass(self.mass)
 
@@ -48,6 +51,12 @@ function Bullet:shoot(x, y, dirX, dirY)
     self.fixture = love.physics.newFixture(self.body, self.shape, 1)
     self.fixture:setCategory(SPELLS_CATEGORY)
     self.fixture:setGroupIndex(-SPELLS_CATEGORY)
+
+    -- Bouncing bullets keep their speed off every surface
+    if self.bounces > 0 then
+        self.fixture:setRestitution(1)
+        self.fixture:setFriction(0)
+    end
 
     -- Multiply the direction by speed
     self:updateVel()
@@ -57,7 +66,34 @@ end
 function Bullet:update(dt)
     self.lifetime = self.lifetime - dt
     if self.lifetime <= 0 then
-        spells:trigger(self, "onExpire")
+        self:expire()
+    end
+end
+
+
+function Bullet:getDirection()
+    -- Current flight direction, gravity and bounces change it from the cast direction
+    local vx, vy = self.body:getLinearVelocity()
+    local size = math.sqrt(vx * vx + vy * vy)
+    if size < 0.001 then
+        return self.direction[1], self.direction[2]
+    end
+    return vx / size, vy / size
+end
+
+
+function Bullet:onContact(fixture, entity, contact)
+    -- Child spells bounce off the hit surface(reflect the direction across the normal, works for either normal sign)
+    local dx, dy = self:getDirection()
+    local nx, ny = contact:getNormal()
+    local dot = dx * nx + dy * ny
+    local x, y = self.body:getWorldCenter()
+    self:hit(entity, x, y, dx - 2 * dot * nx, dy - 2 * dot * ny)
+
+    if self.bounces > 0 then
+        -- Rebound, the physics bounces the body off the surface
+        self.bounces = self.bounces - 1
+    else
         spells:destroy(self)
     end
 end

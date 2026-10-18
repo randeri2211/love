@@ -16,7 +16,7 @@ function Block:new(x, y, width, height)
     block.height = height
     block.name = "Block"
     block.type = "Block"
-    block.hpBar = HPBar(1, 1, 0)
+    block.hpBar = HPBar(BASE_BLOCK_HP, BASE_BLOCK_HP, 0)
     block.imagePath = "GRASS"
     block.image = BLOCK_IMG[block.imagePath]
     block.x = x
@@ -49,8 +49,11 @@ function Block:draw()
 end
 
 
-function Block:damage(dmg)
-    if dmg > self.damageThreshold then
+function Block:damage(dmg, power)
+    -- power is the hit strength checked against the hardness, dmg is what the block loses
+    -- (spells only deal part of their damage to terrain, hardness looks at their dig strength)
+    power = power or dmg
+    if power > self.damageThreshold then
         self.hpBar.currentHP = self.hpBar.currentHP - dmg
         if self.hpBar.currentHP <= 0 then
             self:destroy()

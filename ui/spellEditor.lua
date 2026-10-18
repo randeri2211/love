@@ -283,11 +283,20 @@ function SpellEditor:info(x, y)
         Slab.Text(string.format("Cooldown: %.2fs", self.spell:getCooldown(player)))
         Slab.NewLine()
 
+        -- Stats every form has
         Slab.Text(string.format("Damage: %.1f", params.damage))
-        Slab.Text(string.format("Speed: %.0f", params.speed))
-        Slab.Text(string.format("Size: %.1f", params.radius))
-        Slab.Text("Projectiles: " .. params.count)
+        Slab.Text(string.format("Terrain damage: %.1f (%.0f%%)", params.damage * params.terrainDamage, params.terrainDamage * 100))
+        Slab.Text("Count: " .. params.count)
         Slab.Text(string.format("Lifetime: %.1fs", params.lifetime))
+
+        -- Stats the form rune lists for itself(label, param name, format)
+        local formRune = RUNE_REGISTRY[self.spell.core]
+        for i, stat in ipairs(formRune.stats or {}) do
+            local value = params[stat[2]]
+            if value ~= nil then
+                Slab.Text(stat[1] .. ": " .. string.format(stat[3], value))
+            end
+        end
 
         Slab.Rectangle({W = INFO_W - 20, H = 20, Color = params.color, Rounding = 4})
         Slab.NewLine()

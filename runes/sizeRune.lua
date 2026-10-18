@@ -18,6 +18,18 @@ SizeRune.effects = {
         params.radius = params.radius * 1.5
         params.speed = params.speed * 0.9
     end,
+    -- Wider beam
+    Laser = function(params)
+        params.width = params.width * 1.5
+    end,
+    -- Bigger burst
+    Area = function(params)
+        params.areaRadius = params.areaRadius * 1.4
+    end,
+    -- Bigger trigger zone
+    Trap = function(params)
+        params.triggerRadius = params.triggerRadius * 1.4
+    end,
 }
 
 return SizeRune

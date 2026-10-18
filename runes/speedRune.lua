@@ -14,6 +14,11 @@ SpeedRune.effects = {
     Bullet = function(params)
         params.speed = params.speed * 1.5
     end,
+    -- A beam is already instant, so it reaches further
+    Laser = function(params)
+        params.reach = params.reach * 1.5
+    end,
+    -- No Area or Trap entry, they dont travel
 }
 
 return SpeedRune

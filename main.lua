@@ -19,8 +19,16 @@ function love.load(args)
     initVars()
     registerAll()
 
-    -- Hand written magic circle until the spell editor exists
-    spellTest = Spell:new("Bullet", {"Speed", {"OnHit", Spell:new("Bullet", {"Split", "Split"})}})
+    -- Test spells, number keys pick which one the shoot key casts and the editor edits
+    spellPresets = {
+        Spell:new("Bullet", {"Speed", {"OnHit", Spell:new("Bullet", {"Split", "Split"})}}),     -- 1 Bullet bursting into a shotgun
+        Spell:new("Bullet", {"Speed", {"OnHit", Spell:new("Area", {"Size"})}}),                 -- 2 Exploding bullet
+        Spell:new("Laser", {"Rebound", "Damage"}),                                              -- 3 Bouncing laser
+        Spell:new("Area", {"Gravity", "Size"}),                                                 -- 4 Gravity well
+        Spell:new("Trap", {"Split", "Split"}),                                                  -- 5 Minefield
+        Spell:new("Bullet", {"Split", "Gravity", "Rebound"}),                                   -- 6 Bouncing arcs
+    }
+    spellTest = spellPresets[1]
 
     fpsTimer = love.timer.getTime()
 
@@ -42,6 +50,11 @@ function love.update(dt)
             -- Movement update
             if player_control then
                 player:update(dt)
+
+                -- Holding the shoot key keeps casting, the spell cooldown sets the fire rate
+                if love.keyboard.isDown(SHOOT_KEY) then
+                    spellTest:shoot(player)
+                end
             end
 
             map.enemies:update(dt)
@@ -132,15 +145,15 @@ function love.keypressed(key)
                 saveScene("world")
             elseif key == LOAD_KEY then
                 loadScene("world")
-            -- Shoot key
-            elseif key == SHOOT_KEY then
-                spellTest:shoot(player)
             elseif key == INTERACT_KEY then
                 player:interact()
             elseif key == "y" then
                 player:addStat("swiftness", -10)
             elseif key == "u" then
                 player:addStat("swiftness", 10)
+            -- Number keys pick a test spell
+            elseif tonumber(key) ~= nil and spellPresets[tonumber(key)] ~= nil then
+                spellTest = spellPresets[tonumber(key)]
             else
                 uihandler:checkKeyIngame(key)
             end

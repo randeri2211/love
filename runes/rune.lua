@@ -19,6 +19,8 @@ function Rune:new(name, kind, complexity, manaCost, color)
     -- Modifiers set effects to a function per form name, "default" works on any form
     -- Forms without an effect(and no default) cant use the modifier
     rune.effects = nil
+    -- Forms list their own params for the editor to show, as {label, param name, format}
+    rune.stats = nil
 
     return rune
 end

@@ -13,6 +13,7 @@ JUMP_GRAVITY_SCALE = 0.4
 BASE_JUMP_HEIGHT = 6 * TILE_SIZE
 BASE_MOVE_SPEED = 4 * TILE_SIZE
 BASE_HP = 100
+BASE_BLOCK_HP = 5           -- Spells only deal terrainDamage of their damage to blocks
 BASE_HP_REGEN = 0
 BASE_MANA = 100
 BASE_MANA_REGEN = 1
@@ -25,6 +26,19 @@ COOLDOWN_PER_COMPLEXITY = 0.02  -- Seconds of cooldown for each point of spell c
 
 MAX_SPELL_DEPTH = 3     -- How many circles deep triggers can nest(the main circle counts as 1)
 SPELL_SLOTS = 6         -- Rune slots in the ring of every magic circle
+
+-- Params every form has, so "default" modifier effects can always use them(forms override in their defaults)
+BASE_SPELL_PARAMS = {
+    damage = 10,
+    lifetime = 2,
+    count = 1,                  -- Projectiles per cast, Split multiplies it
+    spread = math.rad(30),      -- Fan angle used when count > 1
+    terrainDamage = 0.1,        -- Part of the damage blocks take, Dig rune raises it
+    manaScale = 1,              -- Multiplies the whole spell mana cost(cheap rapid fire forms lower it)
+    cooldownScale = 1,          -- Multiplies the cooldown(rapid fire forms lower it)
+}
+
+AREA_PULL_SPEED = 120           -- Pixels per second a gravity Area pulls enemies toward its center
 
 -- Magic circle shown in the world when a spell is cast
 CAST_CIRCLE_SCALE = 0.2         -- Size compared to the editor circle

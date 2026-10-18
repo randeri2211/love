@@ -14,15 +14,22 @@ BulletRune.glyph = {
     {"line", -0.85, 0.3, -0.2, 0.3},
 }
 
+-- Shown in the spell editor
+BulletRune.stats = {
+    {"Speed", "speed", "%.0f"},
+    {"Size", "radius", "%.1f"},
+    {"Gravity", "gravityScale", "%.1f"},
+    {"Bounces", "bounces", "%d"},
+}
+
 function BulletRune:defaults()
     -- Starting values before any modifiers are applied
+    -- damage, lifetime, count and spread come from BASE_SPELL_PARAMS
     return {
-        damage = 10,
         speed = 10 * TILE_SIZE * TILES_PER_METER,
         radius = 10,
-        lifetime = 2,
-        count = 1,                  -- Amount of projectiles per cast
-        spread = math.rad(30),      -- Fan angle used when count > 1
+        gravityScale = 0,           -- Gravity rune makes it fall
+        bounces = 0,                -- Rebound rune makes it bounce
         imagePath = "GRASS",
     }
 end

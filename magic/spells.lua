@@ -9,12 +9,15 @@ function Spells:new()
     spells.spells = {}
     spells.queue = {}       -- Triggered casts waiting for the physics update to finish
     spells.circles = {}     -- Magic circles fading out where spells were cast
+    spells.time = 0         -- Game time in seconds, stops while paused(used for cooldowns)
 
     return spells
 end
 
 
 function Spells:update(dt)
+    self.time = self.time + dt
+
     -- Going backwards so spells removed during update dont skip the next one
     for i = #self.spells, 1, -1 do
         self.spells[i].instance:update(dt)
@@ -35,6 +38,16 @@ end
 
 function Spells:addCircle(spell, x, y, dirX, dirY)
     -- Shows the spell magic circle in front of where it was cast
+    -- Casting the same spell again while its circle is still showing keeps that one circle alive
+    for i, circle in ipairs(self.circles) do
+        if circle.spell == spell then
+            circle.x = x + dirX * CAST_CIRCLE_OFFSET
+            circle.y = y + dirY * CAST_CIRCLE_OFFSET
+            circle.dirX, circle.dirY = dirX, dirY
+            circle.time = math.min(circle.time, CAST_DRAW_IN_TIME)    -- Stays fully drawn without restarting the draw-in
+            return
+        end
+    end
     table.insert(self.circles, {
         spell = spell,
         x = x + dirX * CAST_CIRCLE_OFFSET,
@@ -67,16 +80,19 @@ function Spells:drawCircles()
 end
 
 
-function Spells:trigger(instance, event, dirX, dirY)
-    -- Queues the child spells of an event(onHit, onExpire) from where the instance is
+function Spells:trigger(instance, event, dirX, dirY, x, y)
+    -- Queues the child spells of an event(onHit, onExpire), from x, y or where the instance is
     local triggers = instance.spell:getParams().triggers[event]
     if triggers == nil then
         return
     end
 
-    local x, y = instance.body:getWorldCenter()
-    dirX = dirX or instance.direction[1]
-    dirY = dirY or instance.direction[2]
+    if x == nil or y == nil then
+        x, y = instance:getPosition()
+    end
+    if dirX == nil or dirY == nil then
+        dirX, dirY = instance:getDirection()
+    end
     for i, childSpell in ipairs(triggers) do
         table.insert(self.queue, {spell = childSpell, caster = instance.player, x = x, y = y, dirX = dirX, dirY = dirY})
     end

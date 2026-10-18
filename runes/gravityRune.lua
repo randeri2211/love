@@ -1,0 +1,36 @@
+local Rune = require "runes.rune"
+
+local GravityRune = Rune:new("Gravity", "modifier", 3, 2, {0.55, 0.55, 1})
+registerRune("Gravity", GravityRune)
+
+-- Weight falling onto the ground
+GravityRune.glyph = {
+    {"line", 0, -0.85, 0, 0.35},
+    {"line", -0.32, 0.05, 0, 0.37, 0.32, 0.05},
+    {"line", -0.72, 0.68, 0.72, 0.68},
+}
+
+local function strengthen(value)
+    -- The first rune switches it on, every other rune doubles it
+    if value == 0 then
+        return 1
+    end
+    return value * 2
+end
+
+-- No Trap entry, traps already sit on the ground
+GravityRune.effects = {
+    Bullet = function(params)
+        params.gravityScale = strengthen(params.gravityScale)   -- Falls in an arc
+    end,
+    Laser = function(params)
+        params.bend = strengthen(params.bend)                   -- Beam curves down
+    end,
+    Area = function(params)
+        -- Gravity well that pulls enemies in, and lasts longer to do it
+        params.pull = strengthen(params.pull)
+        params.lifetime = params.lifetime * 3
+    end,
+}
+
+return GravityRune

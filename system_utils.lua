@@ -60,6 +60,20 @@ function manageHitbox()
 end
 
 
+function getEntityFromFixture(fixture)
+    -- Block or enemy that owns a fixture, nil for anything else
+    if fixture:getCategory() == BLOCKS_CATEGORY then
+        local x, y = loveToMap(fixture:getBody():getWorldCenter())
+        if map.map[x] ~= nil then
+            return map.map[x][y]
+        end
+    elseif fixture:getCategory() == ENEMY_CATEGORY then
+        return map.enemies:getEnemyByFixture(fixture)
+    end
+    return nil
+end
+
+
 function startCollisionCallback(fixture1, fixture2, contact)
     -- Spell hit section
     if fixture1:getCategory() == SPELLS_CATEGORY or fixture2:getCategory() == SPELLS_CATEGORY then
@@ -69,32 +83,10 @@ function startCollisionCallback(fixture1, fixture2, contact)
         end
         print("spell collision"..fixture2:getCategory())
 
+        -- Each form decides what touching something means(see Form:onContact)
         local spellPair = spells:getSpellByFixture(fixture1)
-        local entity = nil
-        if fixture2:getCategory() == BLOCKS_CATEGORY then
-            local x, y = loveToMap(fixture2:getBody():getWorldCenter())
-            entity = map.map[x][y]
-        end
-
-        if fixture2:getCategory() == ENEMY_CATEGORY then
-            entity = map.enemies:getEnemyByFixture(fixture2)
-        end
-
-        
         if spellPair then
-            if entity ~= nil then
-                entity:damage(spellPair.instance.damage)
-            end
-
-            -- Direction the onHit child spells fly in
-            local dx, dy = spellPair.instance.direction[1], spellPair.instance.direction[2]
-            local nx, ny = contact:getNormal()
-            -- Bounce off the hit surface(reflect the direction across the normal, works for either normal sign)
-            local dot = dx * nx + dy * ny
-            dx, dy = dx - 2 * dot * nx, dy - 2 * dot * ny
-
-            spells:trigger(spellPair.instance, "onHit", dx, dy)
-            spells:destroy(spellPair.instance)
+            spellPair.instance:onContact(fixture2, getEntityFromFixture(fixture2), contact)
         end
     end
 

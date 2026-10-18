@@ -18,6 +18,22 @@ SplitRune.effects = {
         params.count = params.count * 2
         params.damage = params.damage * 0.6
     end,
+    -- More beams in a fan
+    Laser = function(params)
+        params.count = params.count * 2
+        params.damage = params.damage * 0.6
+    end,
+    -- Cluster of smaller bursts
+    Area = function(params)
+        params.count = params.count * 2
+        params.damage = params.damage * 0.6
+        params.areaRadius = params.areaRadius * 0.75
+    end,
+    -- Small minefield
+    Trap = function(params)
+        params.count = params.count * 2
+        params.damage = params.damage * 0.6
+    end,
 }
 
 return SplitRune

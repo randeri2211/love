@@ -33,7 +33,14 @@ function Spell:compile(depth)
     -- Turns the circle into a flat params table the form can use
     depth = depth or 1
     local formRune = RUNE_REGISTRY[self.core]
-    local params = formRune:defaults()
+    -- Shared base params first, then the form own values on top
+    local params = {}
+    for key, value in pairs(BASE_SPELL_PARAMS) do
+        params[key] = value
+    end
+    for key, value in pairs(formRune:defaults()) do
+        params[key] = value
+    end
     params.form = formRune.form
     params.complexity = formRune.complexity
     params.manaCost = formRune.manaCost
@@ -64,6 +71,9 @@ function Spell:compile(depth)
             table.insert(colors, rune.color)
         end
     end
+
+    -- Form wide mana scale(rounded so the editor shows a clean number)
+    params.manaCost = math.floor(params.manaCost * params.manaScale * 10 + 0.5) / 10
 
     -- Blend all rune colors into the spell color
     params.color = {0, 0, 0, 1}
@@ -109,13 +119,18 @@ function Spell:getCooldown(caster)
     if caster.combatStats ~= nil then
         cooldownReduction = caster.combatStats.cooldownReduction
     end
-    return self:getParams().complexity * COOLDOWN_PER_COMPLEXITY * (1 - cooldownReduction)
+    local params = self:getParams()
+    return params.complexity * COOLDOWN_PER_COMPLEXITY * params.cooldownScale * (1 - cooldownReduction)
 end
 
 
 function Spell:cooldownLeft()
-    -- Seconds until the spell can be cast again
-    return math.max(0, (self.cooldownEnd or 0) - love.timer.getTime())
+    -- Seconds until the spell can be cast again, in game time so pausing freezes it
+    -- Loading a world makes a new spells clock, cooldowns from the old one dont count
+    if self.cooldownClock ~= spells then
+        return 0
+    end
+    return math.max(0, self.cooldownEnd - spells.time)
 end
 
 
@@ -149,7 +164,8 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
         if not self:canCast(caster) then
             return
         end
-        self.cooldownEnd = love.timer.getTime() + self:getCooldown(caster)
+        self.cooldownEnd = spells.time + self:getCooldown(caster)
+        self.cooldownClock = spells
     end
     caster.manaBar.currentMana = caster.manaBar.currentMana - params.manaCost
 
@@ -171,6 +187,8 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
     if caster.combatStats ~= nil then
         magicDamage = caster.combatStats.magicDamage
     end
+    -- Params for this cast only, reads everything else from the compiled params
+    local castParams = setmetatable({damage = params.damage * magicDamage}, {__index = params})
 
     -- Spawn every projectile
     for i = 1, params.count do
@@ -184,9 +202,8 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
         local dx = dirX * math.cos(angle) - dirY * math.sin(angle)
         local dy = dirX * math.sin(angle) + dirY * math.cos(angle)
 
-        local instance = params.form:new(caster, params, x, y, dx, dy)
+        local instance = params.form:new(caster, castParams, x, y, dx, dy)
         if instance ~= nil then
-            instance.damage = instance.damage * magicDamage
             instance.spell = self   -- So triggers can find their child spells
             local t = {}
             t.spell = self
