@@ -17,8 +17,8 @@ function Laser:new(player, radius, bounces, reach, imagePath)
     -- Getting the end points for the raycastCallback
     laser.x2, laser.y2 = mouseToLove()
     laser.direction = {x = laser.x2 - laser.x1, y = laser.y2 - laser.y1}
-    local velSize = math.sqrt(direction[1]^2 + direction[2]^2)
-    direction = {direction[1] / velSize, direction[2] / velSize}
+    local velSize = math.sqrt(laser.direction[1]^2 + laser.direction[2]^2)
+    local direction = {laser.direction[1] / velSize, laser.direction[2] / velSize}
     while laser.bounces > 0 do
         -- Reseting the hits counter for the laser callback
         laser.hits = {}
