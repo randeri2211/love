@@ -17,6 +17,11 @@ BASE_HP_REGEN = 0
 BASE_MANA = 100
 BASE_MANA_REGEN = 1
 MAX_COOLDOWN_REDUCTION = 0.9
+MIN_COOLDOWN_REDUCTION = -1     -- Negative stats can at most double cooldowns
+
+BASE_MAX_COMPLEXITY = 50        -- Spells above the caster max complexity cant be cast
+MIN_MAX_COMPLEXITY = 10         -- Negative intelligence cant go below this
+COOLDOWN_PER_COMPLEXITY = 0.02  -- Seconds of cooldown for each point of spell complexity
 
 MAX_SPELL_DEPTH = 3     -- How many circles deep triggers can nest(the main circle counts as 1)
 SPELL_SLOTS = 6         -- Rune slots in the ring of every magic circle

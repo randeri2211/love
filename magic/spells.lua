@@ -88,7 +88,7 @@ function Spells:castQueued()
     local queue = self.queue
     self.queue = {}
     for i, cast in ipairs(queue) do
-        cast.spell:shoot(cast.caster, cast.x, cast.y, cast.dirX, cast.dirY)
+        cast.spell:shoot(cast.caster, cast.x, cast.y, cast.dirX, cast.dirY, true)
     end
 end
 

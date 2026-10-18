@@ -1,3 +1,7 @@
+local function clampValue(value, low, high)
+    return math.max(low, math.min(high, value))
+end
+
 local function combatStats(entity)
     -- Strength - Gives extra contact damage for now(maybe melee weapons if it suits the genre)
     -- Intelligence - Gives bonus magic damage and small max mana bonus
@@ -30,6 +34,9 @@ local function combatStats(entity)
     local intelligenceMagicDamageModifier = 0.05
     combatStats.magicDamage = 1 + intelligenceMagicDamageModifier * entity.stats.intelligence
 
+    local intelligenceComplexityModifier = 2
+    combatStats.maxComplexity = BASE_MAX_COMPLEXITY + intelligenceComplexityModifier * entity.stats.intelligence
+
     -- Wisdom
     local wisdomMaxManaModifier = 1
     entity.manaBar.maxMana = entity.manaBar.baseMaxMana + wisdomMaxManaModifier * entity.stats.wisdom
@@ -56,7 +63,8 @@ local function combatStats(entity)
     entity.hpBar.maxHP = entity.hpBar.baseMaxHP + constitutionMaxHPModifier * entity.stats.constitution
 
     -- Clamp values(negative stats can only lower values down to these minimums)
-    combatStats.cooldownReduction = math.min(combatStats.cooldownReduction, MAX_COOLDOWN_REDUCTION)
+    combatStats.cooldownReduction = clampValue(combatStats.cooldownReduction, MIN_COOLDOWN_REDUCTION, MAX_COOLDOWN_REDUCTION)
+    combatStats.maxComplexity = math.max(combatStats.maxComplexity, MIN_MAX_COMPLEXITY)
     entity.hpBar.regen = math.max(entity.hpBar.regen, 0)
     entity.manaBar.manaRegen = math.max(entity.manaBar.manaRegen, 0)
     entity.hpBar.maxHP = math.max(entity.hpBar.maxHP, 1)

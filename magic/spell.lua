@@ -95,13 +95,61 @@ function Spell:setSlots(slots)
 end
 
 
-function Spell:shoot(caster, x, y, dirX, dirY)
+function Spell:getMaxComplexity(caster)
+    if caster.combatStats ~= nil then
+        return caster.combatStats.maxComplexity
+    end
+    return BASE_MAX_COMPLEXITY
+end
+
+
+function Spell:getCooldown(caster)
+    -- More complex spells take longer to cast again, cooldown reduction shortens it
+    local cooldownReduction = 0
+    if caster.combatStats ~= nil then
+        cooldownReduction = caster.combatStats.cooldownReduction
+    end
+    return self:getParams().complexity * COOLDOWN_PER_COMPLEXITY * (1 - cooldownReduction)
+end
+
+
+function Spell:cooldownLeft()
+    -- Seconds until the spell can be cast again
+    return math.max(0, (self.cooldownEnd or 0) - love.timer.getTime())
+end
+
+
+function Spell:canCast(caster)
+    -- Returns true, or false and the reason("complexity", "cooldown", "mana")
+    local params = self:getParams()
+    if params.complexity > self:getMaxComplexity(caster) then
+        return false, "complexity"
+    end
+    if self:cooldownLeft() > 0 then
+        return false, "cooldown"
+    end
+    if caster.manaBar.currentMana < params.manaCost then
+        return false, "mana"
+    end
+    return true
+end
+
+
+function Spell:shoot(caster, x, y, dirX, dirY, triggered)
     -- Casts the spell from x, y in the dirX, dirY direction(defaults to the caster aiming at the mouse)
+    -- triggered is true for child spells, their complexity and cooldown were checked with the parent
     local params = self:getParams()
 
-    -- Mana check(triggered child spells pay their own cost too, and fizzle without enough mana)
-    if caster.manaBar.currentMana < params.manaCost then
-        return
+    if triggered then
+        -- Child spells still pay their own mana, and fizzle without enough
+        if caster.manaBar.currentMana < params.manaCost then
+            return
+        end
+    else
+        if not self:canCast(caster) then
+            return
+        end
+        self.cooldownEnd = love.timer.getTime() + self:getCooldown(caster)
     end
     caster.manaBar.currentMana = caster.manaBar.currentMana - params.manaCost
 

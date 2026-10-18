@@ -269,7 +269,18 @@ function SpellEditor:info(x, y)
         Slab.Separator()
 
         Slab.Text("Mana: " .. self:manaText(params))
-        Slab.Text("Complexity: " .. params.complexity)
+
+        -- Complexity against the player limit, red when the spell is too complex to cast
+        local maxComplexity = self.spell:getMaxComplexity(player)
+        local complexityOptions = nil
+        if params.complexity > maxComplexity then
+            complexityOptions = {Color = MagicCircle.BLOCKED_COLOR}
+        end
+        Slab.Text("Complexity: " .. params.complexity .. " / " .. maxComplexity, complexityOptions)
+        if complexityOptions ~= nil then
+            Slab.Text("Too complex to cast", complexityOptions)
+        end
+        Slab.Text(string.format("Cooldown: %.2fs", self.spell:getCooldown(player)))
         Slab.NewLine()
 
         Slab.Text(string.format("Damage: %.1f", params.damage))
