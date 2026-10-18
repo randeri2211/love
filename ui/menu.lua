@@ -44,7 +44,7 @@ function Menu()
             end
 
             if UIOverride:Button("Exit", buttonOptions) then
-                love.event.quit()
+                uihandler:openQuitConfirm()
             end
         Slab.EndLayout()
     Slab.EndWindow()

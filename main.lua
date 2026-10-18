@@ -106,16 +106,26 @@ function love.draw()
 end
 
 function love.keypressed(key)
+    -- Escape closes the top open menu, or asks to quit when nothing is open
     if key == EXIT_KEY then
-        love.event.quit()
+        uihandler:escape()
+        return
+    end
+
+    -- Other keys do nothing while the quit confirmation is open
+    if uihandler.showQuitConfirm then
+        return
     end
 
     -- IN_WORLD State handling
     if game_state == IN_WORLD_STATE then
         -- Check pausing first
-        if key == PAUSE_KEY then 
+        if key == PAUSE_KEY then
             paused = not paused
             player_control = not paused
+        -- Spell editor key works while paused so the editor can be closed
+        elseif key == SPELL_EDITOR_KEY then
+            uihandler:toggleSpellEditor()
         elseif not paused then
             -- Save and load keys
             if key == SAVE_KEY then
