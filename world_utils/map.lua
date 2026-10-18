@@ -182,6 +182,35 @@ local function encodeChunk(chunk)
 end
 
 
+function Map:unloadFarChunks(x, y)
+    -- Turns chunks far from map coordinates x, y back into compact data and frees their blocks,
+    -- they are rebuilt exactly as they were when the player comes back
+    local _, pcx, pcy = chunkOf(x, y)
+    for key, chunk in pairs(self.chunks) do
+        local cx, cy = key:match("^(-?%d+),(-?%d+)$")
+        cx, cy = tonumber(cx), tonumber(cy)
+        if math.max(math.abs(cx - pcx), math.abs(cy - pcy)) > CHUNK_UNLOAD_DISTANCE then
+            -- Physics bodies go first, nothing far away should stay in the physics world
+            for index, block in pairs(chunk) do
+                block:destroyBody()
+            end
+            self.saved[key] = encodeChunk(chunk)
+            self.chunks[key] = nil      -- Clearing a field while looping over the table is fine in Lua
+        end
+    end
+end
+
+
+function Map:update(dt)
+    -- Unloads faraway chunks every few seconds instead of every frame
+    self.unloadTimer = (self.unloadTimer or 0) + dt
+    if self.unloadTimer >= CHUNK_UNLOAD_INTERVAL then
+        self.unloadTimer = 0
+        self:unloadFarChunks(loveToMap(player.body:getWorldCenter()))
+    end
+end
+
+
 function Map:toData()
     -- Every visited chunk, the ones not loaded this session are kept as they were saved
     local chunks = {}

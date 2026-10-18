@@ -48,6 +48,7 @@ function love.update(dt)
             end
 
             map.enemies:update(dt)
+            map:update(dt)      -- Unloads chunks far from the player
             spells:update(dt)
             
             -- Setting the camera to the player position

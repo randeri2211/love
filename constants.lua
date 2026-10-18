@@ -86,6 +86,8 @@ MAP_Y = 5000        -- Height of the world in tiles, bedrock at the bottom
 
 -- World generation(tile rows grow downward, row 0 is the old flat ground)
 CHUNK_SIZE = 32         -- Map cells per chunk side, chunks generate the first time they are needed
+CHUNK_UNLOAD_DISTANCE = 3   -- Chunks further than this many chunks from the player go back to compact data
+CHUNK_UNLOAD_INTERVAL = 2   -- Seconds between checks for chunks to unload
 SURFACE_ROW = 0         -- Lowest the ground surface goes, hills rise above it
 HILL_HEIGHT = 14        -- How many tiles hills rise above SURFACE_ROW
 DIRT_DEPTH = 4          -- Dirt layers under the grass before the stone starts
