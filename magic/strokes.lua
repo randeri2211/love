@@ -9,6 +9,9 @@ local CLOUD_POINTS = 64         -- Points every drawing and template is resample
 local MARK_POINTS = 32          -- Fewer points for the small mark shapes
 local MARK_ROTATIONS = 16       -- Marks can point any way around the ring, they are tried at this many angles
 local TOUCH_DISTANCE = 0.12     -- Strokes closer than this(pad units) count as touching, so they form one piece
+-- Runes are also compared turned by these angles(degrees) so a slightly tilted drawing still matches well,
+-- bigger turns still count as a different shape(Speed and a turned rune stay apart)
+local RUNE_ROTATIONS = {-20, -10, 0, 10, 20}
 
 -- Shapes marks are compared against, same format as rune glyphs(-1 to 1 box)
 Strokes.MARK_SHAPES = {
@@ -74,6 +77,21 @@ function Strokes.fromGlyph(glyph)
         end
     end
     return strokes
+end
+
+
+function Strokes.rotate(strokes, angle)
+    -- Copy of strokes turned around 0, 0(rotating before normalizing keeps each tilt sized to its own box)
+    local c, s = math.cos(angle), math.sin(angle)
+    local result = {}
+    for i, stroke in ipairs(strokes) do
+        local turned = {}
+        for j, p in ipairs(stroke) do
+            turned[j] = {p[1] * c - p[2] * s, p[1] * s + p[2] * c}
+        end
+        result[i] = turned
+    end
+    return result
 end
 
 
@@ -266,10 +284,10 @@ end
 
 
 -- Quality
--- Measured on generated drawings: careful ones match at a distance around 1, messy ones 1.7 to 2.2,
--- random scribbles around 3.5(the lowest scribbles reach about 2.1)
-Strokes.QUALITY_BEST = 1.0      -- Distance that counts as a perfect drawing
-Strokes.QUALITY_WORST = 3.5     -- Distance that counts as no resemblance
+-- Measured on generated drawings(tilted up to 25 degrees, with the rotation tolerance): careful ones match
+-- at a distance around 0.6, messy ones around 1.4, random scribbles around 3.2(the lowest about 2.1)
+Strokes.QUALITY_BEST = 0.7      -- Distance that counts as a perfect drawing
+Strokes.QUALITY_WORST = 3.2     -- Distance that counts as no resemblance
 Strokes.MIN_QUALITY = 0.25      -- Below this the drawing is not recognized as any rune
 
 function Strokes.quality(matchDistance)
@@ -289,8 +307,19 @@ function Strokes.recognize(strokes, candidates)
     local cloud = Strokes.cloud(strokes)
     local bestName, bestDistance, secondName, secondDistance = nil, math.huge, nil, math.huge
     for i, candidate in ipairs(candidates) do
-        candidate.cloud = candidate.cloud or Strokes.cloud(Strokes.fromGlyph(candidate.glyph))
-        local d = Strokes.match(cloud, candidate.cloud)
+        -- Clouds of the rune at every tilt in RUNE_ROTATIONS, built once and kept on the candidate
+        if candidate.clouds == nil then
+            candidate.clouds = {}
+            local glyphStrokes = Strokes.fromGlyph(candidate.glyph)
+            for r, degrees in ipairs(RUNE_ROTATIONS) do
+                candidate.clouds[r] = Strokes.cloud(Strokes.rotate(glyphStrokes, math.rad(degrees)))
+            end
+        end
+        -- The closest tilt counts
+        local d = math.huge
+        for r, template in ipairs(candidate.clouds) do
+            d = math.min(d, Strokes.match(cloud, template))
+        end
         if d < bestDistance then
             secondName, secondDistance = bestName, bestDistance
             bestName, bestDistance = candidate.name, d

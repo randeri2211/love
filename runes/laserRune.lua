@@ -8,7 +8,7 @@ LaserRune.form = Laser
 
 -- A source dot and a long beam
 LaserRune.glyph = {
-    {"dot", -0.7, 0, 0.18},
+    {"circle", -0.7, 0, 0.18},
     {"line", -0.5, 0, 0.92, 0},
     {"line", -0.3, -0.22, 0.75, -0.22},
     {"line", -0.3, 0.22, 0.75, 0.22},

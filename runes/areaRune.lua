@@ -8,7 +8,7 @@ AreaRune.form = Area
 
 -- Rings spreading out from a point
 AreaRune.glyph = {
-    {"dot", 0, 0, 0.16},
+    {"circle", 0, 0, 0.16},
     {"arc", 0, 0, 0.48, -2.6, -0.55},
     {"arc", 0, 0, 0.48, 0.55, 2.6},
     {"arc", 0, 0, 0.82, -2.3, -0.85},

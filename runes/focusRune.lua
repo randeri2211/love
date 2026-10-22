@@ -8,7 +8,7 @@ FocusRune.glyph = {
     {"line", -0.85, -0.6, 0.38, 0},
     {"line", -0.85, 0.6, 0.38, 0},
     {"line", -0.85, 0, 0.38, 0},
-    {"dot", 0.6, 0, 0.14},
+    {"circle", 0.6, 0, 0.14},
 }
 
 -- Concentrates the spell, smaller and stronger(no Trap entry, so traps cant use it)

@@ -8,7 +8,7 @@ BulletRune.form = Bullet
 
 -- A shot with motion lines(shapes in a -1 to 1 box, see MagicCircle.drawGlyph)
 BulletRune.glyph = {
-    {"dot", 0.3, 0, 0.28},
+    {"circle", 0.3, 0, 0.28},
     {"line", -0.85, -0.3, -0.2, -0.3},
     {"line", -0.95, 0, -0.1, 0},
     {"line", -0.85, 0.3, -0.2, 0.3},

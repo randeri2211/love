@@ -2,12 +2,13 @@ local Slab = require "libraries.Slab"
 local Spell = require "magic.spell"
 local MagicCircle = require "magic.magicCircle"
 local Spellbooks = require "magic.spellbooks"
+local Strokes = require "magic.strokes"
 
 local SpellEditor = {}
 
 -- Window sizes
 local SPELLS_W = 240
-local PALETTE_W = 260
+local DRAW_W = 260
 local CANVAS_W = 640
 local INFO_W = 300
 local EDITOR_H = 640
@@ -19,9 +20,26 @@ local INSPECT_COLOR = {0.8, 0.85, 1, 0.6}     -- Ring around the circle the stat
 local HINT_COLOR = {0.6, 0.6, 0.6, 1}
 local STAGE_COLOR = {0.07, 0.08, 0.12, 1}
 
+local TARGET_COLOR = {0.4, 0.9, 1, 1}         -- Ring around the slot the drawing pad draws into
+local MARK_STROKE_COLOR = {0.55, 0.75, 1, 1}  -- Strokes in the mark ring
+local ERROR_COLOR = {1, 0.4, 0.4, 1}
+
 local EDITOR_DRAW_IN_TIME = 1.2    -- Seconds for the circle to draw itself when the editor opens
 
-local KIND_TITLES = {form = "Forms (center)", modifier = "Modifiers", trigger = "Triggers"}
+-- Drawing pad, in pad units the rune zone is a circle of radius 1(see magic/strokes)
+local PAD_SIZE = 240                -- Pixels
+local PAD_RUNE_RADIUS = 72          -- Pixels for one pad unit, the dotted divider sits here
+local PAD_EDGE_RADIUS = 116         -- Pixels, outer edge of the mark ring
+local PAD_POINT_SPACING = 2         -- Pixels the mouse has to move before a new point is added to a stroke
+
+-- Rune reference under the pad
+local REF_COLUMNS = 4
+local REF_CELL = 54                 -- Pixels per icon cell
+local REF_ICON_RADIUS = 20
+local GUIDE_ALPHA = 0.22            -- How faint the traced rune shows on the pad
+
+-- Runes the pad can recognize, by where they go(the center takes forms, ring slots the rest)
+local candidates = {}
 
 
 local function windowOptions(title, x, y, w, h)
@@ -47,7 +65,6 @@ function SpellEditor:new(book)
     self.__index = self
 
     editor.book = book
-    editor.selectedRune = nil       -- Rune name picked in the palette
     editor.targets = {}             -- Clickable parts of the circle, rebuilt every frame
     editor.circleTargets = {}       -- Every circle(main and children) as a click area, rebuilt every frame
     editor.bindingKey = false       -- True while waiting for a key to bind to the spell
@@ -68,6 +85,16 @@ function SpellEditor:openSpell(entry)
     self.openTime = love.timer.getTime()    -- The circle draws itself in from this moment
     Spellbooks.select(self.book, entry.id)
     self:fillSlots(entry.spell)
+    self.target = nil               -- Slot the drawing pad draws into, {spell, slot, depth}, picked by clicking a slot
+    self.guide = nil                -- Rune shown faintly on the pad to trace over, picked in the reference
+    self:clearDrawing()
+end
+
+
+function SpellEditor:clearDrawing()
+    self.strokes = {}               -- Finished strokes on the pad, lists of {x, y} in pad units
+    self.currentStroke = nil        -- Stroke being drawn while the mouse is held
+    self.result = nil               -- What the strokes were recognized as(see recognizeDrawing)
 end
 
 
@@ -99,14 +126,14 @@ end
 function SpellEditor:update()
     -- Draws all 4 editor windows centered on the screen
     local w, h = love.graphics.getDimensions()
-    local x = w / 2 - (SPELLS_W + PALETTE_W + CANVAS_W + INFO_W + GAP * 3) / 2
+    local x = w / 2 - (SPELLS_W + DRAW_W + CANVAS_W + INFO_W + GAP * 3) / 2
     local y = h / 2 - EDITOR_H / 2
 
     self:spellList(x, y)
     x = x + SPELLS_W + GAP
-    self:palette(x, y)
-    self:canvas(x + PALETTE_W + GAP, y)
-    self:info(x + PALETTE_W + CANVAS_W + GAP * 2, y)
+    self:drawPad(x, y)
+    self:canvas(x + DRAW_W + GAP, y)
+    self:info(x + DRAW_W + CANVAS_W + GAP * 2, y)
 end
 
 
@@ -160,28 +187,276 @@ function SpellEditor:spellList(x, y)
 end
 
 
--- Palette Window
-function SpellEditor:palette(x, y)
-    -- List of every registered rune grouped by kind
-    Slab.BeginWindow("SpellRunes", windowOptions("Runes", x, y, PALETTE_W, EDITOR_H))
-        for i, kind in ipairs({"form", "modifier", "trigger"}) do
-            Slab.Text(KIND_TITLES[kind])
-            Slab.Separator()
-            for j, rune in ipairs(self:runesOfKind(kind)) do
-                Slab.Rectangle({W = 14, H = 14, Color = rune.color, Rounding = 7})
-                Slab.SameLine({Pad = 6})
-                Slab.Text(rune.name .. "   " .. rune.manaCost .. " mana", {IsSelectable = true, IsSelected = self.selectedRune == rune.name})
-                if Slab.IsControlClicked() then
-                    self.selectedRune = rune.name
-                end
+-- Drawing Pad Window
+function SpellEditor:drawPad(x, y)
+    -- Draw a rune in the middle and its marks around it, then inscribe it into the picked slot
+    Slab.BeginWindow("SpellDraw", windowOptions("Draw a rune", x, y, DRAW_W, EDITOR_H))
+        -- The picked slot can disappear(its trigger cleared), then there is nothing to draw into
+        if self.target ~= nil and self:circlePath(self.spell, self.target.spell, "") == nil then
+            self.target = nil
+        end
+        Slab.Text(self:targetLabel(), {Color = self.target and TARGET_COLOR or HINT_COLOR})
+
+        local ox, oy = Slab.GetCursorPos({Absolute = true})
+        self:handlePadMouse(ox + PAD_SIZE / 2, oy + PAD_SIZE / 2)
+        self:drawPadCanvas()
+        Slab.Image("SpellDrawPad", {Image = self.padCanvas})
+
+        -- What the drawing is recognized as
+        local result = self.result
+        if result ~= nil then
+            if result.name ~= nil then
+                Slab.Text(string.format("%s   %.0f%%", result.name, result.quality * 100), {Color = RUNE_REGISTRY[result.name].color})
+            else
+                Slab.Text("Not recognized", {Color = ERROR_COLOR})
             end
-            Slab.NewLine()
+            if #result.marks > 0 then
+                Slab.Text(#result.marks .. " marks: " .. table.concat(result.marks, ", "))
+            end
+            if result.problem ~= nil then
+                Slab.Text(result.problem, {Color = ERROR_COLOR})
+            end
+        else
+            Slab.Text("Rune inside the dotted line,", {Color = HINT_COLOR})
+            Slab.Text("marks around it", {Color = HINT_COLOR})
+        end
+        Slab.NewLine()
+
+        local buttonW = (DRAW_W - 30) / 3
+        local canInscribe = self.target ~= nil and result ~= nil and result.name ~= nil and result.problem == nil
+        if Slab.Button("Inscribe", {W = buttonW, Disabled = not canInscribe}) then
+            self:place(self.target, result.name)
+            self:clearDrawing()
+        end
+        Slab.SameLine()
+        if Slab.Button("Undo", {W = buttonW, Disabled = #self.strokes == 0}) then
+            table.remove(self.strokes)
+            self:recognizeDrawing()
+        end
+        Slab.SameLine()
+        if Slab.Button("Clear", {W = buttonW, Disabled = #self.strokes == 0}) then
+            self:clearDrawing()
         end
 
+        Slab.NewLine()
         Slab.Separator()
-        Slab.Text("Left click a slot to place", {Color = HINT_COLOR})
-        Slab.Text("Right click a slot to clear", {Color = HINT_COLOR})
+        self:runeReference()
     Slab.EndWindow()
+end
+
+
+function SpellEditor:runeReference()
+    -- Icons of the runes that fit the picked slot, hover for details, click one to trace it on the pad
+    local runes = {}
+    local target = self.target or {slot = 1}
+    for i, candidate in ipairs(self:candidatesFor(target)) do
+        table.insert(runes, RUNE_REGISTRY[candidate.name])
+    end
+    -- A guide from the other kind of slot doesnt help here
+    if self.guide ~= nil and self:placeKindMismatch(target, self.guide) then
+        self.guide = nil
+    end
+
+    local rows = math.ceil(#runes / REF_COLUMNS)
+    local w, h = REF_COLUMNS * REF_CELL, rows * REF_CELL
+    if self.refCanvas == nil or self.refCanvas:getHeight() ~= h then
+        self.refCanvas = love.graphics.newCanvas(w, h)
+    end
+
+    -- Icon under the mouse
+    local ox, oy = Slab.GetCursorPos({Absolute = true})
+    local mx, my = Slab.GetMousePosition()
+    local hovered = nil
+    local column, row = math.floor((mx - ox) / REF_CELL), math.floor((my - oy) / REF_CELL)
+    if mx >= ox and my >= oy and column < REF_COLUMNS and row < rows then
+        hovered = runes[row * REF_COLUMNS + column + 1]
+    end
+    if hovered ~= nil and Slab.IsMouseClicked(1) then
+        if self.guide == hovered.name then
+            self.guide = nil
+        else
+            self.guide = hovered.name
+        end
+    end
+
+    love.graphics.push("all")
+    love.graphics.setCanvas(self.refCanvas)
+    love.graphics.origin()
+    love.graphics.clear(STAGE_COLOR)
+    for i, rune in ipairs(runes) do
+        local cx = ((i - 1) % REF_COLUMNS + 0.5) * REF_CELL
+        local cy = (math.floor((i - 1) / REF_COLUMNS) + 0.5) * REF_CELL
+        -- Same look as a slot in the magic circle, brighter when hovered or traced
+        local bright = rune == hovered or rune.name == self.guide
+        love.graphics.setColor(MagicCircle.SLOT_BG_COLOR)
+        love.graphics.circle("fill", cx, cy, REF_ICON_RADIUS, 32)
+        love.graphics.setColor(rune.color[1], rune.color[2], rune.color[3], bright and 1 or 0.7)
+        love.graphics.setLineWidth(bright and 3 or 1.5)
+        love.graphics.circle("line", cx, cy, REF_ICON_RADIUS, 32)
+        MagicCircle.drawGlyph(rune.glyph, cx, cy, REF_ICON_RADIUS * 0.6, 1.4)
+    end
+    love.graphics.pop()
+    Slab.Image("SpellRuneReference", {Image = self.refCanvas})
+
+    if hovered ~= nil then
+        Slab.Text(string.format("%s  (%s, %s mana)", hovered.name, hovered.kind, tostring(hovered.manaCost)), {Color = hovered.color})
+    elseif self.guide ~= nil then
+        Slab.Text("Tracing " .. self.guide .. ", click it to hide", {Color = HINT_COLOR})
+    else
+        Slab.Text("Click a rune to trace it on the pad", {Color = HINT_COLOR})
+    end
+end
+
+
+function SpellEditor:placeKindMismatch(target, runeName)
+    -- True when a rune is the wrong kind for the slot(forms only go in the center)
+    local isForm = RUNE_REGISTRY[runeName].kind == "form"
+    return isForm ~= (target.slot == "core")
+end
+
+
+function SpellEditor:targetLabel()
+    if self.target == nil then
+        return "Click a slot in the circle to draw"
+    end
+    local place = " slot " .. self.target.slot
+    if self.target.slot == "core" then
+        place = " center"
+    end
+    return "Drawing into: " .. self:circlePath(self.spell, self.target.spell, "Main circle") .. place
+end
+
+
+function SpellEditor:handlePadMouse(cx, cy)
+    -- Records strokes while the left mouse button is held on the pad, cx, cy is the pad center on screen
+    local mx, my = Slab.GetMousePosition()
+    local px, py = (mx - cx) / PAD_RUNE_RADIUS, (my - cy) / PAD_RUNE_RADIUS
+    local onPad = distance(mx, my, cx, cy) <= PAD_EDGE_RADIUS
+
+    if self.currentStroke == nil then
+        if Slab.IsMouseClicked(1) and onPad and self.target ~= nil then
+            self.currentStroke = {{px, py}}
+        end
+    elseif Slab.IsMouseDown(1) then
+        local last = self.currentStroke[#self.currentStroke]
+        if distance(px, py, last[1], last[2]) * PAD_RUNE_RADIUS >= PAD_POINT_SPACING then
+            table.insert(self.currentStroke, {px, py})
+        end
+    else
+        -- Stroke finished, the drawing is recognized again with it
+        table.insert(self.strokes, self.currentStroke)
+        self.currentStroke = nil
+        self:recognizeDrawing()
+    end
+end
+
+
+function SpellEditor:recognizeDrawing()
+    -- Rune zone strokes are matched against the runes that fit the picked slot, ring strokes are read as marks
+    if #self.strokes == 0 or self.target == nil then
+        self.result = nil
+        return
+    end
+    local runeStrokes, markStrokes = Strokes.splitZones(self.strokes, 1)
+    local name, quality = Strokes.recognize(runeStrokes, self:candidatesFor(self.target))
+
+    local marks = {}
+    for i, piece in ipairs(Strokes.pieces(markStrokes)) do
+        local kind = Strokes.readMark(piece)
+        table.insert(marks, kind or "?")
+    end
+
+    local problem = nil
+    if name ~= nil then
+        problem = self:placeProblem(self.target, name)
+    elseif #runeStrokes == 0 then
+        problem = "Draw the rune inside the dotted line"
+    end
+    self.result = {name = name, quality = quality, marks = marks, problem = problem}
+end
+
+
+function SpellEditor:candidatesFor(target)
+    -- Forms for the center, modifiers and triggers for the ring slots(cached, the recognizer keeps its clouds on them)
+    local key = target.slot == "core" and "core" or "ring"
+    if candidates[key] == nil then
+        candidates[key] = {}
+        local kinds = key == "core" and {"form"} or {"modifier", "trigger"}
+        for i, kind in ipairs(kinds) do
+            for j, rune in ipairs(self:runesOfKind(kind)) do
+                if rune.glyph ~= nil then
+                    table.insert(candidates[key], {name = rune.name, glyph = rune.glyph})
+                end
+            end
+        end
+    end
+    return candidates[key]
+end
+
+
+function SpellEditor:drawPadCanvas()
+    -- Pad background, the mark ring edge, the dotted divider and the strokes
+    if self.padCanvas == nil then
+        self.padCanvas = love.graphics.newCanvas(PAD_SIZE, PAD_SIZE)
+    end
+    local c = PAD_SIZE / 2
+    love.graphics.push("all")
+    love.graphics.setCanvas(self.padCanvas)
+    love.graphics.origin()
+    love.graphics.clear(STAGE_COLOR)
+    love.graphics.setLineWidth(1)
+
+    -- Faint outer edge of the mark ring
+    love.graphics.setColor(MagicCircle.RING_COLOR[1], MagicCircle.RING_COLOR[2], MagicCircle.RING_COLOR[3], 0.25)
+    love.graphics.circle("line", c, c, PAD_EDGE_RADIUS, 64)
+
+    -- Dim dotted divider between the rune and its marks
+    love.graphics.setColor(MagicCircle.RING_COLOR[1], MagicCircle.RING_COLOR[2], MagicCircle.RING_COLOR[3], 0.45)
+    local dashes = 40
+    for k = 0, dashes - 1, 2 do
+        local a1 = k * 2 * math.pi / dashes
+        love.graphics.arc("line", "open", c, c, PAD_RUNE_RADIUS, a1, a1 + 2 * math.pi / dashes, 4)
+    end
+
+    -- Rune picked in the reference, faint so the drawing goes over it
+    if self.guide ~= nil then
+        local rune = RUNE_REGISTRY[self.guide]
+        love.graphics.setColor(rune.color[1], rune.color[2], rune.color[3], GUIDE_ALPHA)
+        MagicCircle.drawGlyph(rune.glyph, c, c, PAD_RUNE_RADIUS * 0.7, 3)
+    end
+
+    -- Strokes, the rune zone in the recognized rune color and marks in their own color
+    love.graphics.setLineWidth(3)
+    love.graphics.setLineJoin("bevel")
+    local runeColor = {1, 1, 1, 1}
+    if self.result ~= nil and self.result.name ~= nil then
+        runeColor = RUNE_REGISTRY[self.result.name].color
+    end
+    local runeStrokes, markStrokes = Strokes.splitZones(self.strokes, 1)
+    self:drawPadStrokes(runeStrokes, runeColor, c)
+    self:drawPadStrokes(markStrokes, MARK_STROKE_COLOR, c)
+    if self.currentStroke ~= nil then
+        self:drawPadStrokes({self.currentStroke}, {1, 1, 1, 1}, c)
+    end
+
+    love.graphics.pop()
+end
+
+
+function SpellEditor:drawPadStrokes(strokes, color, c)
+    love.graphics.setColor(color)
+    for i, stroke in ipairs(strokes) do
+        if #stroke == 1 then
+            love.graphics.circle("fill", c + stroke[1][1] * PAD_RUNE_RADIUS, c + stroke[1][2] * PAD_RUNE_RADIUS, 2)
+        else
+            local points = {}
+            for j, p in ipairs(stroke) do
+                table.insert(points, c + p[1] * PAD_RUNE_RADIUS)
+                table.insert(points, c + p[2] * PAD_RUNE_RADIUS)
+            end
+            love.graphics.line(points)
+        end
+    end
 end
 
 
@@ -224,7 +499,9 @@ function SpellEditor:canvas(x, y)
         -- Clicks
         if target ~= nil then
             if Slab.IsMouseClicked(1) then
-                self:place(target)
+                -- Picks the slot the drawing pad draws into, the current drawing is read again for it
+                self.target = {spell = target.spell, slot = target.slot, depth = target.depth}
+                self:recognizeDrawing()
             elseif Slab.IsMouseClicked(2) then
                 self:clear(target)
             end
@@ -283,13 +560,20 @@ function SpellEditor:drawCircle(w, h, hovered, hoveredCircle, ox, oy)
         love.graphics.circle("line", hoveredCircle.x - ox, hoveredCircle.y - oy, hoveredCircle.radius + 6, 64)
     end
 
-    -- Hover ring around the slot under the mouse, red when the selected rune cant go there
-    if hovered ~= nil then
-        if self:canPlace(hovered) then
-            love.graphics.setColor(HOVER_COLOR)
-        else
-            love.graphics.setColor(MagicCircle.BLOCKED_COLOR)
+    -- Ring around the slot the drawing pad draws into
+    if self.target ~= nil then
+        for i, target in ipairs(self.targets) do
+            if target.spell == self.target.spell and target.slot == self.target.slot then
+                love.graphics.setColor(TARGET_COLOR)
+                love.graphics.setLineWidth(3)
+                love.graphics.circle("line", target.x - ox, target.y - oy, target.radius + 6, 48)
+            end
         end
+    end
+
+    -- Hover ring around the slot under the mouse
+    if hovered ~= nil then
+        love.graphics.setColor(HOVER_COLOR)
         love.graphics.setLineWidth(2)
         love.graphics.circle("line", hovered.x - ox, hovered.y - oy, hovered.radius + 4, 48)
     end
@@ -350,28 +634,34 @@ function SpellEditor:circlePath(spell, target, path)
 end
 
 
-function SpellEditor:canPlace(target)
-    -- Whether the selected palette rune fits this part of the circle
-    if self.selectedRune == nil then
-        return true     -- Nothing selected, just hovering
-    end
-    local rune = RUNE_REGISTRY[self.selectedRune]
+function SpellEditor:placeProblem(target, runeName)
+    -- Why a rune cant go in this part of the circle, nil when it can
+    local rune = RUNE_REGISTRY[runeName]
     if target.slot == "core" then
-        return rune.kind == "form"
+        if rune.kind ~= "form" then
+            return "The center takes a form rune"
+        end
+        return nil
     end
-    if rune.kind == "form" or Spell.isBlocked(target.spell.core, rune.name) then
-        return false
+    if rune.kind == "form" then
+        return "Forms go in the center"
     end
-    return rune.kind ~= "trigger" or target.depth < MAX_SPELL_DEPTH
+    if Spell.isBlocked(target.spell.core, rune.name) then
+        return rune.name .. " doesnt work on " .. target.spell.core
+    end
+    if rune.kind == "trigger" and target.depth >= MAX_SPELL_DEPTH then
+        return "Too deep for another trigger"
+    end
+    return nil
 end
 
 
-function SpellEditor:place(target)
-    -- Puts the palette rune into the clicked part of the circle
-    if self.selectedRune == nil or not self:canPlace(target) then
+function SpellEditor:place(target, runeName)
+    -- Puts a rune into the picked part of the circle
+    if self:placeProblem(target, runeName) ~= nil then
         return
     end
-    local rune = RUNE_REGISTRY[self.selectedRune]
+    local rune = RUNE_REGISTRY[runeName]
     local spell = target.spell
 
     if target.slot == "core" then
@@ -418,7 +708,6 @@ function SpellEditor:info(x, y)
     local params = inspected:getParams()
 
     Slab.BeginWindow("SpellInfo", windowOptions("Spell", x, y, INFO_W, EDITOR_H))
-        Slab.Text("Selected rune: " .. (self.selectedRune or "none"))
         Slab.Text("Showing: " .. path)
         Slab.Text("Click inside a circle to show it", {Color = HINT_COLOR})
         Slab.Separator()
@@ -474,6 +763,7 @@ function SpellEditor:info(x, y)
             self:fillSlots(self.spell)
             self.spell.dirty = true
             self.inspected = self.spell
+            self.target = nil
         end
         Slab.SameLine()
         if Slab.Button("Done") then

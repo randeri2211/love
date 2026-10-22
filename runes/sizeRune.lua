@@ -5,7 +5,7 @@ registerRune("Size", SizeRune)
 
 -- A core pushed out to four corner brackets
 SizeRune.glyph = {
-    {"dot", 0, 0, 0.17},
+    {"circle", 0, 0, 0.17},
     {"line", -0.75, -0.35, -0.75, -0.75, -0.35, -0.75},
     {"line", 0.35, -0.75, 0.75, -0.75, 0.75, -0.35},
     {"line", 0.75, 0.35, 0.75, 0.75, 0.35, 0.75},

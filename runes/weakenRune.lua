@@ -3,10 +3,10 @@ local Rune = require "runes.rune"
 local WeakenRune = Rune:new("Weaken", "modifier", 1, 0, {0.6, 0.6, 0.68})
 registerRune("Weaken", WeakenRune)
 
--- Two chevrons pointing down
+-- A minus in a circle, less power(it used to be two chevrons, too close to Speed when drawn)
 WeakenRune.glyph = {
-    {"line", -0.55, -0.5, 0, -0.05, 0.55, -0.5},
-    {"line", -0.55, 0.05, 0, 0.5, 0.55, 0.05},
+    {"circle", 0, 0, 0.7},
+    {"line", -0.42, 0, 0.42, 0},
 }
 
 WeakenRune.effects = {
