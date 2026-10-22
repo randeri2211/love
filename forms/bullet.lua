@@ -22,6 +22,8 @@ function Bullet:new(caster, params, x, y, dirX, dirY)
     bullet.color = params.color
     bullet.gravityScale = params.gravityScale   -- Gravity makes the bullet fall in an arc
     bullet.bounces = params.bounces             -- Rebound, contacts left before the bullet breaks
+    bullet.pierce = params.pierce               -- Enemies and blocks left it can pass through
+    bullet.pierced = {}                         -- Fixtures it is passing through, their contacts stay off
     bullet.imagePath = params.imagePath
     bullet.image = BLOCK_IMG[bullet.imagePath]
 
@@ -83,8 +85,23 @@ end
 
 
 function Bullet:onContact(fixture, entity, contact)
-    -- Child spells bounce off the hit surface(reflect the direction across the normal, works for either normal sign)
+    if self.pierced[fixture] then
+        return
+    end
     local dx, dy = self:getDirection()
+
+    -- Pierce, enemies and blocks are hit and passed through(children keep the bullet direction)
+    -- Blocks take the terrain damage as usual, every block or enemy passed uses one pierce
+    if self.pierce > 0 and entity ~= nil then
+        self.pierce = self.pierce - 1
+        self.pierced[fixture] = true
+        contact:setEnabled(false)
+        local x, y = self.body:getWorldCenter()
+        self:hit(entity, x, y, dx, dy)
+        return
+    end
+
+    -- Child spells bounce off the hit surface(reflect the direction across the normal, works for either normal sign)
     local nx, ny = contact:getNormal()
     local dot = dx * nx + dy * ny
     -- Children start at the contact point, the bullet center is up to a radius away from it
@@ -99,6 +116,14 @@ function Bullet:onContact(fixture, entity, contact)
         self.bounces = self.bounces - 1
     else
         spells:destroy(self)
+    end
+end
+
+
+function Bullet:preSolve(fixture, contact)
+    -- Physics turns contacts back on every step, so the ones it is piercing are turned off again
+    if self.pierced[fixture] then
+        contact:setEnabled(false)
     end
 end
 

@@ -116,7 +116,7 @@ function SpellEditor:fillSlots(spell)
     for i = 1, SPELL_SLOTS do
         if spell.slots[i] == nil then
             spell.slots[i] = false
-        elseif type(spell.slots[i]) == "table" then
+        elseif type(spell.slots[i]) == "table" and spell.slots[i][2] then
             self:fillSlots(spell.slots[i][2])
         end
     end
@@ -210,8 +210,11 @@ function SpellEditor:drawPad(x, y)
             else
                 Slab.Text("Not recognized", {Color = ERROR_COLOR})
             end
-            if #result.marks > 0 then
-                Slab.Text(#result.marks .. " marks: " .. table.concat(result.marks, ", "))
+            if result.reading ~= nil then
+                local rune = RUNE_REGISTRY[result.name]
+                Slab.Text(rune.describeMarks and rune:describeMarks(result.reading) or "Marks read")
+            elseif #result.marks > 0 then
+                Slab.Text(#result.marks .. " marks, " .. (result.name or "this rune") .. " doesnt use them", {Color = HINT_COLOR})
             end
             if result.problem ~= nil then
                 Slab.Text(result.problem, {Color = ERROR_COLOR})
@@ -225,7 +228,7 @@ function SpellEditor:drawPad(x, y)
         local buttonW = (DRAW_W - 30) / 3
         local canInscribe = self.target ~= nil and result ~= nil and result.name ~= nil and result.problem == nil
         if Slab.Button("Inscribe", {W = buttonW, Disabled = not canInscribe}) then
-            self:place(self.target, result.name)
+            self:place(self.target, result.name, {quality = result.quality, marks = result.reading, strokes = self.strokes})
             self:clearDrawing()
         end
         Slab.SameLine()
@@ -360,19 +363,21 @@ function SpellEditor:recognizeDrawing()
     local runeStrokes, markStrokes = Strokes.splitZones(self.strokes, 1)
     local name, quality = Strokes.recognize(runeStrokes, self:candidatesFor(self.target))
 
-    local marks = {}
-    for i, piece in ipairs(Strokes.pieces(markStrokes)) do
-        local kind = Strokes.readMark(piece)
-        table.insert(marks, kind or "?")
+    -- The recognized rune reads the marks its own way, runes without readMarks ignore them
+    local marks = Strokes.readMarks(markStrokes, 0, 0)
+    local reading, markProblem = nil, nil
+    local rune = name and RUNE_REGISTRY[name]
+    if rune and rune.readMarks ~= nil and #marks > 0 then
+        reading, markProblem = rune:readMarks(marks)
     end
 
     local problem = nil
     if name ~= nil then
-        problem = self:placeProblem(self.target, name)
+        problem = self:placeProblem(self.target, name) or markProblem
     elseif #runeStrokes == 0 then
         problem = "Draw the rune inside the dotted line"
     end
-    self.result = {name = name, quality = quality, marks = marks, problem = problem}
+    self.result = {name = name, quality = quality, marks = marks, reading = reading, problem = problem}
 end
 
 
@@ -656,8 +661,8 @@ function SpellEditor:placeProblem(target, runeName)
 end
 
 
-function SpellEditor:place(target, runeName)
-    -- Puts a rune into the picked part of the circle
+function SpellEditor:place(target, runeName, drawing)
+    -- Puts a rune into the picked part of the circle, drawing is {quality, marks, strokes} from the pad
     if self:placeProblem(target, runeName) ~= nil then
         return
     end
@@ -667,8 +672,9 @@ function SpellEditor:place(target, runeName)
     if target.slot == "core" then
         -- Changing the form keeps every rune, the ones the new form blocks turn inactive
         spell.core = rune.name
+        spell.coreDrawing = drawing
     elseif rune.kind == "modifier" then
-        spell.slots[target.slot] = rune.name
+        spell.slots[target.slot] = {rune.name, nil, drawing = drawing}
     elseif rune.kind == "trigger" then
         -- New triggers start with a plain bullet child, swapping trigger types keeps the old child
         local _, child = spell:readSlot(spell.slots[target.slot])
@@ -676,7 +682,7 @@ function SpellEditor:place(target, runeName)
             child = Spell:new("Bullet", {})
             self:fillSlots(child)
         end
-        spell.slots[target.slot] = {rune.name, child}
+        spell.slots[target.slot] = {rune.name, child, drawing = drawing}
     end
 
     -- Recompiling the root also recompiles every child
@@ -759,6 +765,7 @@ function SpellEditor:info(x, y)
 
         if Slab.Button("Clear") then
             self.spell.core = "Bullet"
+            self.spell.coreDrawing = nil
             self.spell.slots = {}
             self:fillSlots(self.spell)
             self.spell.dirty = true

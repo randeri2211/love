@@ -11,16 +11,18 @@ FocusRune.glyph = {
     {"circle", 0.6, 0, 0.14},
 }
 
--- Concentrates the spell, smaller and stronger(no Trap entry, so traps cant use it)
--- Slot order matters, Focus before Split still sees a single bullet
+-- Narrows the fan of every Split after it in the flow, a well drawn Focus narrows more
+FocusRune.affects = {
+    Split = function(settings, strength)
+        settings.spreadScale = settings.spreadScale * 0.5 ^ strength
+    end,
+}
+
+-- Concentrates the spell too, smaller and stronger(no Trap entry, so traps cant use it)
 FocusRune.effects = {
     Bullet = function(params)
-        if params.count > 1 then
-            params.spread = params.spread * 0.5     -- Tighter fan
-        else
-            params.damage = params.damage * 1.4
-            params.radius = params.radius * 0.7
-        end
+        params.damage = params.damage * 1.4
+        params.radius = params.radius * 0.7
     end,
     Laser = function(params)
         params.width = params.width * 0.6

@@ -21,6 +21,18 @@ function Rune:new(name, kind, complexity, manaCost, color)
     rune.effects = nil
     -- Forms list their own params for the editor to show, as {label, param name, format}
     rune.stats = nil
+    -- Runes that read marks drawn around them set these(see Split):
+    -- readMarks(self, marks) turns the marks from Strokes.readMarks into a plain table that is saved with the slot,
+    -- or returns nil and a reason when the marks cant go together(two aim arrows on a Bullet)
+    -- checkMarks(self, saved) cleans that table when a save loads, nil drops it
+    -- markCost(self, marks) returns the extra complexity and mana the marks add
+    -- describeMarks(self, marks) is the text the editor shows for them
+    -- Runes can act on runes after them in the flow before anything reaches the spell:
+    -- settings(self, marks) is the table a rune is changed through, its marks or its defaults(see Split)
+    -- affects maps a rune name to function(settings, strength) that changes that rune settings(see Focus)
+    -- Effects get the settings as a second argument
+    -- Forms have no effects, their marks go through applyMarks(self, params, settings) instead(see Bullet)
+    rune.affects = nil
 
     return rune
 end
@@ -36,14 +48,81 @@ function Rune:worksWith(formName)
 end
 
 
-function Rune:apply(params, formName)
+function Rune:settings(marks)
+    -- Starting settings for this rune in a spell, a copy so other runes can change it without touching the saved marks
+    local settings = {}
+    for key, value in pairs(marks or {}) do
+        settings[key] = value
+    end
+    return settings
+end
+
+
+-- Params a drawn rune always changes fully, whatever the drawing quality
+-- Costs stay fixed so a sloppy drawing isnt cheaper
+Rune.FULL_PARAMS = {manaScale = true, complexityScale = true, cooldownScale = true, bounces = true}
+-- Params that scale with quality but have to stay whole numbers(a Split drawn at 70% makes fewer projectiles)
+Rune.WHOLE_PARAMS = {count = true}
+
+
+function Rune.strength(quality)
+    -- How much of a rune effect a drawing gets, quality is 0 to 1 from the recognizer(nil for runes that werent drawn)
+    if quality == nil then
+        return 1
+    end
+    -- Linear, a rune drawn at 70% gets 70% of its effect
+    return math.max(0, math.min(1, quality))
+end
+
+
+local function blend(before, after, strength)
+    -- Moves a param from its old value toward the full effect, by strength(0 is no change, 1 is the full effect)
+    if type(before) ~= "number" or type(after) ~= "number" then
+        return after
+    end
+    -- Drawbacks(lower damage from Split or Weaken) always land fully, so a sloppy drawing cant dodge them
+    if after <= before then
+        return after
+    end
+    -- Multiplied values blend on the ratio so x1.5 at half strength is about x1.22, not x1.25
+    if before ~= 0 and after / before > 0 then
+        return before * (after / before) ^ strength
+    end
+    -- Values switched on from 0(gravity, recoil) blend in a straight line
+    return before + (after - before) * strength
+end
+
+
+function Rune:apply(params, formName, quality, settings)
     -- Runs the effect for this form, falling back to the default effect(multiply values so modifiers stack)
+    -- A drawn rune effect is scaled by how well it was drawn, settings come from its marks and the runes before it
     if self.effects == nil then
         return
     end
     local effect = self.effects[formName] or self.effects.default
-    if effect ~= nil then
-        effect(params)
+    if effect == nil then
+        return
+    end
+    local strength = Rune.strength(quality)
+    if strength >= 1 then
+        effect(params, settings)
+        return
+    end
+
+    -- Run the effect on a copy, then move each changed param only part of the way
+    local changed = {}
+    for key, value in pairs(params) do
+        changed[key] = value
+    end
+    effect(changed, settings)
+    for key, value in pairs(changed) do
+        if Rune.FULL_PARAMS[key] or params[key] == nil then
+            params[key] = value
+        elseif Rune.WHOLE_PARAMS[key] then
+            params[key] = math.floor(blend(params[key], value, strength) + 0.5)
+        else
+            params[key] = blend(params[key], value, strength)
+        end
     end
 end
 

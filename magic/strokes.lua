@@ -18,6 +18,8 @@ Strokes.MARK_SHAPES = {
     arrow = {{"line", -0.8, 0, 0.8, 0}, {"line", 0.35, -0.4, 0.8, 0, 0.35, 0.4}},
     dot = {{"dot", 0, 0, 0.2}},
     line = {{"line", -0.8, 0, 0.8, 0}},
+    -- A line crossed by two short bars at its thirds, a bolt passing through
+    pierce = {{"line", 0, -0.8, 0, 0.8}, {"line", -0.35, -0.27, 0.35, -0.27}, {"line", -0.35, 0.27, 0.35, 0.27}},
 }
 
 
@@ -382,14 +384,88 @@ function Strokes.angleAround(piece, cx, cy)
 end
 
 
-function Strokes.angleSpan(pieces, cx, cy)
-    -- Smallest angle around a point that covers every piece(the spread of a fan of marks)
-    if #pieces < 2 then
+function Strokes.pointsOutward(piece, cx, cy)
+    -- True when an arrow piece points away from the point, the head adds ink at the tip end
+    -- so the average of its points sits past the middle of the shaft on that side
+    local x, y = Strokes.center(piece)
+    local ax, ay = x - (cx or 0), y - (cy or 0)
+    local length = math.sqrt(ax * ax + ay * ay)
+    if length == 0 then
+        return true
+    end
+    ax, ay = ax / length, ay / length
+    local sum, count, near, far = 0, 0, math.huge, -math.huge
+    for i, stroke in ipairs(piece) do
+        for j, p in ipairs(stroke) do
+            -- Distance along the line from the point through the piece
+            local along = (p[1] - (cx or 0)) * ax + (p[2] - (cy or 0)) * ay
+            sum, count = sum + along, count + 1
+            near, far = math.min(near, along), math.max(far, along)
+        end
+    end
+    return sum / count > (near + far) / 2
+end
+
+
+function Strokes.arrowDirection(piece)
+    -- Angle an arrow piece points(radians, 0 is to the right), read from the arrow itself so it works anywhere around the rune
+    -- The shaft is the longest line in the piece, the end the head sits on has more ink around it
+    local points = {}
+    for i, stroke in ipairs(piece) do
+        for j, p in ipairs(stroke) do
+            table.insert(points, p)
+        end
+    end
+    local a, b, longest = points[1], points[1], -1
+    for i = 1, #points do
+        for j = i + 1, #points do
+            local d = distance(points[i], points[j])
+            if d > longest then
+                a, b, longest = points[i], points[j], d
+            end
+        end
+    end
+    if longest <= 0 then
+        return 0
+    end
+    local ax, ay = (b[1] - a[1]) / longest, (b[2] - a[2]) / longest
+    local sum = 0
+    for i, p in ipairs(points) do
+        sum = sum + (p[1] - a[1]) * ax + (p[2] - a[2]) * ay
+    end
+    -- Average past the middle of the shaft means the head is at b
+    if sum / #points > longest / 2 then
+        return math.atan2(ay, ax)
+    end
+    return math.atan2(-ay, -ax)
+end
+
+
+function Strokes.readMarks(markStrokes, cx, cy)
+    -- Every mark piece with what it looks like and where it sits, this list is what runes read their marks from:
+    -- {kind, quality, angle(around the center), outward and direction(arrows only), strokes}
+    local marks = {}
+    for i, piece in ipairs(Strokes.pieces(markStrokes)) do
+        local kind, quality = Strokes.readMark(piece)
+        local mark = {kind = kind, quality = quality, angle = Strokes.angleAround(piece, cx, cy), strokes = piece}
+        if kind == "arrow" then
+            mark.outward = Strokes.pointsOutward(piece, cx, cy)
+            mark.direction = Strokes.arrowDirection(piece)
+        end
+        table.insert(marks, mark)
+    end
+    return marks
+end
+
+
+function Strokes.angleSpan(marks)
+    -- Smallest angle around the center that covers every mark(the spread of a fan of marks), marks from readMarks
+    if #marks < 2 then
         return 0
     end
     local angles = {}
-    for i, piece in ipairs(pieces) do
-        table.insert(angles, Strokes.angleAround(piece, cx, cy) % (2 * math.pi))
+    for i, mark in ipairs(marks) do
+        table.insert(angles, mark.angle % (2 * math.pi))
     end
     table.sort(angles)
     -- The span is the full circle minus the biggest empty gap between neighbouring marks

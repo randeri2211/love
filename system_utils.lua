@@ -108,6 +108,17 @@ function finishCollisionCallback(fixture1, fixture2, contact)
 end
 
 function preSolve(fixture1, fixture2, contact)
+    -- Spells can turn off contacts they pass through(see Bullet pierce)
+    if fixture1:getCategory() == SPELLS_CATEGORY or fixture2:getCategory() == SPELLS_CATEGORY then
+        if fixture2:getCategory() == SPELLS_CATEGORY then
+            fixture1, fixture2 = fixture2, fixture1
+        end
+        local spellPair = spells:getSpellByFixture(fixture1)
+        if spellPair then
+            spellPair.instance:preSolve(fixture2, contact)
+        end
+    end
+
     if fixture1:getCategory() == PLAYER_CATEGORY or fixture2:getCategory() == PLAYER_CATEGORY then
         -- Swap positions if fixture2 is the spell for simplicity going forward
         if fixture2:getCategory() == PLAYER_CATEGORY then

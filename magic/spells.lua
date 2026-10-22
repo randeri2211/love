@@ -8,6 +8,7 @@ function Spells:new()
     self.__index = self
     spells.spells = {}
     spells.queue = {}       -- Triggered casts waiting for the physics update to finish
+    spells.scheduled = {}   -- Things to run later on the game clock, {time, run}(burst shots)
     spells.circles = {}     -- Magic circles fading out where spells were cast
     spells.time = 0         -- Game time in seconds, stops while paused(used for cooldowns)
 
@@ -33,6 +34,23 @@ function Spells:update(dt)
     end
 
     self:castQueued()
+
+    -- Scheduled things whose time came, run after the loop so they can schedule more
+    local due = {}
+    for i = #self.scheduled, 1, -1 do
+        if self.scheduled[i].time <= self.time then
+            table.insert(due, table.remove(self.scheduled, i))
+        end
+    end
+    for i = #due, 1, -1 do
+        due[i].run()
+    end
+end
+
+
+function Spells:schedule(delay, run)
+    -- Runs run() after delay seconds of game time(paused time doesnt count)
+    table.insert(self.scheduled, {time = self.time + delay, run = run})
 end
 
 

@@ -44,6 +44,7 @@ BASE_SPELL_PARAMS = {
     recoil = 0,                 -- Pushes the caster away from the aim, Recoil rune raises it
 }
 
+BURST_DELAY = 0.1               -- Seconds between the shots of a burst(dots around the Bullet rune)
 RECOIL_SPEED = 6 * TILE_SIZE * math.sqrt(GRAVITY_MULTIPLIER)    -- Push speed of one Recoil rune on a normal cast(scaled so rocket jumps keep their height)
 PUSH_DECAY = 6                  -- How fast horizontal knockback fades(per second)
 

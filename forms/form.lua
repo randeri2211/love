@@ -51,6 +51,11 @@ function Form:onContact(fixture, entity, contact)
 end
 
 
+function Form:preSolve(fixture, contact)
+    -- Called every physics step while touching a fixture, before the contact is solved(can turn it off)
+end
+
+
 -- Helpers for forms
 
 function Form:damageFor(entity)
