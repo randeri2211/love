@@ -22,7 +22,9 @@ function Laser:new(caster, params, x, y, dirX, dirY)
     laser.reach = params.reach
     laser.width = params.width
     laser.bounces = params.bounces   -- Rebound, reflections off surfaces
-    laser.bend = params.bend         -- Gravity, how much the beam curves down
+    laser.bend = params.bend         -- Gravity, how much the beam curves
+    laser.gravityX, laser.gravityY = params.gravityX, params.gravityY   -- Way it curves, down unless Gravity has an arrow
+    laser.pierce = params.pierce     -- Pierce, enemies and blocks the beam passes through
     laser.lifetime = params.lifetime -- How long the beam stays visible
     laser.duration = params.lifetime
     laser.color = params.color
@@ -35,12 +37,13 @@ function Laser:new(caster, params, x, y, dirX, dirY)
 end
 
 
-function Laser:castSegment(x1, y1, x2, y2)
-    -- Closest fixture on the segment, ignoring the caster, other spells and things that ignore spells
+function Laser:castSegment(x1, y1, x2, y2, passed)
+    -- Closest thing on the segment: blocks from the map(buried blocks have no hitbox), everything else from physics
+    -- Ignores the caster, other spells, things that ignore spells and whatever the beam already pierced(passed)
     local closest = nil
     p_world:rayCast(x1, y1, x2, y2, function(fixture, x, y, xn, yn, fraction)
         local category = fixture:getCategory()
-        if category == PLAYER_CATEGORY or category == SPELLS_CATEGORY or fixture:isSensor() then
+        if category == PLAYER_CATEGORY or category == SPELLS_CATEGORY or category == BLOCKS_CATEGORY or fixture:isSensor() then
             return -1   -- Ignore this fixture and keep going
         end
         for i, masked in ipairs({fixture:getMask()}) do
@@ -48,12 +51,17 @@ function Laser:castSegment(x1, y1, x2, y2)
                 return -1
             end
         end
-        closest = {x = x, y = y, nx = xn, ny = yn, fixture = fixture}
+        local entity = getEntityFromFixture(fixture)
+        if entity ~= nil and passed[entity] then
+            return -1
+        end
+        closest = {x = x, y = y, nx = xn, ny = yn, fixture = fixture, entity = entity, fraction = fraction}
         return fraction     -- Only look for closer hits from now on
     end)
 
-    if closest ~= nil then
-        closest.entity = getEntityFromFixture(closest.fixture)
+    local block = map:castRay(x1, y1, x2, y2, function(block) return passed[block] end)
+    if block ~= nil and (closest == nil or block.fraction < closest.fraction) then
+        closest = {x = block.x, y = block.y, nx = block.nx, ny = block.ny, entity = block.block, fraction = block.fraction}
     end
     return closest
 end
@@ -65,7 +73,9 @@ function Laser:fire()
     local dx, dy = self.direction[1], self.direction[2]
     local travelled = 0
     local bounces = self.bounces
+    local pierce = self.pierce
     local damaged = {}      -- Each thing is only hit once per beam
+    local passed = {}       -- Things the beam pierced, it goes on through them
     self.points = {x, y}
 
     for step = 1, MAX_STEPS do
@@ -73,9 +83,17 @@ function Laser:fire()
             break
         end
         local length = math.min(SEGMENT, self.reach - travelled)
-        local hit = self:castSegment(x, y, x + dx * length, y + dy * length)
+        local hit = self:castSegment(x, y, x + dx * length, y + dy * length, passed)
 
-        if hit ~= nil then
+        if hit ~= nil and pierce > 0 and hit.entity ~= nil then
+            -- Pierce, hit it and keep going the same way from where it was hit
+            pierce = pierce - 1
+            passed[hit.entity] = true
+            damaged[hit.entity] = true
+            self:hit(hit.entity, hit.x, hit.y, dx, dy)
+            travelled = travelled + distance(x, y, hit.x, hit.y)
+            x, y = hit.x, hit.y
+        elseif hit ~= nil then
             table.insert(self.points, hit.x)
             table.insert(self.points, hit.y)
             travelled = travelled + distance(x, y, hit.x, hit.y)
@@ -102,9 +120,10 @@ function Laser:fire()
             table.insert(self.points, x)
             table.insert(self.points, y)
 
-            -- Gravity bends the beam down a little every step
+            -- Gravity bends the beam a little every step
             if self.bend ~= 0 then
-                dy = dy + self.bend * BEND_PER_PIXEL * length
+                dx = dx + self.gravityX * self.bend * BEND_PER_PIXEL * length
+                dy = dy + self.gravityY * self.bend * BEND_PER_PIXEL * length
                 local size = math.sqrt(dx * dx + dy * dy)
                 dx, dy = dx / size, dy / size
             end

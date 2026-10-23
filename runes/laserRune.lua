@@ -20,6 +20,7 @@ LaserRune.stats = {
     {"Width", "width", "%.1f"},
     {"Bounces", "bounces", "%d"},
     {"Bend", "bend", "%.1f"},
+    {"Pierce", "pierce", "%d"},
 }
 
 function LaserRune:defaults()
@@ -30,10 +31,14 @@ function LaserRune:defaults()
         width = 4,
         bounces = 0,            -- Rebound rune reflects it
         bend = 0,               -- Gravity rune curves it down
+        pierce = 0,             -- Pierce rune lets it pass through enemies and blocks
         lifetime = 0.08,        -- How long each beam stays visible, short so rapid casts blend together
         manaScale = 0.1,        -- 10% of the normal mana cost per cast
         cooldownScale = 0.25,   -- Casts 4 times as often
     }
 end
+
+-- Marks: an arrow aims the beam, it bends and bounces from there as usual
+LaserRune:useAimMarks()
 
 return LaserRune

@@ -21,8 +21,9 @@ function Bullet:new(caster, params, x, y, dirX, dirY)
     bullet.terrainDamage = params.terrainDamage
     bullet.color = params.color
     bullet.gravityScale = params.gravityScale   -- Gravity makes the bullet fall in an arc
+    bullet.gravityX, bullet.gravityY = params.gravityX, params.gravityY  -- Way it falls, down unless Gravity has an arrow
     bullet.bounces = params.bounces             -- Rebound, contacts left before the bullet breaks
-    bullet.pierce = params.pierce               -- Enemies and blocks left it can pass through
+    bullet.pierce = params.pierce               -- Enemies and blocks left it can pass through(Pierce rune)
     bullet.pierced = {}                         -- Fixtures it is passing through, their contacts stay off
     bullet.piercedBlocks = {}                   -- Blocks already pierced, so a block is only hit once
     bullet.inTerrain = nil                      -- Last checked position once it pierced a block(see pierceTerrain)
@@ -47,7 +48,9 @@ function Bullet:shoot(x, y, dirX, dirY)
     self.direction = {dirX, dirY}
     self.body = love.physics.newBody(p_world, x + self.radius * self.direction[1], y + self.radius * self.direction[2], "dynamic")
     self.body:setBullet(true)
-    self.body:setGravityScale(self.gravityScale)
+    -- Falling down uses the world gravity, any other way is pushed every frame instead(see update)
+    self.customGravity = self.gravityX ~= 0 or self.gravityY ~= 1
+    self.body:setGravityScale(self.customGravity and 0 or self.gravityScale)
     self.body:setLinearDamping(0)
     self.body:setMass(self.mass)
 
@@ -68,13 +71,18 @@ function Bullet:shoot(x, y, dirX, dirY)
     -- Spawned inside the ground(a child spell deep in terrain, casting into a wall), blocks in there have no hitboxes
     -- so the bullet follows the map from the start, a plain bullet stops at the block it is in
     local bx, by = self.body:getWorldCenter()
-    if map:blockAt(bx, by) ~= nil then
+    if map:solidAt(bx, by) ~= nil then
         self.inTerrain = {bx, by}
     end
 end
 
 
 function Bullet:update(dt)
+    -- Gravity the Gravity rune turned, as strong as the world gravity would be
+    if self.customGravity and self.gravityScale ~= 0 then
+        local force = self.body:getMass() * GRAVITY * self.gravityScale
+        self.body:applyForce(self.gravityX * force, self.gravityY * force)
+    end
     -- Only blocks next to air have physics bodies, so once inside terrain the tiles are checked on the map instead
     if self.inTerrain ~= nil and self:pierceTerrain() then
         return
@@ -96,7 +104,7 @@ function Bullet:pierceTerrain()
     local steps = math.max(1, math.ceil(distance(fromX, fromY, x, y) / (TILE_SIZE / 4)))
     for i = 0, steps do
         local px, py = fromX + (x - fromX) * i / steps, fromY + (y - fromY) * i / steps
-        local block = map:blockAt(px, py)
+        local block = map:solidAt(px, py)
         if block ~= nil and not self.piercedBlocks[block] then
             self.piercedBlocks[block] = true
             self:hit(block, px, py, dx, dy)

@@ -42,9 +42,12 @@ BASE_SPELL_PARAMS = {
     complexityScale = 1,        -- Multiplies the whole spell complexity(weakening runes lower it)
     cooldownScale = 1,          -- Multiplies the cooldown(rapid fire forms lower it)
     recoil = 0,                 -- Pushes the caster away from the aim, Recoil rune raises it
+    repeats = 1,                -- Casts in a row per cast, Repeat rune multiplies it
+    gravityX = 0,               -- Way gravity pulls the spell(bullets fall, lasers bend), an arrow on Gravity turns it
+    gravityY = 1,
 }
 
-BURST_DELAY = 0.1               -- Seconds between the shots of a burst(dots around the Bullet rune)
+REPEAT_DELAY = 0.1              -- Seconds between the casts of a Repeat
 RECOIL_SPEED = 6 * TILE_SIZE * math.sqrt(GRAVITY_MULTIPLIER)    -- Push speed of one Recoil rune on a normal cast(scaled so rocket jumps keep their height)
 PUSH_DECAY = 6                  -- How fast horizontal knockback fades(per second)
 

@@ -156,9 +156,12 @@ end
 function Spellbooks.default()
     -- What a new player starts with, bound to keys 1-7
     local book = Spellbook()
-    -- Bullet drawn with pierce marks(2 pierces) that explodes on every hit, shows where each pierce hits
-    local piercing = Spell:new("Bullet", {{"OnHit", Spell:new("Area", {false, false, false, false, false, false})}, false, false, false, false, false})
-    piercing.coreDrawing = {quality = 1, marks = {pierce = 2}, strokes = {}}
+    -- Bullet with a Pierce rune(2 pierces) that explodes on every hit, shows where each pierce hits
+    local piercing = Spell:new("Bullet", {
+        {"Pierce", nil, drawing = {quality = 1, marks = {pierce = 2}, strokes = {}}},
+        {"OnHit", Spell:new("Area", {false, false, false, false, false, false})},
+        false, false, false, false,
+    })
     local defaults = {
         {"Piercing blast", piercing},
         {"Shotgun burst", Spell:new("Bullet", {"Speed", {"OnHit", Spell:new("Bullet", {"Split", "Split"})}})},

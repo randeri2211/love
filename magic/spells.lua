@@ -8,7 +8,7 @@ function Spells:new()
     self.__index = self
     spells.spells = {}
     spells.queue = {}       -- Triggered casts waiting for the physics update to finish
-    spells.scheduled = {}   -- Things to run later on the game clock, {time, run}(burst shots)
+    spells.scheduled = {}   -- Things to run later on the game clock, {time, run}(Repeat casts)
     spells.circles = {}     -- Magic circles fading out where spells were cast
     spells.time = 0         -- Game time in seconds, stops while paused(used for cooldowns)
 

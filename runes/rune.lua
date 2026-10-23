@@ -58,9 +58,60 @@ function Rune:settings(marks)
 end
 
 
+-- Aim Marks
+-- Forms that are cast in a direction share one mark: a single arrow turns the cast from the aim the way it points
+-- (only one, a cast cant go two ways), Spell:shoot turns the direction by params.aimOffset
+local AIM_MIN_QUALITY = 0.25        -- Arrows drawn worse than this dont count
+local AIM_COMPLEXITY = 1
+
+function Rune:useAimMarks()
+    -- Gives a form the aim arrow mark(see Bullet and Laser)
+    function self:readMarks(marks)
+        local arrows = {}
+        for i, mark in ipairs(marks) do
+            if mark.kind == "arrow" and mark.quality >= AIM_MIN_QUALITY then
+                table.insert(arrows, mark)
+            end
+        end
+        if #arrows > 1 then
+            return nil, "Only one aim arrow on a " .. self.name
+        end
+        if #arrows == 0 then
+            return nil
+        end
+        -- 0 is the aim(to the right on the pad), turned to -180 to 180 degrees
+        return {aim = (arrows[1].direction + math.pi) % (2 * math.pi) - math.pi}
+    end
+
+    function self:checkMarks(saved)
+        -- Marks the form doesnt have anymore(old Bullet bursts and pierce) are dropped
+        if type(saved.aim) ~= "number" then
+            return nil
+        end
+        return {aim = math.max(-math.pi, math.min(math.pi, saved.aim))}
+    end
+
+    function self:markCost(marks)
+        return AIM_COMPLEXITY, 0
+    end
+
+    function self:describeMarks(marks)
+        local degrees = math.floor(math.deg(math.abs(marks.aim)) + 0.5)
+        return string.format("aimed %d %s", degrees, marks.aim < 0 and "up" or "down")
+    end
+
+    function self:applyMarks(params, marks)
+        params.aimOffset = marks.aim
+    end
+end
+
+
 -- Params a drawn rune always changes fully, whatever the drawing quality
 -- Costs stay fixed so a sloppy drawing isnt cheaper
-Rune.FULL_PARAMS = {manaScale = true, complexityScale = true, cooldownScale = true, bounces = true}
+-- Repeats and pierce are counted from marks, their quality is already in the count
+-- The gravity direction is a direction, blending it would also weaken it
+Rune.FULL_PARAMS = {manaScale = true, complexityScale = true, cooldownScale = true, bounces = true, repeats = true, pierce = true,
+    gravityX = true, gravityY = true}
 -- Params that scale with quality but have to stay whole numbers(a Split drawn at 70% makes fewer projectiles)
 Rune.WHOLE_PARAMS = {count = true}
 

@@ -746,6 +746,9 @@ function SpellEditor:info(x, y)
         Slab.Text(string.format("Damage: %.1f", params.damage))
         Slab.Text(string.format("Terrain damage: %.1f (%.0f%%)", params.damage * params.terrainDamage, params.terrainDamage * 100))
         Slab.Text("Count: " .. params.count)
+        if params.repeats > 1 then
+            Slab.Text("Repeats: " .. params.repeats)
+        end
         Slab.Text(string.format("Lifetime: %.1fs", params.lifetime))
         if params.recoil > 0 then
             Slab.Text(string.format("Recoil: %.0f", params.recoil * RECOIL_SPEED * params.cooldownScale))

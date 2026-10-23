@@ -82,6 +82,12 @@ function Block:hasOwnState()
 end
 
 
+function Block:contains(x, y)
+    -- True when a love point is inside the block box(blocks shorter than a tile sit at the bottom of it)
+    return x >= self.x and x <= self.x + self.width and y >= self.y and y <= self.y + self.height
+end
+
+
 function Block:destroy()
     -- The map removes the hitbox and gives the newly exposed neighbors theirs
     map:set(self.mx, self.my, nil)

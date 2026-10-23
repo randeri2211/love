@@ -92,7 +92,7 @@ function Spell:compile(depth)
     params.damage = params.damage * Rune.strength(self.coreDrawing and self.coreDrawing.quality)
     params.complexity = formRune.complexity
     params.manaCost = formRune.manaCost
-    -- Marks drawn around the form(Bullet aim, burst and pierce), before the modifiers so they build on them
+    -- Marks drawn around the form(the aim arrow), before the modifiers so they build on them
     local coreMarks = self.coreDrawing and self.coreDrawing.marks
     if coreMarks ~= nil then
         if formRune.applyMarks ~= nil then
@@ -368,10 +368,10 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
 
     self:spawnVolley(caster, castParams, x, y, dirX, dirY)
 
-    -- Burst, more volleys in a row the same way, already paid for in the mana cost
+    -- Repeat, more volleys in a row the same way, already paid for in the mana cost
     -- Casts the caster made follow their hands, triggered ones stay where they were triggered
-    for shot = 2, params.burst or 1 do
-        spells:schedule((shot - 1) * BURST_DELAY, function()
+    for shot = 2, params.repeats do
+        spells:schedule((shot - 1) * REPEAT_DELAY, function()
             local shotX, shotY = x, y
             if defaultOrigin and caster.castOrigin ~= nil then
                 shotX, shotY = caster:castOrigin(dirX, dirY)

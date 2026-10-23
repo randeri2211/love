@@ -156,6 +156,124 @@ function Map:blockAt(x, y)
 end
 
 
+function Map:solidAt(x, y)
+    -- Block whose box a love point is inside, nil for air(the top of a tile with a short block is air)
+    local block = self:blockAt(x, y)
+    if block ~= nil and block:contains(x, y) then
+        return block
+    end
+    return nil
+end
+
+
+local function rayBox(x1, y1, dx, dy, bx1, by1, bx2, by2)
+    -- Where a segment enters a box(the slab test), as a fraction of the segment and the normal of the face it enters
+    -- A segment starting inside the box enters at 0 with no face(0, 0), nil when it misses
+    local enter, leave, nx, ny = 0, 1, 0, 0
+    if dx == 0 then
+        if x1 < bx1 or x1 > bx2 then
+            return nil
+        end
+    else
+        local t1, t2, n = (bx1 - x1) / dx, (bx2 - x1) / dx, -1
+        if t1 > t2 then
+            t1, t2, n = t2, t1, 1
+        end
+        if t1 > enter then
+            enter, nx, ny = t1, n, 0
+        end
+        leave = math.min(leave, t2)
+    end
+    if dy == 0 then
+        if y1 < by1 or y1 > by2 then
+            return nil
+        end
+    else
+        local t1, t2, n = (by1 - y1) / dy, (by2 - y1) / dy, -1
+        if t1 > t2 then
+            t1, t2, n = t2, t1, 1
+        end
+        if t1 > enter then
+            enter, nx, ny = t1, 0, n
+        end
+        leave = math.min(leave, t2)
+    end
+    if enter > leave then
+        return nil
+    end
+    return enter, nx, ny
+end
+
+
+function Map:castRay(x1, y1, x2, y2, skip)
+    -- First block on the segment from x1, y1 to x2, y2(love coordinates), walking the tiles it crosses one by one
+    -- Sees every block, buried ones have no hitbox so physics raycasts miss them
+    -- Each tile block is checked against its real box, so a ray can pass over a block shorter than a tile
+    -- skip(block) returning true lets the ray pass a block(blocks a laser already pierced)
+    -- Returns {block, x, y, nx, ny, fraction} with the face normal it entered through, or nil
+    local dx, dy = x2 - x1, y2 - y1
+    local tx, ty = math.floor(x1 / TILE_SIZE), math.floor(y1 / TILE_SIZE)
+    local function hitIn(cx, cy)
+        local block = self:blockAt(cx * TILE_SIZE, cy * TILE_SIZE)
+        if block == nil or (skip and skip(block)) then
+            return nil
+        end
+        local fraction, nx, ny = rayBox(x1, y1, dx, dy, block.x, block.y, block.x + block.width, block.y + block.height)
+        if fraction == nil then
+            return nil
+        end
+        if nx == 0 and ny == 0 then
+            -- Started inside the block, it faces back along the ray
+            if math.abs(dx) >= math.abs(dy) then
+                nx = dx > 0 and -1 or 1
+            else
+                ny = dy > 0 and -1 or 1
+            end
+        end
+        return {block = block, x = x1 + dx * fraction, y = y1 + dy * fraction, nx = nx, ny = ny, fraction = fraction}
+    end
+
+    -- The tile the ray starts in first
+    local hit = hitIn(tx, ty)
+    if hit ~= nil then
+        return hit
+    end
+
+    -- Fraction of the segment to the next tile edge on each axis, and per whole tile
+    local stepX, stepY = dx > 0 and 1 or -1, dy > 0 and 1 or -1
+    local nextX, nextY, perX, perY = math.huge, math.huge, math.huge, math.huge
+    if dx ~= 0 then
+        nextX = ((dx > 0 and (tx + 1) * TILE_SIZE or tx * TILE_SIZE) - x1) / dx
+        perX = TILE_SIZE / math.abs(dx)
+    end
+    if dy ~= 0 then
+        nextY = ((dy > 0 and (ty + 1) * TILE_SIZE or ty * TILE_SIZE) - y1) / dy
+        perY = TILE_SIZE / math.abs(dy)
+    end
+
+    while true do
+        -- Step into whichever neighbor tile the ray reaches first
+        local fraction
+        if nextX < nextY then
+            fraction = nextX
+            tx = tx + stepX
+            nextX = nextX + perX
+        else
+            fraction = nextY
+            ty = ty + stepY
+            nextY = nextY + perY
+        end
+        if fraction > 1 then
+            return nil
+        end
+        hit = hitIn(tx, ty)
+        if hit ~= nil then
+            return hit
+        end
+    end
+end
+
+
 function Map:set(x, y, block)
     -- Places a block or removes it(nil), the chunk is saved as it is so nothing else needs to remember it
     if y < 1 or y > self.height then
