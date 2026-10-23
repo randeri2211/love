@@ -24,6 +24,8 @@ function Bullet:new(caster, params, x, y, dirX, dirY)
     bullet.bounces = params.bounces             -- Rebound, contacts left before the bullet breaks
     bullet.pierce = params.pierce               -- Enemies and blocks left it can pass through
     bullet.pierced = {}                         -- Fixtures it is passing through, their contacts stay off
+    bullet.piercedBlocks = {}                   -- Blocks already pierced, so a block is only hit once
+    bullet.inTerrain = nil                      -- Last checked position once it pierced a block(see pierceTerrain)
     bullet.imagePath = params.imagePath
     bullet.image = BLOCK_IMG[bullet.imagePath]
 
@@ -66,10 +68,41 @@ end
 
 
 function Bullet:update(dt)
+    -- Only blocks next to air have physics bodies, so once inside terrain the tiles are checked on the map instead
+    if self.inTerrain ~= nil and self:pierceTerrain() then
+        return
+    end
     self.lifetime = self.lifetime - dt
     if self.lifetime <= 0 then
         self:expire()
     end
+end
+
+
+function Bullet:pierceTerrain()
+    -- Hits every block between the last checked position and now, in small steps so fast bullets dont skip tiles
+    -- Returns true when the bullet ran out of pierce and stopped
+    local fromX, fromY = self.inTerrain[1], self.inTerrain[2]
+    local x, y = self.body:getWorldCenter()
+    local dx, dy = self:getDirection()
+    local steps = math.max(1, math.ceil(distance(fromX, fromY, x, y) / (TILE_SIZE / 4)))
+    for i = 1, steps do
+        local px, py = fromX + (x - fromX) * i / steps, fromY + (y - fromY) * i / steps
+        -- Blocks are found from the corner of the tile the point is in, the same way blocks are placed
+        local block = map:get(loveToMap(math.floor(px / TILE_SIZE) * TILE_SIZE, math.floor(py / TILE_SIZE) * TILE_SIZE))
+        if block ~= nil and not self.piercedBlocks[block] then
+            self.piercedBlocks[block] = true
+            self:hit(block, px, py, dx, dy)
+            if self.pierce > 0 then
+                self.pierce = self.pierce - 1
+            else
+                spells:destroy(self)
+                return true
+            end
+        end
+    end
+    self.inTerrain = {x, y}
+    return false
 end
 
 
@@ -88,6 +121,12 @@ function Bullet:onContact(fixture, entity, contact)
     if self.pierced[fixture] then
         return
     end
+    -- A block already pierced through the map(see pierceTerrain) keeps letting the bullet through
+    if entity ~= nil and self.piercedBlocks[entity] then
+        self.pierced[fixture] = true
+        contact:setEnabled(false)
+        return
+    end
     local dx, dy = self:getDirection()
 
     -- Pierce, enemies and blocks are hit and passed through(children keep the bullet direction)
@@ -98,6 +137,11 @@ function Bullet:onContact(fixture, entity, contact)
         contact:setEnabled(false)
         local x, y = self.body:getWorldCenter()
         self:hit(entity, x, y, dx, dy)
+        if entity.type == "Block" then
+            -- Inside the terrain the blocks have no bodies, the bullet follows the map from here
+            self.piercedBlocks[entity] = true
+            self.inTerrain = self.inTerrain or {x, y}
+        end
         return
     end
 
