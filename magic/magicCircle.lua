@@ -1,3 +1,5 @@
+local Strokes = require "magic.strokes"
+
 local MagicCircle = {}
 
 -- Circle sizes at scale 1(child circles are drawn smaller)
@@ -11,6 +13,7 @@ MagicCircle.RING_COLOR = {0.6, 0.6, 0.75, 1}
 MagicCircle.EMPTY_COLOR = {0.35, 0.35, 0.4, 1}
 MagicCircle.SLOT_BG_COLOR = {0.06, 0.07, 0.11, 1}
 MagicCircle.BLOCKED_COLOR = {0.9, 0.2, 0.2, 1}     -- Runes the circle form doesnt allow
+MagicCircle.MARK_ALPHA = 0.75                       -- Marks around a drawn rune are a little fainter than the rune
 
 local TAU = math.pi * 2
 local TOP = -math.pi / 2
@@ -106,6 +109,76 @@ function MagicCircle.drawGlyph(glyph, x, y, radius, lineWidth)
             love.graphics.arc("line", "open", shape[2], shape[3], shape[4], shape[5], shape[6], 24)
         end
     end
+    love.graphics.pop()
+end
+
+
+-- Drawings
+local function drawingLines(drawing)
+    -- The player strokes as flat point lists for love.graphics.line, split into the rune and its marks
+    -- Built once and kept on the drawing(saving only keeps quality, marks and strokes)
+    if drawing.lines == nil then
+        local runeStrokes, markStrokes = Strokes.splitZones(drawing.strokes, 1)
+        local total = 0
+        local function flatten(strokes)
+            local lines = {}
+            for i, stroke in ipairs(strokes) do
+                local flat = {}
+                for j, point in ipairs(stroke) do
+                    table.insert(flat, point[1])
+                    table.insert(flat, point[2])
+                end
+                total = total + #stroke
+                table.insert(lines, flat)
+            end
+            return lines
+        end
+        drawing.lines = {rune = flatten(runeStrokes), marks = flatten(markStrokes)}
+        drawing.lines.points = total
+    end
+    return drawing.lines
+end
+
+
+function MagicCircle.hasDrawing(drawing)
+    -- True when a rune was drawn by the player, runes without strokes show their clean glyph
+    return drawing ~= nil and drawing.strokes ~= nil and #drawing.strokes > 0
+end
+
+
+function MagicCircle.drawDrawing(drawing, x, y, radius, lineWidth, color, alpha, progress)
+    -- Draws the player strokes, the rune zone(pad radius 1) fills radius and the marks sit around it
+    -- progress(0-1) draws the strokes in the order they were drawn, like the rune being written
+    if radius <= 0.01 then
+        return
+    end
+    local lines = drawingLines(drawing)
+    local budget = math.floor((progress or 1) * lines.points + 0.5)
+    love.graphics.push()
+    love.graphics.translate(x, y)
+    love.graphics.scale(radius)
+    love.graphics.setLineWidth(lineWidth / radius)   -- Same thickness at any size
+
+    local function drawLines(list, a)
+        love.graphics.setColor(color[1], color[2], color[3], a)
+        for i, flat in ipairs(list) do
+            local count = math.min(#flat / 2, budget)
+            if count <= 0 then
+                return
+            end
+            budget = budget - count
+            if count == 1 then
+                -- A tap, drawn as a small dot
+                love.graphics.circle("fill", flat[1], flat[2], lineWidth / radius, 8)
+            elseif count * 2 == #flat then
+                love.graphics.line(flat)
+            else
+                love.graphics.line({unpack(flat, 1, count * 2)})
+            end
+        end
+    end
+    drawLines(lines.rune, alpha)
+    drawLines(lines.marks, alpha * MagicCircle.MARK_ALPHA)
     love.graphics.pop()
 end
 
@@ -314,19 +387,28 @@ local worldDrawer = {
             r = radius * easeBack(appear)
         end
         local lineWidth = width(scale)
+        local _, _, drawing = spell:readSlot(spell.slots[index])
+        local drawn = style.glyphs and MagicCircle.hasDrawing(drawing)
 
         if rune == nil then
             strokeArc(x, y, r, 0, TAU, MagicCircle.EMPTY_COLOR, lineWidth * 0.6, 0.8 * appear)
         elseif blocked then
             -- Inactive rune, dim glyph with a red ring and slash
             fillCircle(x, y, r, MagicCircle.SLOT_BG_COLOR, appear)
-            if rune.glyph then
+            if drawn then
+                MagicCircle.drawDrawing(drawing, x, y, r, lineWidth * 0.8, rune.color, 0.3 * appear * style.alpha, appear)
+            elseif rune.glyph then
                 setColor(rune.color, 0.3 * appear)
                 MagicCircle.drawGlyph(rune.glyph, x, y, r * 0.6, lineWidth * 0.8)
             end
             strokeArc(x, y, r, 0, TAU, MagicCircle.BLOCKED_COLOR, lineWidth, 0.8 * appear)
             local d = r * 0.7
             strokeLine(x - d, y + d, x + d, y - d, MagicCircle.BLOCKED_COLOR, lineWidth, 0.8 * appear)
+        elseif drawn then
+            -- The player drawing, the slot ring is where the pad divider was so the marks sit around the slot
+            fillCircle(x, y, r, MagicCircle.SLOT_BG_COLOR, appear)
+            strokeArc(x, y, r, 0, TAU, rune.color, lineWidth, appear)
+            MagicCircle.drawDrawing(drawing, x, y, r, lineWidth * 0.8, rune.color, appear * style.alpha, appear)
         elseif style.glyphs and rune.glyph then
             fillCircle(x, y, r, MagicCircle.SLOT_BG_COLOR, appear)
             strokeArc(x, y, r, 0, TAU, rune.color, lineWidth, appear)
@@ -355,7 +437,12 @@ local worldDrawer = {
         end
         local lineWidth = width(scale)
 
-        if style.glyphs and rune.glyph then
+        if style.glyphs and MagicCircle.hasDrawing(spell.coreDrawing) then
+            -- The player drawing of the form, its marks sit between the core and the ring
+            fillCircle(x, y, r, MagicCircle.SLOT_BG_COLOR, coreAppear)
+            strokeArc(x, y, r, 0, TAU, rune.color, lineWidth * 1.2, coreAppear)
+            MagicCircle.drawDrawing(spell.coreDrawing, x, y, r, lineWidth * 0.8, rune.color, coreAppear * style.alpha, coreAppear)
+        elseif style.glyphs and rune.glyph then
             fillCircle(x, y, r, MagicCircle.SLOT_BG_COLOR, coreAppear)
             strokeArc(x, y, r, 0, TAU, rune.color, lineWidth * 1.2, coreAppear)
             strokeArc(x, y, r * 0.8, 0, TAU, rune.color, lineWidth * 0.5, 0.5 * coreAppear)

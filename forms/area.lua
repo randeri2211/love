@@ -41,21 +41,40 @@ function Area:currentRadius()
 end
 
 
+local function overlapsBox(cx, cy, radius, x1, y1, x2, y2)
+    -- True when a circle touches a box, using the point of the box closest to the circle center
+    local px = math.max(x1, math.min(cx, x2))
+    local py = math.max(y1, math.min(cy, y2))
+    return distance(cx, cy, px, py) <= radius
+end
+
+
 function Area:query(radius)
-    -- Blocks and enemies overlapping the circle(collected first, so nothing is destroyed mid query)
+    -- Blocks and enemies overlapping the circle not hit yet(collected first, so nothing is destroyed mid query)
+    -- Returns {entity, fixture(enemies only), x, y}
     local found = {}
+
+    -- Enemies always have bodies, so physics finds them
     p_world:queryBoundingBox(self.x - radius, self.y - radius, self.x + radius, self.y + radius, function(fixture)
-        local category = fixture:getCategory()
-        if category == ENEMY_CATEGORY or category == BLOCKS_CATEGORY then
+        if fixture:getCategory() == ENEMY_CATEGORY then
             local x1, y1, x2, y2 = fixture:getBoundingBox()
-            local cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
-            local size = math.min(x2 - x1, y2 - y1) / 2
-            if distance(cx, cy, self.x, self.y) <= radius + size then
-                table.insert(found, {fixture = fixture, x = cx, y = cy})
+            if overlapsBox(self.x, self.y, radius, x1, y1, x2, y2) then
+                table.insert(found, {fixture = fixture, x = (x1 + x2) / 2, y = (y1 + y2) / 2})
             end
         end
         return true     -- Keep looking
     end)
+
+    -- Blocks come from the map tiles under the circle, blocks inside the ground have no hitbox for physics to find
+    for tx = math.floor((self.x - radius) / TILE_SIZE), math.floor((self.x + radius) / TILE_SIZE) do
+        for ty = math.floor((self.y - radius) / TILE_SIZE), math.floor((self.y + radius) / TILE_SIZE) do
+            local block = map:blockAt(tx * TILE_SIZE, ty * TILE_SIZE)
+            if block ~= nil and not self.hits[block]
+                and overlapsBox(self.x, self.y, radius, block.x, block.y, block.x + block.width, block.y + block.height) then
+                table.insert(found, {entity = block, x = block.x + block.width / 2, y = block.y + block.height / 2})
+            end
+        end
+    end
     return found
 end
 
@@ -66,8 +85,9 @@ function Area:update(dt)
 
     for i, found in ipairs(self:query(radius)) do
         local fixture = found.fixture
-        if not fixture:isDestroyed() then
-            local entity = getEntityFromFixture(fixture)
+        -- Enemies hit earlier in this loop may already be gone
+        if fixture == nil or not fixture:isDestroyed() then
+            local entity = found.entity or getEntityFromFixture(fixture)
             local key = entity or fixture
             -- Direction from the center outward, for child spells
             local dx, dy = found.x - self.x, found.y - self.y
@@ -84,7 +104,7 @@ function Area:update(dt)
             end
 
             -- Gravity pulls enemies that survived toward the center
-            if self.pull > 0 and not fixture:isDestroyed() and fixture:getCategory() == ENEMY_CATEGORY then
+            if self.pull > 0 and fixture ~= nil and not fixture:isDestroyed() then
                 local body = fixture:getBody()
                 local bx, by = body:getPosition()
                 local step = math.min(size, AREA_PULL_SPEED * self.pull * dt)

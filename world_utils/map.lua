@@ -149,6 +149,13 @@ function Map:get(x, y)
 end
 
 
+function Map:blockAt(x, y)
+    -- Block in the tile a love point is in, nil for air
+    -- Found from the tile corner the same way blocks are placed(loveToMap of a point inside a tile can land a row off)
+    return self:get(loveToMap(math.floor(x / TILE_SIZE) * TILE_SIZE, math.floor(y / TILE_SIZE) * TILE_SIZE))
+end
+
+
 function Map:set(x, y, block)
     -- Places a block or removes it(nil), the chunk is saved as it is so nothing else needs to remember it
     if y < 1 or y > self.height then

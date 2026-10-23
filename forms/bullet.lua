@@ -64,6 +64,13 @@ function Bullet:shoot(x, y, dirX, dirY)
 
     -- Multiply the direction by speed
     self:updateVel()
+
+    -- Spawned inside the ground(a child spell deep in terrain, casting into a wall), blocks in there have no hitboxes
+    -- so the bullet follows the map from the start, a plain bullet stops at the block it is in
+    local bx, by = self.body:getWorldCenter()
+    if map:blockAt(bx, by) ~= nil then
+        self.inTerrain = {bx, by}
+    end
 end
 
 
@@ -81,15 +88,15 @@ end
 
 function Bullet:pierceTerrain()
     -- Hits every block between the last checked position and now, in small steps so fast bullets dont skip tiles
+    -- The last checked position is checked again so the block a bullet spawned in is hit too(blocks are only hit once)
     -- Returns true when the bullet ran out of pierce and stopped
     local fromX, fromY = self.inTerrain[1], self.inTerrain[2]
     local x, y = self.body:getWorldCenter()
     local dx, dy = self:getDirection()
     local steps = math.max(1, math.ceil(distance(fromX, fromY, x, y) / (TILE_SIZE / 4)))
-    for i = 1, steps do
+    for i = 0, steps do
         local px, py = fromX + (x - fromX) * i / steps, fromY + (y - fromY) * i / steps
-        -- Blocks are found from the corner of the tile the point is in, the same way blocks are placed
-        local block = map:get(loveToMap(math.floor(px / TILE_SIZE) * TILE_SIZE, math.floor(py / TILE_SIZE) * TILE_SIZE))
+        local block = map:blockAt(px, py)
         if block ~= nil and not self.piercedBlocks[block] then
             self.piercedBlocks[block] = true
             self:hit(block, px, py, dx, dy)
