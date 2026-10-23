@@ -83,29 +83,31 @@ end
 
 
 function Block:destroy()
-    self:destroyBody()
+    -- The map removes the hitbox and gives the newly exposed neighbors theirs
     map:set(self.mx, self.my, nil)
 end
 
 
-function Block:generateBody()
-    -- Setting up all the userdata
-    if self.body == nil then
-        self.body = love.physics.newBody(p_world, self.x, self.y, "static")
-        self.shape = love.physics.newRectangleShape(self.width / 2, self.height / 2, self.width, self.height)
-        self.fixture = love.physics.newFixture(self.body, self.shape, 1)
-        self.body:setSleepingAllowed(true)
-        self.body:isAwake(false)
+function Block:generateHitbox(body)
+    -- Hitbox of this block as a fixture on its chunk body(see Map:refreshHitbox), the same box the block is drawn in
+    -- The fixture knows its block, so contacts and queries find the block straight from it
+    if self.fixture == nil then
+        self.shape = love.physics.newRectangleShape(self.x + self.width / 2, self.y + self.height / 2, self.width, self.height)
+        self.fixture = love.physics.newFixture(body, self.shape, 1)
         self.fixture:setCategory(BLOCKS_CATEGORY)
         self.fixture:setGroupIndex(-BLOCKS_CATEGORY)
+        self.fixture:setUserData(self)
     end
 end
 
 
-function Block:destroyBody()
-    if self.body ~= nil then
-        self.body:destroy()
-        self.body = nil
+function Block:destroyHitbox()
+    if self.fixture ~= nil then
+        if not self.fixture:isDestroyed() then
+            self.fixture:destroy()
+        end
+        self.fixture = nil
+        self.shape = nil
     end
 end
 

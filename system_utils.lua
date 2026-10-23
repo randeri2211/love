@@ -27,42 +27,21 @@ end
 
 
 function manageHitbox()
+    -- Blocks around the player have hitboxes, the map only does work when the player moves to another tile
     local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2) + CAMERA_RENDER_OFFSET)
     local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2) + CAMERA_RENDER_OFFSET)
     local p_x,p_y = loveToMap(player.body:getWorldCenter())
-    local destroyDistance = 3
-    -- The map is infinite sideways, only the top and bottom have an edge
-    for x = p_x - x_diff - destroyDistance, p_x + x_diff + destroyDistance do
-        for y = math.max(p_y - y_diff - destroyDistance, 1),math.min(p_y + y_diff + destroyDistance, map.height) do
-            local block = map:get(x, y)
-            if block ~= nil then
-                -- In the body destroy area
-                if x < p_x - x_diff or x > p_x +x_diff or y < p_y - y_diff or y > p_y + y_diff then
-                    -- If outside of range, destroy the body
-                    block:destroyBody()
-                -- In the body generate area
-                else
-                    -- If in range, and one of the neighbors is not a block,or at the top or bottom edge, generate a body
-                    if y > 1 and y < map.height then
-                        if map:get(x - 1, y) == nil or map:get(x + 1, y) == nil or map:get(x, y - 1) == nil or map:get(x, y + 1) == nil then
-                            block:generateBody()
-                        end
-                    else
-                        block:generateBody()
-                    end
-                end
-            end
-        end
-    end
+    map:updateHitboxes(p_x - x_diff, p_y - y_diff, p_x + x_diff, p_y + y_diff)
 end
 
 
 function getEntityFromFixture(fixture)
-    -- Block or enemy that owns a fixture, nil for anything else
-    if fixture:getCategory() == BLOCKS_CATEGORY then
-        local x, y = loveToMap(fixture:getBody():getWorldCenter())
-        return map:get(x, y)
-    elseif fixture:getCategory() == ENEMY_CATEGORY then
+    -- Block or enemy that owns a fixture, nil for anything else(blocks and enemies keep themselves on their fixture)
+    local owner = fixture:getUserData()
+    if owner ~= nil then
+        return owner
+    end
+    if fixture:getCategory() == ENEMY_CATEGORY then
         return map.enemies:getEnemyByFixture(fixture)
     end
     return nil

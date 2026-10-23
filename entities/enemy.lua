@@ -23,6 +23,7 @@ function Enemy:new(x, y)
     enemy.fixture = love.physics.newFixture(enemy.body, enemy.shape, 1)
     enemy.fixture:setCategory(ENEMY_CATEGORY)
     enemy.fixture:setGroupIndex(-ENEMY_CATEGORY)
+    enemy.fixture:setUserData(enemy)    -- Contacts find the enemy straight from its fixture
     
     -- Enemy Init
     enemy.body:setGravityScale(1)

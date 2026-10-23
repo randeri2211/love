@@ -23,6 +23,16 @@ function Map:emptyMap()
     self.enemies = Enemies:new()
     self.chunks = {}    -- Chunks with real blocks, chunks["cx,cy"][cell index] = block
     self.saved = {}     -- Visited chunks from a save, kept as data until they are needed again
+    -- Hitboxes: one static body per chunk holds the fixtures of its blocks that touch air
+    -- Clearing the map(loading a save) removes the old hitboxes from the physics world too
+    for key, body in pairs(self.chunkBodies or {}) do
+        if not body:isDestroyed() then
+            body:destroy()
+        end
+    end
+    self.chunkBodies = {}
+    self.hitboxWindow = nil     -- Map area that has hitboxes, {x1, y1, x2, y2}(see updateHitboxes)
+    self.pendingHitboxes = {}   -- Cells changed during a physics callback, refreshed on the next update
 end
 
 
@@ -145,7 +155,101 @@ function Map:set(x, y, block)
         return
     end
     local key, cx, cy, index = chunkOf(x, y)
-    self:getChunk(key, cx, cy)[index] = block
+    local chunk = self:getChunk(key, cx, cy)
+    if chunk[index] ~= nil and chunk[index] ~= block then
+        chunk[index]:destroyHitbox()
+    end
+    chunk[index] = block
+
+    -- The block and its neighbors may have started or stopped touching air
+    self:refreshHitbox(x, y)
+    self:refreshHitbox(x - 1, y)
+    self:refreshHitbox(x + 1, y)
+    self:refreshHitbox(x, y - 1)
+    self:refreshHitbox(x, y + 1)
+end
+
+
+-- Hitboxes
+function Map:chunkBody(x, y)
+    -- Static body of the chunk a map cell is in, made when its first block gets a hitbox
+    local key = chunkOf(x, y)
+    local body = self.chunkBodies[key]
+    if body == nil then
+        body = love.physics.newBody(p_world, 0, 0, "static")
+        self.chunkBodies[key] = body
+    end
+    return body
+end
+
+
+function Map:inHitboxWindow(x, y)
+    local w = self.hitboxWindow
+    return w ~= nil and x >= w[1] and x <= w[3] and y >= w[2] and y <= w[4]
+end
+
+
+function Map:refreshHitbox(x, y)
+    -- Gives a block a hitbox when it is near the player and touches air(or the top or bottom of the map),
+    -- blocks inside the ground cant be touched so they go without
+    if not self:inHitboxWindow(x, y) then
+        return
+    end
+    -- Fixtures cant be made while the physics world is in a callback(a spell breaking a block on contact)
+    if p_world:isLocked() then
+        table.insert(self.pendingHitboxes, {x, y})
+        return
+    end
+    local block = self:get(x, y)
+    if block == nil then
+        return
+    end
+    local exposed = y <= 1 or y >= self.height
+        or self:get(x - 1, y) == nil or self:get(x + 1, y) == nil
+        or self:get(x, y - 1) == nil or self:get(x, y + 1) == nil
+    if exposed then
+        block:generateHitbox(self:chunkBody(x, y))
+    else
+        block:destroyHitbox()
+    end
+end
+
+
+function Map:updateHitboxes(x1, y1, x2, y2)
+    -- Moves the area with hitboxes, only the cells that left or joined it change
+    -- (placing and breaking blocks inside it is handled by set)
+    y1, y2 = math.max(y1, 1), math.min(y2, self.height)
+    local pending = self.pendingHitboxes
+    self.pendingHitboxes = {}
+    for i, cell in ipairs(pending) do
+        self:refreshHitbox(cell[1], cell[2])
+    end
+
+    local old = self.hitboxWindow
+    if old ~= nil and old[1] == x1 and old[2] == y1 and old[3] == x2 and old[4] == y2 then
+        return
+    end
+    self.hitboxWindow = {x1, y1, x2, y2}
+
+    if old ~= nil then
+        for x = old[1], old[3] do
+            for y = old[2], old[4] do
+                if not self:inHitboxWindow(x, y) then
+                    local block = self:get(x, y)
+                    if block ~= nil then
+                        block:destroyHitbox()
+                    end
+                end
+            end
+        end
+    end
+    for x = x1, x2 do
+        for y = y1, y2 do
+            if old == nil or x < old[1] or x > old[3] or y < old[2] or y > old[4] then
+                self:refreshHitbox(x, y)
+            end
+        end
+    end
 end
 
 
@@ -190,9 +294,13 @@ function Map:unloadFarChunks(x, y)
         local cx, cy = key:match("^(-?%d+),(-?%d+)$")
         cx, cy = tonumber(cx), tonumber(cy)
         if math.max(math.abs(cx - pcx), math.abs(cy - pcy)) > CHUNK_UNLOAD_DISTANCE then
-            -- Physics bodies go first, nothing far away should stay in the physics world
+            -- Hitboxes go first, nothing far away should stay in the physics world
             for index, block in pairs(chunk) do
-                block:destroyBody()
+                block:destroyHitbox()
+            end
+            if self.chunkBodies[key] ~= nil then
+                self.chunkBodies[key]:destroy()
+                self.chunkBodies[key] = nil
             end
             self.saved[key] = encodeChunk(chunk)
             self.chunks[key] = nil      -- Clearing a field while looping over the table is fine in Lua
