@@ -92,7 +92,7 @@ end
 
 -- Animation
 function Zombie:animationSetup()
-    self.anim = Humanoid.build(self.width, self.height)
+    self.anim = Humanoid.build(self.width, self.height, ZOMBIE_SKIN)
     self.animations = {
         right = Humanoid.walk(self.anim, WALK_CYCLE, WALK.right),
         left = Humanoid.walk(self.anim, WALK_CYCLE, WALK.left),

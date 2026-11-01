@@ -322,7 +322,7 @@ end
 
 function Player:animationSetup()
     -- The shared humanoid body(see animations/humanoid), spells start at the hand tips(see castOrigin)
-    self.anim, self.handLength = Humanoid.build(self.width, self.height)
+    self.anim, self.handLength = Humanoid.build(self.width, self.height, PLAYER_SKIN)
     local x, y = self.body:getWorldCenter()
     self.anim.actor:GetTransformer():GetRoot().translation = {x , y}
 
@@ -361,6 +361,10 @@ function Player:castAt(dirX, dirY)
     if angle < -math.pi then
         angle = angle + 2 * math.pi
     end
+    -- Standing still it turns to face the cast, while walking the walk decides
+    if self.direction == "" then
+        Humanoid.face(self.anim, dirX < 0 and "left" or "right")
+    end
     self.castPose.right_hand.rotation = angle - CAST_HAND_SPREAD
     self.castPose.left_hand.rotation = angle + CAST_HAND_SPREAD
     self.castHold = CAST_POSE_HOLD
@@ -374,7 +378,7 @@ function Player:castOrigin(dirX, dirY)
     -- Where spells start: at the hand tips along the cast direction, between the two raised hands
     -- Worked out from the pose instead of read from the animation, which is still blending in on the first cast
     local x, y = self.body:getWorldCenter()
-    local shoulderY = y - self.height / 3      -- Hands hang from the top of the torso(see moveControl)
+    local shoulderY = Humanoid.rootY(self.anim, y, self.height)     -- Hands hang from the top of the torso
     return x + dirX * self.handLength, shoulderY + dirY * self.handLength
 end
 

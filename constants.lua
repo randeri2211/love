@@ -82,12 +82,14 @@ SPAWN_Y = 0.1       -- Relative to world so on a scale of 0-1
 
 PLAYER_WIDTH = TILE_SIZE * 0.8
 PLAYER_HEIGHT = 2 * TILE_SIZE * 0.98
+PLAYER_SKIN = "player"     -- Skin sheet in assets/skins(nil draws the plain colored body)
 
 -- Zombie, a slow humanoid that walks at the player
 ZOMBIE_HP = 30
 ZOMBIE_SPEED = BASE_MOVE_SPEED * 0.45
 ZOMBIE_SIGHT = 14 * TILE_SIZE      -- How close the player has to be for it to start walking at them
 ZOMBIE_CONTACT_DAMAGE = 10
+ZOMBIE_SKIN = "zombie"
 
 -- Contact damage, enemies with contactDamage hurt the player by touching them
 CONTACT_IMMUNITY_TIME = 0.8         -- Seconds after a contact hit when touching cant hurt again(spells still can)
