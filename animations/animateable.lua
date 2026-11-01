@@ -34,4 +34,17 @@ function Animateable:newActor()
     self.actor = lovebone.newActor(self.skeleton)
 end
 
+-- Pixel colors for bone images(love.image mapPixel callbacks)
+function fullWhite(x, y, r, g, b, a)
+    return 255, 255, 255, 255
+end
+
+function fullBlue(x, y, r, g, b, a)
+    return 0, 0, 255, 255
+end
+
+function fullRed(x, y, r, g, b, a)
+    return 255, 0, 0, 255
+end
+
 return Animateable

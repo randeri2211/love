@@ -83,6 +83,17 @@ SPAWN_Y = 0.1       -- Relative to world so on a scale of 0-1
 PLAYER_WIDTH = TILE_SIZE * 0.8
 PLAYER_HEIGHT = 2 * TILE_SIZE * 0.98
 
+-- Zombie, a slow humanoid that walks at the player
+ZOMBIE_HP = 30
+ZOMBIE_SPEED = BASE_MOVE_SPEED * 0.45
+ZOMBIE_SIGHT = 14 * TILE_SIZE      -- How close the player has to be for it to start walking at them
+ZOMBIE_CONTACT_DAMAGE = 10
+
+-- Contact damage, enemies with contactDamage hurt the player by touching them
+CONTACT_IMMUNITY_TIME = 0.8         -- Seconds after a contact hit when touching cant hurt again(spells still can)
+CONTACT_KNOCKBACK = 5 * TILE_SIZE   -- Push away from whatever hit, so the player isnt stuck inside it(0 turns it off)
+CONTACT_BLINK_RATE = 12             -- Blinks per second while immune
+
 INTERACT_DISTANCE = 5
 
 MAP_X = 1000        -- The world is infinite sideways, this only sets where column 0 sits in map coordinates

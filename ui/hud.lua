@@ -8,6 +8,9 @@ local BAR_W = 260
 local BAR_H = 16
 local GAP = 6
 local COOLDOWN_H = 4
+local OVERHEAD_W = TILE_SIZE * 1.4  -- Hp bar over enemies
+local OVERHEAD_H = 5
+local OVERHEAD_GAP = 6              -- Pixels above the head
 
 -- Colors
 local BG_COLOR = {0.06, 0.07, 0.11, 0.85}
@@ -39,8 +42,10 @@ local function clamp(value, low, high)
 end
 
 
-function Hud:drawBar(key, x, y, label, current, max, color, markerValue)
+function Hud:drawBar(key, x, y, label, current, max, color, markerValue, w, h)
     -- One bar with a trail behind it, values on top and an optional marker(like a mana cost)
+    -- w and h default to the screen bar size, bars without a label show no text(small bars over enemies)
+    local BAR_W, BAR_H = w or BAR_W, h or BAR_H
     local ratio = clamp(current / max, 0, 1)
 
     -- Trail jumps up with gains and drains slowly after losses
@@ -74,10 +79,24 @@ function Hud:drawBar(key, x, y, label, current, max, color, markerValue)
         love.graphics.line(mx, y - 2, mx, y + BAR_H + 2)
     end
 
-    local font = love.graphics.getFont()
-    local text = string.format("%s  %d / %d", label, math.floor(current + 0.5), math.floor(max + 0.5))
-    love.graphics.setColor(TEXT_COLOR)
-    love.graphics.print(text, x + 6, y + (BAR_H - font:getHeight()) / 2)
+    if label ~= nil then
+        local font = love.graphics.getFont()
+        local text = string.format("%s  %d / %d", label, math.floor(current + 0.5), math.floor(max + 0.5))
+        love.graphics.setColor(TEXT_COLOR)
+        love.graphics.print(text, x + 6, y + (BAR_H - font:getHeight()) / 2)
+    end
+end
+
+
+function Hud:drawOverhead(x, top)
+    -- Small hp bar centered above an entity in world space(inside the camera), only once it is hurt
+    local hpBar = self.entity.hpBar
+    if hpBar == nil or hpBar.currentHP >= hpBar.maxHP then
+        return
+    end
+    love.graphics.push("all")
+    self:drawBar("hp", x - OVERHEAD_W / 2, top - OVERHEAD_GAP - OVERHEAD_H, nil, hpBar.currentHP, hpBar.maxHP, HP_COLOR, nil, OVERHEAD_W, OVERHEAD_H)
+    love.graphics.pop()
 end
 
 

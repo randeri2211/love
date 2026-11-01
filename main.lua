@@ -156,6 +156,9 @@ function love.keypressed(key)
                 player:addStat("swiftness", -10)
             elseif key == "u" then
                 player:addStat("swiftness", 10)
+            elseif key == SPAWN_ZOMBIE_KEY then
+                local mx, my = mouseToLove()
+                map.enemies:addEnemy(ENTITY_REGISTRY.Zombie:new(mx, my))
             -- Keys bound in the spell editor pick a spell
             elseif Spellbooks.selectByKey(player.spellbook, key) then
             else
