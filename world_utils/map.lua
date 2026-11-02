@@ -12,6 +12,10 @@ function Map:new(height, seed, settings)
     map.height = height
     map.seed = seed or love.math.random(1, 1000000)
     map.settings = settings
+    map.time = 0        -- Seconds of game time, the time of day comes from it(see world_utils/worldClock)
+    if settings ~= nil then
+        map.time = DAY_START * (settings.dayLength or DAY_LENGTH)
+    end
     map.center = {x = math.floor(MAP_X * SPAWN_X + 0.5),
                     y = math.floor(map.height * SPAWN_Y + 0.5)}
     map:emptyMap()
@@ -490,7 +494,7 @@ function Map:toData()
     for key, chunk in pairs(self.chunks) do
         chunks[key] = encodeChunk(chunk)
     end
-    return {seed = self.seed, settings = self.settings, chunks = chunks}
+    return {seed = self.seed, settings = self.settings, time = self.time, chunks = chunks}
 end
 
 
@@ -499,6 +503,7 @@ function Map:loadData(data)
     self:emptyMap()
     self.seed = data.seed
     self.settings = data.settings       -- nil for worlds made before biomes, they stay all plains
+    self.time = data.time or DAY_START * DAY_LENGTH   -- Worlds saved before the clock start in the morning
     self.saved = data.chunks or {}
 end
 

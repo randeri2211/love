@@ -10,6 +10,8 @@ local debugWorldDraw = require "libraries.debugWorldDraw"
 local UIHandler = require "ui.uiHandler"
 local Spellbooks = require "magic.spellbooks"
 local Background = require "world_utils.background"
+local WorldClock = require "world_utils.worldClock"
+local worldCanvas = nil     -- The world is drawn here first so the time of day light can tint it(see love.draw)
 local new_frame = false
 
 function love.load(args)
@@ -50,6 +52,7 @@ function love.update(dt)
 
             map.enemies:update(dt)
             map:update(dt)      -- Unloads chunks far from the player
+            WorldClock.update(dt)
             spells:update(dt)
             
             -- Setting the camera to the player position
@@ -85,17 +88,32 @@ function love.draw()
         -- Sky and distant hills first, they move slower than the camera
         local camX, camY = game_cam:position()
         Background.drawSky(camX, camY)
-        -- Drawing everything in regard to the camera
+
+        -- The world goes on its own canvas, then onto the screen tinted by the light of the time of day
+        local w, h = love.graphics.getDimensions()
+        if worldCanvas == nil or worldCanvas:getWidth() ~= w or worldCanvas:getHeight() ~= h then
+            worldCanvas = love.graphics.newCanvas(w, h)
+        end
+        love.graphics.setCanvas(worldCanvas)
+        love.graphics.clear(0, 0, 0, 0)
         game_cam:attach()
             -- Rock walls behind the caves, then the blocks over them
             Background.drawWalls(camX, camY)
             -- Map draws entities aswell
-            map:draw() 
+            map:draw()
+            player.anim.actor:Draw()
+        game_cam:detach()
+        love.graphics.setCanvas()
+        local light = WorldClock.blend(AMBIENT_LIGHT)
+        love.graphics.push("all")
+        love.graphics.setBlendMode("alpha", "premultiplied")
+        love.graphics.setColor(light[1], light[2], light[3], 1)
+        love.graphics.draw(worldCanvas)
+        love.graphics.pop()
+
+        -- Spells over the light, so magic glows at night
+        game_cam:attach()
             spells:draw()
-            
-            -- if new_frame then
-                player.anim.actor:Draw()
-            -- end
             if not new_frame then
                 new_frame = true
             end

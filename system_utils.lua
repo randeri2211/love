@@ -13,7 +13,7 @@ function initVars(settings)
 
     game_cam = camera()
     -- New random seed, loading a world replaces it with the saved one
-    map = Map:new(MAP_Y, nil, settings or {biomeWidth = BIOME_SIZES[DEFAULT_BIOME_SIZE][2]})
+    map = Map:new(MAP_Y, nil, settings or {biomeWidth = BIOME_SIZES[DEFAULT_BIOME_SIZE][2], dayLength = DAY_LENGTH})
     spells = Spells:new()
     -- Physics init
     love.physics.setMeter(TILE_SIZE * TILES_PER_METER)
@@ -187,6 +187,14 @@ function debugPrint()
     printUp()
     printJumping()
     printBiome()
+    printTime()
+end
+
+function printTime()
+    local WorldClock = require "world_utils.worldClock"
+    local hours = WorldClock.phase() * 24
+    love.graphics.print(string.format("time: %02d:%02d  light %.2f", math.floor(hours), math.floor((hours % 1) * 60), WorldClock.light()), 0, order * 10)
+    order = order + 1
 end
 
 function printBiome()

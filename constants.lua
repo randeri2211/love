@@ -1,4 +1,5 @@
 DEBUG = false
+DEBUG_DAY_LENGTH = 60           -- With DEBUG on a whole day takes this many seconds(the world keeps its own setting)
 DEBUG_ONE_HIT_BLOCKS = true     -- With DEBUG on, any hit breaks a block(bedrock still cant break), for digging around in development
 
 SCREEN_X  = 1920
@@ -137,6 +138,20 @@ CAVE_START_DEPTH = 10   -- No caves this close to the surface
 ORE_START_DEPTH = 20    -- Ore only this deep under the surface
 ORE_THRESHOLD = 0.74    -- Noise above this is ore, 0.74 is about 2% of the deep stone(0.70 is about 5%)
 BEDROCK_ROWS = 3        -- Unbreakable rows at the bottom of the world
+
+-- Day and night(see world_utils/worldClock)
+DAY_LENGTH = 20 * 60            -- Seconds in a day for new worlds, saved with the world so changing it never changes old ones
+DAY_START = 0.35                -- Part of the day a new world starts at, morning
+-- Moments of the day and where they are(0 midnight, 0.5 noon), values blend between neighbors
+-- A moment can repeat to hold a look for a while: night lasts from 0.82 around midnight to 0.18
+TIME_KEYS = {
+    {"night", 0}, {"night", 0.18}, {"dawn", 0.25}, {"day", 0.32}, {"day", 0.68}, {"dusk", 0.75}, {"night", 0.82},
+}
+-- Background colors a biome gives for the day are tinted by these at other moments, unless it gives its own per moment
+SKY_TINT = {night = {0.12, 0.14, 0.3}, dawn = {1, 0.72, 0.7}, day = {1, 1, 1}, dusk = {1, 0.6, 0.45}}
+HILL_TINT = {night = {0.2, 0.22, 0.38}, dawn = {0.85, 0.7, 0.7}, day = {1, 1, 1}, dusk = {0.85, 0.6, 0.5}}
+-- Light over the world(blocks, creatures), spells are drawn after it so they glow at night
+AMBIENT_LIGHT = {night = {0.32, 0.35, 0.55}, dawn = {0.85, 0.78, 0.78}, day = {1, 1, 1}, dusk = {0.92, 0.72, 0.62}}
 
 -- Biomes(see world_utils/biomes and the biomes folder)
 UNDERGROUND_DEPTH = 45  -- Tiles under the surface where the underground layers take over from the surface biome

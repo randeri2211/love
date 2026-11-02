@@ -1,5 +1,6 @@
 local Biomes = require "world_utils.biomes"
 local Generator = require "world_utils.generator"
+local WorldClock = require "world_utils.worldClock"
 
 -- What is behind the world: a sky with parallax silhouettes above ground, dark rock walls below it
 -- Silhouette layers move slower than the camera the further away they are, colors come from the biome the camera is in
@@ -37,18 +38,32 @@ local function palette(biome)
 end
 
 
+local function timed(color, tint)
+    -- A palette color for now: a biome can give one per moment of the day, a single color is its day look tinted by the time
+    if type(color) == "table" and color.day ~= nil then
+        return WorldClock.blend(color)
+    end
+    local t = WorldClock.blend(tint)
+    return {color[1] * t[1], color[2] * t[2], color[3] * t[3]}
+end
+
+
 local function blended(tx)
-    -- Background of the biome at a column, mixed with its neighbor near a border like the terrain
+    -- Background of the biome at a column for the time of day, mixed with its neighbor near a border like the terrain
     local biome, neighbor, share = Biomes.surface(tx, map.seed, map.settings)
     local a, b = palette(biome), palette(neighbor)
     local result = {
-        skyTop = mix(b.skyTop, a.skyTop, share),
-        skyBottom = mix(b.skyBottom, a.skyBottom, share),
+        skyTop = mix(timed(b.skyTop, SKY_TINT), timed(a.skyTop, SKY_TINT), share),
+        skyBottom = mix(timed(b.skyBottom, SKY_TINT), timed(a.skyBottom, SKY_TINT), share),
         height = b.height + (a.height - b.height) * share,
         layers = {},
     }
     for i = 1, #LAYERS do
-        result.layers[i] = {color = mix(b.layers[i].color, a.layers[i].color, share), rim = mix(b.layers[i].rim, a.layers[i].rim, share)}
+        local la, lb = a.layers[i], b.layers[i]
+        result.layers[i] = {
+            color = mix(timed(lb.color, HILL_TINT), timed(la.color, HILL_TINT), share),
+            rim = mix(timed(lb.rim, HILL_TINT), timed(la.rim, HILL_TINT), share),
+        }
     end
     return result
 end
