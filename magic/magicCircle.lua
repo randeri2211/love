@@ -48,7 +48,7 @@ function MagicCircle.layout(spell, cx, cy, scale, depth, drawer)
             dx = dx,
             dy = dy,
             rune = runeName and RUNE_REGISTRY[runeName] or nil,
-            blocked = runeName and spell.isBlocked(spell.core, runeName) or false,
+            blocked = runeName and (spell.isBlocked(spell.core, runeName) or spell:isRepeatedElement(i)) or false,
             child = childSpell,
             index = i,
         }

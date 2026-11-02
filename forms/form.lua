@@ -1,3 +1,4 @@
+local Elements = require "magic.elements"
 
 local Form = {}
 
@@ -79,6 +80,16 @@ function Form:hit(entity, x, y, dirX, dirY, pushX, pushY)
     -- pushX, pushY is the way the hit shoves, the way the spell was going(defaults to dirX, dirY)
     if entity ~= nil then
         entity:damage(self:damageFor(entity), self:digStrength())
+        -- Elements burn, freeze and poison what was hit, Lightning jumps on from it
+        if self.elementParams ~= nil then
+            local hx, hy = x, y
+            if hx == nil and entity.body ~= nil and not entity.body:isDestroyed() then
+                hx, hy = entity.body:getWorldCenter()
+            end
+            if hx ~= nil then
+                Elements.onHit(self, entity, hx, hy)
+            end
+        end
         -- Knockback from the spell, only things that can be pushed(enemies, not blocks), with a little hop
         if entity.push ~= nil and (self.knockback or 0) > 0 then
             pushX, pushY = pushX or dirX, pushY or dirY

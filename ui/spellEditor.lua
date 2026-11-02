@@ -11,7 +11,7 @@ local SPELLS_W = 240
 local DRAW_W = 260
 local CANVAS_W = 640
 local INFO_W = 300
-local EDITOR_H = 690
+local EDITOR_H = 745
 local GAP = 10
 
 -- Colors(circle colors live in MagicCircle)
@@ -656,6 +656,14 @@ function SpellEditor:placeProblem(target, runeName)
     if Spell.isBlocked(target.spell.core, rune.name) then
         return rune.name .. " doesnt work on " .. target.spell.core
     end
+    if rune.element ~= nil then
+        -- One of each element in a circle, another circle(a trigger child) can have its own
+        for i, slot in ipairs(target.spell.slots) do
+            if i ~= target.slot and target.spell:readSlot(slot) == rune.name then
+                return "Only one " .. rune.name .. " in a circle"
+            end
+        end
+    end
     if rune.kind == "trigger" and target.depth >= MAX_SPELL_DEPTH then
         return "Too deep for another trigger"
     end
@@ -763,6 +771,22 @@ function SpellEditor:info(x, y)
             if value ~= nil then
                 Slab.Text(stat[1] .. ": " .. string.format(stat[3], value))
             end
+        end
+
+        -- Elements
+        if params.burnDps > 0 then
+            Slab.Text(string.format("Burn: %.1f/s for %.1fs", params.burnDps, params.burnTime))
+        end
+        if params.frostSlow > 0 then
+            Slab.Text(string.format("Frost: %d%% slower for %.1fs", math.floor(math.min(params.frostSlow, FROST_MAX_SLOW) * 100 + 0.5), params.frostTime))
+        end
+        if params.poisonDps > 0 then
+            Slab.Text(string.format("Poison: %.1f/s for %.1fs", params.poisonDps, params.poisonTime))
+            Slab.Text(string.format("  stacks up to x%d", POISON_MAX_STACKS))
+        end
+        if params.chainDamage > 0 then
+            Slab.Text(string.format("Lightning: %d%% to %d near", math.floor(params.chainDamage * 100 + 0.5), CHAIN_TARGETS))
+            Slab.Text(string.format("  within %.1f tiles", params.chainRange / TILE_SIZE))
         end
 
         Slab.Rectangle({W = INFO_W - 20, H = 20, Color = params.color, Rounding = 4})

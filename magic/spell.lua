@@ -1,4 +1,5 @@
 local Rune = require "runes.rune"
+local Elements = require "magic.elements"
 
 local Spell = {}
 
@@ -20,6 +21,22 @@ function Spell.isBlocked(formName, runeName)
     -- True when the rune has no effect for this form(see Rune:worksWith)
     local rune = RUNE_REGISTRY[runeName]
     return rune ~= nil and not rune:worksWith(formName)
+end
+
+
+function Spell:isRepeatedElement(index)
+    -- True for an element rune whose element is already earlier in the circle, only the first of each element counts
+    local name = self:readSlot(self.slots[index])
+    local rune = name and RUNE_REGISTRY[name]
+    if rune == nil or rune.element == nil then
+        return false
+    end
+    for j = 1, index - 1 do
+        if self:readSlot(self.slots[j]) == name then
+            return true
+        end
+    end
+    return false
 end
 
 
@@ -114,7 +131,7 @@ function Spell:compile(depth)
     for i, slot in ipairs(self.slots) do
         local runeName, _, drawing = self:readSlot(slot)
         local rune = runeName and RUNE_REGISTRY[runeName]
-        if rune and not Spell.isBlocked(self.core, runeName) then
+        if rune and not Spell.isBlocked(self.core, runeName) and not self:isRepeatedElement(i) then
             settings[i] = rune:settings(drawing and drawing.marks)
         end
     end
@@ -125,7 +142,8 @@ function Spell:compile(depth)
             local strength = Rune.strength(drawing and drawing.quality)
             for j = i + 1, #self.slots do
                 local target = settings[j] and RUNE_REGISTRY[self:readSlot(self.slots[j])]
-                local affect = target and rune.affects[target.name]
+                -- An "element" entry changes every element rune(Damage before Fire burns hotter)
+                local affect = target and (rune.affects[target.name] or (target.element ~= nil and rune.affects.element or nil))
                 if affect ~= nil then
                     affect(settings[j], strength)
                 end
@@ -430,6 +448,9 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
             instance.spell = self   -- So triggers can find their child spells
             instance.knockback = castParams.knockback   -- How hard its hits shove(see Form:hit)
             instance.digCap = caster.combatStats and caster.combatStats.digCap    -- Most dig strength it has(see Form:digStrength)
+            -- Elements it carries to its hits and shows while it flies(see magic/elements)
+            instance.elements = Elements.of(castParams)
+            instance.elementParams = instance.elements and Elements.pick(castParams)
             local t = {}
             t.spell = self
             t.instance = instance

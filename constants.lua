@@ -53,7 +53,19 @@ BASE_SPELL_PARAMS = {
     knockback = 1,              -- How hard a hit shoves what it hits, the way the spell was going
     recoilDirX = 0,             -- Way an arrow on Recoil pushes, drawn as if facing right(see Spell.facingDirection)
     recoilDirY = 0,             -- 0, 0 is no arrow: recoil pushes away from the aim and dashes go toward it
+    -- Element runes switch these on(see magic/elements), 0 is off
+    burnDps = 0, burnTime = 0,          -- Fire: damage per second while burning, and for how long
+    frostSlow = 0, frostTime = 0,       -- Frost: part of the speed taken away, and for how long
+    poisonDps = 0, poisonTime = 0,      -- Poison: damage per second per stack, and for how long
+    chainDamage = 0, chainRange = 0,    -- Lightning: part of the hit that jumps to nearby enemies, and how far(pixels)
 }
+
+-- Elements(see magic/elements and magic/statuses)
+STATUS_TICK = 0.5               -- Seconds between burn and poison damage
+POISON_MAX_STACKS = 3           -- Poison hits add up to this many stacks
+FROST_MAX_SLOW = 0.8            -- Frost never slows more than this part of the speed
+CHAIN_TARGETS = 2               -- Enemies a Lightning hit jumps to
+ELEMENT_PARTICLES = 1500        -- Most element particles at once
 
 -- Self form(spells on the caster)
 SELF_HEAL = 20                  -- HP the first Damage rune heals over a Self spell, more runes heal more

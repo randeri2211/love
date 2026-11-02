@@ -187,7 +187,7 @@ Some set items and trinkets are boss drops. Which ones and why is decided once b
 | 7 | **Consumables:** potions from an alchemy station | Mana economy, and a second use for plants |
 | 8 | **Sound and onboarding** | No audio yet. Drawing runes is a skill, so it needs teaching |
 
-### Damage types (Decided): element runes
+### Damage types (Done): element runes
 Elements are **modifier runes**, by the rule in `rune-marks.md`: a new behavior that makes sense on 2+ forms is a modifier rune.
 Tying elements to forms would remove a choice, a fire laser and a frost laser should both be possible builds.
 
@@ -200,7 +200,10 @@ Tying elements to forms would remove a choice, a fire laser and a frost laser sh
 | (none) | Plain damage stays the default arcane type | As today |
 
 - **Every element changes how the spell looks on every form:** a fire laser has red particles along the beam, a fire bullet glows red and trails fire particles, and so on for each element.
-- Forge armor resists specific elements, biome enemies resist or are weak to them.
+- Forge armor resists specific elements, biome enemies resist or are weak to them(not built yet).
+- **Done:** Fire burns 4/s for 3s(refreshes), Frost slows 40% for 3s, Poison 2/s for 8s stacking to x3, Lightning jumps 50% of the hit
+  to 2 enemies within 6 tiles. Damage before an element makes it stronger, Size makes it last longer(or jump further), Weaken weakens it.
+  The numbers are in `magic/elements`, the status rules in `magic/statuses`, the look in `magic/elementFx`.
 - **Each element at most once per circle:** a second Fire rune in the same circle is refused (shown as blocked in the editor).
   Each trigger circle counts on its own, so an OnHit child circle can have its own Fire.
 - **Different elements can share a circle:** a Fire + Frost bullet burns and slows.

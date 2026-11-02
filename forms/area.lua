@@ -119,6 +119,14 @@ function Area:update(dt)
 end
 
 
+function Area:fxSpot()
+    -- A random spot on the edge of the burst as it grows
+    local radius = self:currentRadius()
+    local angle = love.math.random() * math.pi * 2
+    return self.x + math.cos(angle) * radius, self.y + math.sin(angle) * radius, 4, 80
+end
+
+
 function Area:draw()
     local radius = self:currentRadius()
     if radius <= 0 then

@@ -157,6 +157,18 @@ function Laser:getDirection()
 end
 
 
+function Laser:fxSpot()
+    -- A random spot along the beam, a long beam sparkles all along
+    local points = self.points
+    if points == nil or #points < 4 then
+        return nil
+    end
+    local i = love.math.random(1, #points / 2 - 1) * 2 - 1
+    local t = love.math.random()
+    return points[i] + (points[i + 2] - points[i]) * t, points[i + 1] + (points[i + 3] - points[i + 1]) * t, self.width / 2, 90
+end
+
+
 function Laser:draw()
     if self.points == nil or #self.points < 4 then
         return

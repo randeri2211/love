@@ -1,5 +1,6 @@
 local Form = require "forms.form"
 local MagicCircle = require "magic.magicCircle"
+local ElementFx = require "magic.elementFx"
 
 local Trap = Form:new()
 
@@ -91,9 +92,18 @@ function Trap:update(dt)
 end
 
 
+function Trap:fxSpot()
+    local x, y = self.body:getWorldCenter()
+    return x, y, TRAP_GLYPH_RADIUS, 12
+end
+
+
 function Trap:draw()
     local x, y = self.body:getWorldCenter()
     local c = self.color
+    if self.elements ~= nil then
+        ElementFx.glow(self.elements, x, y, TRAP_GLYPH_RADIUS * 0.6)
+    end
 
     love.graphics.push("all")
     -- Trigger zone pulses once armed

@@ -12,6 +12,13 @@ SizeRune.glyph = {
     {"line", -0.35, 0.75, -0.75, 0.75, -0.75, 0.35},
 }
 
+-- Every element after it in the flow lasts longer, Lightning jumps further
+SizeRune.affects = {
+    element = function(settings, strength)
+        settings.duration = settings.duration * 1.5 ^ strength
+    end,
+}
+
 SizeRune.effects = {
     -- Bigger projectile, a bit slower
     Bullet = function(params)

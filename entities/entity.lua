@@ -2,6 +2,7 @@ local Movement = require "components.movement"
 local HPBar = require "components.hpBar"
 local Stats = require "components.stats.stats"
 local CombatStats = require "components.stats.combatStats"
+local Statuses = require "magic.statuses"
 local ManaBar = require "components.manaBar"
 
 local Entity = {}
@@ -33,6 +34,7 @@ function Entity:update(dt)
         self.statsDirty = false
     end
     self:regen(dt)
+    Statuses.update(self, dt)       -- Burning, frozen, poisoned(see magic/statuses)
 
     -- Horizontal knockback fades out(old saves dont have pushX)
     local pushX = self.movement.pushX or 0

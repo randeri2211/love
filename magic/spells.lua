@@ -1,4 +1,5 @@
 local MagicCircle = require "magic.magicCircle"
+local ElementFx = require "magic.elementFx"
 
 local Spells = {}
 
@@ -20,9 +21,18 @@ function Spells:update(dt)
     self.time = self.time + dt
 
     -- Going backwards so spells removed during update dont skip the next one
+    -- Elements trail particles from where the spell is, before it moves(it may be gone after its update)
     for i = #self.spells, 1, -1 do
-        self.spells[i].instance:update(dt)
+        local instance = self.spells[i].instance
+        if instance.elements ~= nil and instance.fxSpot ~= nil then
+            local x, y, spread, rate = instance:fxSpot()
+            if x ~= nil then
+                ElementFx.trail(instance.elements, x, y, spread, rate, dt)
+            end
+        end
+        instance:update(dt)
     end
+    ElementFx.update(dt)
 
     -- Age the cast circles and remove the faded ones
     for i = #self.circles, 1, -1 do
@@ -134,6 +144,7 @@ function Spells:draw()
     for i, spell in pairs(self.spells) do
         spell.instance:draw()
     end
+    ElementFx.draw()
 end
 
 

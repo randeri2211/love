@@ -9,6 +9,13 @@ DamageRune.glyph = {
     {"line", -0.62, 0, 0.62, 0},
 }
 
+-- Every element after it in the flow hits harder: hotter burns, more slow, stronger poison and jumps
+DamageRune.affects = {
+    element = function(settings, strength)
+        settings.power = settings.power * 1.5 ^ strength
+    end,
+}
+
 DamageRune.effects = {
     -- More damage, every form has damage so this works on all of them
     default = function(params)

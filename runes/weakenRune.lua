@@ -9,6 +9,13 @@ WeakenRune.glyph = {
     {"line", -0.42, 0, 0.42, 0},
 }
 
+-- Every element after it in the flow is weaker(always fully, a drawback cant be drawn badly to dodge it)
+WeakenRune.affects = {
+    element = function(settings, strength)
+        settings.power = settings.power * 0.6
+    end,
+}
+
 WeakenRune.effects = {
     -- Weaker spell that is cheaper and simpler, every form has damage so this works on all of them
     default = function(params)

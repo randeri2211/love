@@ -1,4 +1,5 @@
 local Form = require "forms.form"
+local ElementFx = require "magic.elementFx"
 
 local Bullet = Form:new()
 
@@ -185,10 +186,20 @@ function Bullet:preSolve(fixture, contact)
 end
 
 
+function Bullet:fxSpot()
+    -- Where its element particles come from: the orb, and how many a second
+    local x, y = self.body:getWorldCenter()
+    return x, y, self.radius * 0.8, 45
+end
+
+
 function Bullet:draw()
-    -- A glowing orb in the spell color: a soft halo, the orb, and a bright core
+    -- A glowing orb in the spell color: a soft halo, the orb, and a bright core, glowing in its element colors
     local x, y = self.body:getWorldCenter()
     local c = self.color
+    if self.elements ~= nil then
+        ElementFx.glow(self.elements, x, y, self.radius)
+    end
     love.graphics.setColor(c[1], c[2], c[3], 0.25)
     love.graphics.circle("fill", x, y, self.radius * 1.5)
     love.graphics.setColor(c[1], c[2], c[3], 1)
