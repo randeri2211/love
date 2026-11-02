@@ -69,7 +69,7 @@ function Area:query(radius)
     for tx = math.floor((self.x - radius) / TILE_SIZE), math.floor((self.x + radius) / TILE_SIZE) do
         for ty = math.floor((self.y - radius) / TILE_SIZE), math.floor((self.y + radius) / TILE_SIZE) do
             local block = map:blockAt(tx * TILE_SIZE, ty * TILE_SIZE)
-            if block ~= nil and not self.hits[block]
+            if block ~= nil and block.solid and not self.hits[block]
                 and overlapsBox(self.x, self.y, radius, block.x, block.y, block.x + block.width, block.y + block.height) then
                 table.insert(found, {entity = block, x = block.x + block.width / 2, y = block.y + block.height / 2})
             end

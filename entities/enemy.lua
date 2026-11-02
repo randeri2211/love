@@ -2,6 +2,8 @@ local Entity = require "entities.entity"
 
 local Enemy = Entity:new()
 registerEntity("Enemy",Enemy)
+-- What it drops when it dies: {item, min, max, chance(0-1, 1 when left out)} per entry, rolled one by one
+Enemy.loot = {}
 
 function Enemy:new(x, y)
     -- Enemy Attributes
@@ -32,6 +34,17 @@ function Enemy:new(x, y)
 end
 
 -- Enemy Functions
+function Enemy:dropLoot()
+    -- Rolls the loot table, every entry that comes up drops min to max of its item where the enemy died
+    local x, y = self.body:getWorldCenter()
+    for i, entry in ipairs(self.loot) do
+        if love.math.random() < (entry.chance or 1) then
+            map.drops:spawn(entry.item, love.math.random(entry.min or 1, entry.max or entry.min or 1), x, y)
+        end
+    end
+end
+
+
 function Enemy:draw()
     local x, y = self.body:getWorldCenter()
     love.graphics.circle("fill",x, y,self.radius)

@@ -203,6 +203,11 @@ BIOME_SIZES = {
 }
 DEFAULT_BIOME_SIZE = 2      -- Index in BIOME_SIZES
 
+-- Trees and plants(see world_utils/flora)
+FLORA_VERSION = 1       -- Saved with new worlds, worlds without it grow no trees or plants so their saved chunks still match
+TREE_CELL = 8           -- Columns per tree spot, each spot has at most one tree so canopies never touch
+ROOT_HP_SCALE = 4       -- A block with a tree or cactus growing on it takes this many times longer to break
+
 PLAYER_CATEGORY = 2
 BLOCKS_CATEGORY = 3
 SPELLS_CATEGORY = 4

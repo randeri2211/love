@@ -4,6 +4,13 @@ local Items = require "items.items"
 -- Building.target says what would happen at a spot, placing and the preview both use it so they always agree
 local Building = {}
 
+local function solidBlockAt(x, y)
+    -- A solid block in the tile of a love point(trees and plants dont hold a block up)
+    local block = map:blockAt(x, y)
+    return block ~= nil and block.solid
+end
+
+
 local function overlapsBody(x1, y1, x2, y2)
     -- True when the player, an enemy or a dropped item is in the box, a block would trap it
     local blocked = false
@@ -37,12 +44,13 @@ function Building.target(player, x, y)
     local px, py = player.body:getWorldCenter()
     if my < 1 or my > map.height then
         target.reason = "Outside the world"
-    elseif map:blockAt(cx, cy) ~= nil then
-        target.reason = "Already a block there"
+    elseif map:blockAt(cx, cy) ~= nil and not map:blockAt(cx, cy).replaceable then
+        -- Small plants make way, a tree is in the way like any block
+        target.reason = map:blockAt(cx, cy).solid and "Already a block there" or "A tree is in the way"
     elseif distance(px, py, cx + TILE_SIZE / 2, cy + TILE_SIZE / 2) > PLACE_REACH then
         target.reason = "Too far"
-    elseif not (map:blockAt(cx - TILE_SIZE, cy) or map:blockAt(cx + TILE_SIZE, cy)
-        or map:blockAt(cx, cy - TILE_SIZE) or map:blockAt(cx, cy + TILE_SIZE)) then
+    elseif not (solidBlockAt(cx - TILE_SIZE, cy) or solidBlockAt(cx + TILE_SIZE, cy)
+        or solidBlockAt(cx, cy - TILE_SIZE) or solidBlockAt(cx, cy + TILE_SIZE)) then
         target.reason = "Needs a block next to it"
     elseif overlapsBody(cx, cy, cx + TILE_SIZE, cy + TILE_SIZE) then
         target.reason = "Something is in the way"
@@ -58,6 +66,14 @@ function Building.place(player, x, y)
     local target = Building.target(player, x, y)
     if target == nil or not target.ok then
         return false
+    end
+    -- A plant in the way is cleared first, dropping what it gives
+    local existing = map:get(target.mx, target.my)
+    if existing ~= nil then
+        local item = existing:dropItem()
+        if item ~= nil then
+            map.drops:spawn(item, 1, existing.x + existing.width / 2, existing.y + existing.height / 2)
+        end
     end
     map:set(target.mx, target.my, map:newBlock(target.block, target.mx, target.my))
     local stack = player.inventory.slots[target.slot]

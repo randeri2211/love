@@ -13,7 +13,7 @@ function initVars(settings)
 
     game_cam = camera()
     -- New random seed, loading a world replaces it with the saved one
-    map = Map:new(MAP_Y, nil, settings or {biomeWidth = BIOME_SIZES[DEFAULT_BIOME_SIZE][2], dayLength = DAY_LENGTH})
+    map = Map:new(MAP_Y, nil, settings or {biomeWidth = BIOME_SIZES[DEFAULT_BIOME_SIZE][2], dayLength = DAY_LENGTH, flora = FLORA_VERSION})
     spells = Spells:new()
     -- Physics init
     love.physics.setMeter(TILE_SIZE * TILES_PER_METER)

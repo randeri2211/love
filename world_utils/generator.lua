@@ -1,4 +1,5 @@
 local Biomes = require "world_utils.biomes"
+local Flora = require "world_utils.flora"
 
 -- Picks the block for every tile from the world seed and settings, the same seed always gives the same world
 -- Tile coordinates: tx is the column, ty the row(rows grow downward like love coordinates)
@@ -72,6 +73,12 @@ function Generator.tile(tx, ty, seed, bottomRow, settings)
 
     local surface = Generator.surfaceRow(tx, seed, settings)
     if ty < surface then
+        -- Worlds made before trees(no flora setting) stay bare, their saved chunks were made that way
+        if settings ~= nil and settings.flora ~= nil then
+            return Flora.tile(tx, ty, surface, seed, settings,
+                function(column) return (Biomes.surface(column, seed, settings)) end,
+                function(column) return Generator.surfaceRow(column, seed, settings) end)
+        end
         return nil
     end
     local depth = ty - surface

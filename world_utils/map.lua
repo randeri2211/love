@@ -161,6 +161,13 @@ function Map:get(x, y)
 end
 
 
+function Map:isSolid(x, y)
+    -- True when the map cell holds a solid block(not air, not a tree or plant)
+    local block = self:get(x, y)
+    return block ~= nil and block.solid
+end
+
+
 function Map:blockAt(x, y)
     -- Block in the tile a love point is in, nil for air
     -- Found from the tile corner the same way blocks are placed(loveToMap of a point inside a tile can land a row off)
@@ -169,9 +176,9 @@ end
 
 
 function Map:solidAt(x, y)
-    -- Block whose box a love point is inside, nil for air(the top of a tile with a short block is air)
+    -- Block whose box a love point is inside, nil for air(the top of a tile with a short block is air, trees are air too)
     local block = self:blockAt(x, y)
-    if block ~= nil and block:contains(x, y) then
+    if block ~= nil and block.solid and block:contains(x, y) then
         return block
     end
     return nil
@@ -227,7 +234,7 @@ function Map:castRay(x1, y1, x2, y2, skip)
     local tx, ty = math.floor(x1 / TILE_SIZE), math.floor(y1 / TILE_SIZE)
     local function hitIn(cx, cy)
         local block = self:blockAt(cx * TILE_SIZE, cy * TILE_SIZE)
-        if block == nil or (skip and skip(block)) then
+        if block == nil or not block.solid or (skip and skip(block)) then
             return nil
         end
         local fraction, nx, ny = rayBox(x1, y1, dx, dy, block.x, block.y, block.x + block.width, block.y + block.height)
@@ -361,9 +368,14 @@ function Map:refreshHitbox(x, y)
     if block == nil then
         return
     end
+    -- Trees and plants never get hitboxes, and a block next to one touches air
+    if not block.solid then
+        block:destroyHitbox()
+        return
+    end
     local exposed = y <= 1 or y >= self.height
-        or self:get(x - 1, y) == nil or self:get(x + 1, y) == nil
-        or self:get(x, y - 1) == nil or self:get(x, y + 1) == nil
+        or not self:isSolid(x - 1, y) or not self:isSolid(x + 1, y)
+        or not self:isSolid(x, y - 1) or not self:isSolid(x, y + 1)
     if exposed then
         block:generateHitbox(self:chunkBody(x, y))
     else

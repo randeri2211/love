@@ -1,6 +1,8 @@
 local HPBar = require "components.hpBar"
+local Flora = require "world_utils.flora"
 local Block = {}
 registerBlock("Block",Block)
+Block.solid = true      -- Trees and plants are not(see blocks/floraBlock), the map treats them as air for hitboxes and rays
 
 function Block:new(x, y, width, height)
     -- Block Variables
@@ -72,6 +74,11 @@ function Block:damage(dmg, power)
         return
     end
     if power > self.damageThreshold then
+        -- A tree or cactus growing on it makes it slower to break, same hardness but more to dig through
+        local above = map:get(self.mx, self.my + 1)
+        if above ~= nil and above.rootScale ~= nil then
+            dmg = dmg / above.rootScale
+        end
         self.hpBar.currentHP = self.hpBar.currentHP - dmg
         if self.hpBar.currentHP <= 0 then
             self:breakApart()
@@ -96,6 +103,8 @@ function Block:breakApart()
         map.drops:spawn(item, 1, self.x + self.width / 2, self.y + self.height / 2)
     end
     self:destroy()
+    -- Whatever grew on it comes down too
+    Flora.fell(map, self.mx, self.my)
 end
 
 

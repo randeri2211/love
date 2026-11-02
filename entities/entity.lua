@@ -90,6 +90,9 @@ function Entity:damage(damage)
     self.hpBar.currentHP = self.hpBar.currentHP - damage * (1 - self:damageReduction())
     self:selfHit()
     if self.hpBar.currentHP <= 0 then
+        if self.dropLoot ~= nil then
+            self:dropLoot()
+        end
         self:die()
     end
 end

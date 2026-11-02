@@ -7,7 +7,8 @@ TILESHEET = love.graphics.newImage("assets/blocks.png")
 TILESHEET:setFilter("nearest", "nearest")    -- Keeps the pixel art sharp when scaled up
 -- Numbered tiles are variants(stone1-3, see Block:variant) or ore nugget patterns drawn over stone(ore1-4, see OreBlock)
 local TILE_ORDER = {"grass", "dirt", "stone1", "stone2", "stone3", "deepstone1", "deepstone2", "deepstone3",
-    "bedrock1", "bedrock2", "bedrock3", "sand", "sandstone", "snow", "ice", "bricks", "slab", "ore1", "ore2", "ore3", "ore4"}
+    "bedrock1", "bedrock2", "bedrock3", "sand", "sandstone", "snow", "ice", "bricks", "slab", "ore1", "ore2", "ore3", "ore4",
+    "oakLog", "oakLeaves", "pineLog", "pineLeaves", "cactus", "tallGrass"}
 BLOCK_TILES = {}
 for i, name in ipairs(TILE_ORDER) do
     if name == "slab" then

@@ -6,6 +6,7 @@ local Humanoid = require "animations.humanoid"
 -- A slow humanoid that shambles toward the player with its arms out, the same body as the player
 local Zombie = Enemy:new()
 registerEntity("Zombie", Zombie)
+Zombie.loot = {}        -- Nothing yet(see Enemy.loot), drops come with more enemies
 
 local ARM_BONES = {"right_hand", "left_hand"}
 local ARM_REACH = math.rad(12)      -- Arms point a little below level, reaching for the player

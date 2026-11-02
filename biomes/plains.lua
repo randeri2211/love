@@ -9,6 +9,8 @@ registerBiome("Plains", {
     },
     blocks = {top = "Grass", filler = "Dirt", fillerDepth = DIRT_DEPTH, stone = "Stone"},
     caves = {startDepth = CAVE_START_DEPTH, tunnel = 0.045, network = 0.04, scale = 0.5, cavern = 0.87},
+    -- What grows on it(see world_utils/flora): the tree, how many tree spots get one, the small plant and how many ground tiles get one
+    flora = {tree = "Oak", treeChance = 0.55, plant = "TallGrass", plantChance = 0.3},
     ores = {
         {block = "CopperOre", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD},
         {block = "IronOre", minDepth = 28, threshold = 0.79},
