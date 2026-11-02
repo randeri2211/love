@@ -1,6 +1,7 @@
 require "ui.menu"
 local Slab = require "libraries.Slab"
 local SpellEditor = require "ui.spellEditor"
+local CharacterScreen = require "ui.characterScreen"
 local Hud = require "ui.hud"
 local Spellbooks = require "magic.spellbooks"
 
@@ -13,6 +14,7 @@ function UIHandler:new()
 
     uihandler.showMap = false
     uihandler.spellEditor = nil     -- Open spell editor, nil when closed
+    uihandler.characterScreen = nil -- Open character and inventory screen, nil when closed(the game keeps running)
     uihandler.showQuitConfirm = false
     uihandler.wasPaused = false     -- Pause state to go back to when the quit confirmation is cancelled
     uihandler.showPauseMenu = false
@@ -28,6 +30,8 @@ function UIHandler:escape()
         self:closeQuitConfirm()
     elseif self.showPauseMenu then
         self:closePauseMenu()
+    elseif self.characterScreen ~= nil then
+        self:toggleCharacterScreen()
     elseif self.spellEditor ~= nil then
         -- Escape cancels binding a key first, then closes the editor
         if self.spellEditor.bindingKey then
@@ -148,6 +152,20 @@ function UIHandler:toggleSpellEditor()
 end
 
 
+function UIHandler:toggleCharacterScreen()
+    -- The character and inventory screen, the world keeps going behind it
+    if self.showQuitConfirm or self.showPauseMenu or self.spellEditor ~= nil then
+        return
+    end
+    if self.characterScreen == nil then
+        self.characterScreen = CharacterScreen:new(player)
+    else
+        self.characterScreen:close()
+        self.characterScreen = nil
+    end
+end
+
+
 function UIHandler:checkKeyIngame(key)
     -- This will handle things like opening inventory on pressing the inventory
     if key == MINIMAP_KEY then
@@ -172,6 +190,15 @@ function UIHandler:update()
             self:map()
         end
 
+        if self.characterScreen ~= nil then
+            -- Loading a world makes a new player, the screen closes with the old one
+            if self.characterScreen.owner ~= player then
+                self.characterScreen = nil
+            else
+                self.characterScreen:update()
+            end
+        end
+
         if self.spellEditor ~= nil then
             self.spellEditor:update()
             if self.spellEditor.closed then
@@ -187,6 +214,14 @@ function UIHandler:update()
     -- Drawn last so it sits on top of every other menu
     if self.showQuitConfirm then
         self:quitConfirm()
+    end
+end
+
+
+function UIHandler:drawTop()
+    -- Drawn after Slab, over every window: the item stack held in the character screen
+    if self.characterScreen ~= nil then
+        self.characterScreen:drawHeld()
     end
 end
 

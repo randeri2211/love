@@ -126,8 +126,9 @@ function groundRay(p)
     -- The rays start a little inside the body, standing on the edge of a block its corner is above the lowest point
     -- of the round feet, and a ray that starts inside a block doesnt see it
     local function groundCallback(fixture, x, y, xn, yn, fraction)
-        if fixture:getBody() == p.body or fixture:getCategory() == SPELLS_CATEGORY or fixture:isSensor() then
-            return -1   -- Its own body and spells arent ground, keep looking
+        local category = fixture:getCategory()
+        if fixture:getBody() == p.body or category == SPELLS_CATEGORY or category == ITEM_CATEGORY or fixture:isSensor() then
+            return -1   -- Its own body, spells and dropped items arent ground, keep looking
         end
         p.grounded = true
         return 0

@@ -68,15 +68,34 @@ function Block:damage(dmg, power)
     power = power or dmg
     -- Development: blocks break on any hit, the bottom of the world still holds
     if DEBUG and DEBUG_ONE_HIT_BLOCKS and self.damageThreshold ~= math.huge then
-        self:destroy()
+        self:breakApart()
         return
     end
     if power > self.damageThreshold then
         self.hpBar.currentHP = self.hpBar.currentHP - dmg
         if self.hpBar.currentHP <= 0 then
-            self:destroy()
+            self:breakApart()
         end
     end
+end
+
+
+function Block:dropItem()
+    -- Item the block leaves when broken: drop on the class(like Grass dropping Dirt), itself by default, false for none
+    if self.drop == false then
+        return nil
+    end
+    return self.drop or self.name
+end
+
+
+function Block:breakApart()
+    -- Broken by damage: the block goes and its item pops out of where it was
+    local item = self:dropItem()
+    if item ~= nil then
+        map.drops:spawn(item, 1, self.x + self.width / 2, self.y + self.height / 2)
+    end
+    self:destroy()
 end
 
 

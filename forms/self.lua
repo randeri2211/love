@@ -36,6 +36,7 @@ function Self:new(caster, params, x, y, dirX, dirY)
     -- The target keeps its active effects so buffs from several casts stack(see Entity:selfBuff)
     target.selfEffects = target.selfEffects or {}
     target.selfEffects[effect] = true
+    target.statsDirty = true    -- Its haste and lightness go into its stats(see CombatStats)
 
     -- Dash toward the aim, or the way an arrow on Recoil points(forward is away from the caster when it is on someone else)
     -- Sideways shoves fade fast so they get the full speed, up and down ones less
@@ -99,6 +100,7 @@ end
 function Self:destroy()
     if self.target.selfEffects ~= nil then
         self.target.selfEffects[self] = nil
+        self.target.statsDirty = true
     end
 end
 

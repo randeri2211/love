@@ -103,6 +103,11 @@ function Entity:selfBuff(key)
     return value
 end
 
+function Entity:gravityScale()
+    -- How strongly gravity pulls it, from its combat stats(Self spells can make it lighter)
+    return self.combatStats and self.combatStats.gravityScale or 1
+end
+
 function Entity:selfHit()
     -- Tells the Self spells on this entity it was hurt, their onHit children fire
     for effect in pairs(self.selfEffects or {}) do

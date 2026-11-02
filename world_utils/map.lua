@@ -1,5 +1,6 @@
 local Enemies = require "entities.enemies"
 local Generator = require "world_utils.generator"
+local Drops = require "world_utils.drops"
 local Map = {}
 
 function Map:new(height, seed, settings)
@@ -27,6 +28,10 @@ end
 function Map:emptyMap()
     -- Forgets every chunk, the map starts over from its seed
     self.enemies = Enemies:new()
+    if self.drops ~= nil then
+        self.drops:clear()
+    end
+    self.drops = Drops:new()    -- Items lying in the world(see world_utils/drops)
     self.chunks = {}    -- Chunks with real blocks, chunks["cx,cy"][cell index] = block
     self.saved = {}     -- Visited chunks from a save, kept as data until they are needed again
     -- Hitboxes: one static body per chunk holds the fixtures of its blocks that touch air
@@ -476,6 +481,7 @@ end
 
 
 function Map:update(dt)
+    self.drops:update(dt)
     -- Unloads faraway chunks every few seconds instead of every frame
     self.unloadTimer = (self.unloadTimer or 0) + dt
     if self.unloadTimer >= CHUNK_UNLOAD_INTERVAL then
@@ -494,7 +500,7 @@ function Map:toData()
     for key, chunk in pairs(self.chunks) do
         chunks[key] = encodeChunk(chunk)
     end
-    return {seed = self.seed, settings = self.settings, time = self.time, chunks = chunks}
+    return {seed = self.seed, settings = self.settings, time = self.time, drops = self.drops:toData(), chunks = chunks}
 end
 
 
@@ -505,6 +511,7 @@ function Map:loadData(data)
     self.settings = data.settings       -- nil for worlds made before biomes, they stay all plains
     self.time = data.time or DAY_START * DAY_LENGTH   -- Worlds saved before the clock start in the morning
     self.saved = data.chunks or {}
+    self.drops:loadData(data.drops)
 end
 
 
@@ -522,6 +529,7 @@ function Map:draw()
         end
     end
 
+    self.drops:draw()
     map.enemies:draw()
 end
 

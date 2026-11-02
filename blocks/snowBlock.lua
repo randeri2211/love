@@ -3,6 +3,7 @@ local HPBar = require "components.hpBar"
 
 local SnowBlock = Block:new()
 registerBlock("Snow", SnowBlock)
+SnowBlock.drop = "Dirt"     -- The snow on top doesnt come along
 
 function SnowBlock:new(x, y, width, height)
     -- Top layer of snowy hills, soft

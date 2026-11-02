@@ -133,6 +133,9 @@ function love.draw()
         end
     end
     Slab.Draw()
+    if game_state == IN_WORLD_STATE then
+        uihandler:drawTop()
+    end
 end
 
 function love.keypressed(key)
@@ -166,6 +169,8 @@ function love.keypressed(key)
         -- Spell editor key works while paused so the editor can be closed
         elseif key == SPELL_EDITOR_KEY then
             uihandler:toggleSpellEditor()
+        elseif key == CHARACTER_KEY then
+            uihandler:toggleCharacterScreen()
         -- Save and load the open world, saving while paused is fine
         elseif key == SAVE_KEY then
             saveScene(currentWorld)

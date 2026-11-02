@@ -2,6 +2,7 @@ local Block = require "blocks.block"
 local HPBar = require "components.hpBar"
 
 local BedrockBlock = Block:new()
+BedrockBlock.drop = false   -- Cant be broken anyway
 registerBlock("Bedrock", BedrockBlock)
 
 function BedrockBlock:new(x, y, width, height)

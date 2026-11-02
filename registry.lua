@@ -2,6 +2,7 @@ BLOCK_REGISTRY = {}
 ENTITY_REGISTRY = {}
 RUNE_REGISTRY = {}
 BIOME_REGISTRY = {}
+ITEM_REGISTRY = {}
 
 
 function registerAll()
@@ -9,6 +10,7 @@ function registerAll()
     registerFolder("entities")
     registerFolder("runes")
     registerFolder("biomes")
+    registerFolder("items")     -- After blocks, every block becomes an item(see items/blockItems)
 end
 
 
@@ -33,6 +35,12 @@ function registerRune(runeName, rune)
         RUNE_REGISTRY = {}
     end
     RUNE_REGISTRY[runeName] = rune
+end
+
+
+function registerItem(itemName, item)
+    item.name = itemName
+    ITEM_REGISTRY[itemName] = item
 end
 
 

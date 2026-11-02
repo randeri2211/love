@@ -1,10 +1,11 @@
 local binser = require "libraries.binser.binser"
 local Spellbooks = require "magic.spellbooks"
+local Inventories = require "items.inventories"
 
 -- Saves are written with binser, which keeps numbers, booleans, strings and nested tables exactly
 local SAVEABLE = {string = true, number = true, boolean = true, table = true}
 -- Fields that are rebuilt by code instead of saved(animations, and the spellbook which has its own file)
-local SKIP_KEYS = {anim = true, animations = true, spellbook = true, hud = true, __index = true}
+local SKIP_KEYS = {anim = true, animations = true, spellbook = true, inventory = true, hud = true, __index = true}
 
 
 currentWorld = "world"     -- Name of the open world, save and load use it
@@ -79,6 +80,7 @@ function saveScene(worldName)
     writeData(folder .. "/" .. ENTITIES_FILENAME, saveEntities())
     writeData(folder .. "/" .. MAP_FILENAME, saveMap())
     writeData(folder .. "/" .. SPELLS_FILENAME, Spellbooks.toData(player.spellbook))
+    writeData(folder .. "/" .. INVENTORY_FILENAME, Inventories.toData(player.inventory))
 end
 
 function loadScene(worldName)
@@ -104,6 +106,12 @@ function loadScene(worldName)
     local spellData = readData(folder .. "/" .. SPELLS_FILENAME)
     if spellData ~= nil then
         player.spellbook = Spellbooks.fromData(spellData)
+    end
+
+    -- Worlds saved before items start with an empty inventory
+    local inventoryData = readData(folder .. "/" .. INVENTORY_FILENAME)
+    if inventoryData ~= nil then
+        player.inventory = Inventories.fromData(inventoryData)
     end
 end
 

@@ -3,6 +3,7 @@ local HPBar = require "components.hpBar"
 
 local GrassBlock = Block:new()
 registerBlock("Grass", GrassBlock)
+GrassBlock.drop = "Dirt"    -- The grass doesnt come along
 
 function GrassBlock:new(x, y, width, height)
     -- Top layer of the ground, anything can dig it

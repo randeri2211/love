@@ -9,4 +9,5 @@ EXIT_KEY = "escape"
 SHOOT_KEY = "b"
 MINIMAP_KEY = "m"
 SPELL_EDITOR_KEY = "c"
+CHARACTER_KEY = "tab"      -- Character and inventory screen
 SPAWN_ZOMBIE_KEY = "z"     -- Testing: spawns a zombie at the mouse

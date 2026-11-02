@@ -72,6 +72,10 @@ local function combatStats(entity)
     entity.movement.maxSpeed = math.max(entity.movement.maxSpeed, entity.movement.baseMaxSpeed / 10)
     entity.movement.jumpHeight = math.max(entity.movement.jumpHeight, entity.movement.baseJumpHeight / 10)
 
+    -- Buffs from Self spells on it go on top of the stats(a Self effect marks the stats dirty when it starts and ends)
+    entity.movement.maxSpeed = entity.movement.maxSpeed * entity:selfBuff("haste")
+    combatStats.gravityScale = entity:selfBuff("lightness")    -- Below 1 jumps higher and falls slower
+
     -- Apply the remembered percentages to the new max values
     entity.hpBar.currentHP = hpPercent * entity.hpBar.maxHP
     entity.manaBar.currentMana = manaPercent * entity.manaBar.maxMana

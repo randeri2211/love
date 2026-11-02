@@ -2,6 +2,7 @@ local ManaBar = require "components.manaBar"
 local Spellbooks = require "magic.spellbooks"
 local Entity = require "entities.entity"
 local Humanoid = require "animations.humanoid"
+local Inventory = require "components.inventory"
 
 local Player = Entity:new()
 AS = 25
@@ -47,6 +48,7 @@ function Player:new(x, y, name)
     
     player.manaBar = ManaBar(100, 100, 10)
     player.spellbook = Spellbooks.default()    -- Loading a world replaces it with the saved one
+    player.inventory = Inventory(INVENTORY_SIZE)    -- Saved in its own file like the spellbook
 
     -- Player Init
     player.body:setGravityScale(1)
@@ -121,7 +123,7 @@ function Player:move()
     local moved = false
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown(RIGHT_KEY) then
-        self.body:setLinearVelocity(self.movement.maxSpeed * self:selfBuff("haste"), y)
+        self.body:setLinearVelocity(self.movement.maxSpeed, y)
         moved = true
         if self.direction ~= 'right' then
             self.direction = 'right'
@@ -136,7 +138,7 @@ function Player:move()
     end
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown(LEFT_KEY) then
-        self.body:setLinearVelocity(-self.movement.maxSpeed * self:selfBuff("haste"), y)
+        self.body:setLinearVelocity(-self.movement.maxSpeed, y)
         moved = true
         if self.direction ~= 'left' then
             self.direction = 'left'
@@ -158,13 +160,13 @@ function Player:move()
             self.jumping = true
             self.body:setLinearVelocity(x, - self.movement.jumpHeight)
         elseif self.jumping and self.up then
-            self.body:setGravityScale(JUMP_GRAVITY_SCALE * self:selfBuff("lightness"))
+            self.body:setGravityScale(JUMP_GRAVITY_SCALE * self:gravityScale())
         else
-            self.body:setGravityScale(self:selfBuff("lightness"))
+            self.body:setGravityScale(self:gravityScale())
         end
     else
         self.jumping = false
-        self.body:setGravityScale(self:selfBuff("lightness"))
+        self.body:setGravityScale(self:gravityScale())
     end
 
     self:moveControl(moved)

@@ -214,7 +214,7 @@ function Zombie:update(dt)
 
     Entity.update(self, dt)
     groundRay(self)
-    self.body:setGravityScale(self:selfBuff("lightness"))     -- Self spells on it can make it lighter
+    self.body:setGravityScale(self:gravityScale())     -- Self spells on it can make it lighter
 
     local px, py = player.body:getWorldCenter()
     local vx, vy = self.body:getLinearVelocity()
@@ -226,7 +226,7 @@ function Zombie:update(dt)
     vx = self.movement.pushX or 0
     if chasing then
         self:face(side > 0 and "right" or "left")
-        vx = vx + side * self.movement.maxSpeed * self:selfBuff("haste")
+        vx = vx + side * self.movement.maxSpeed
         -- A block in front at its feet with room above it gets stepped up with a hop
         if self.grounded then
             local frontX = x + side * (self.width / 2 + 4)

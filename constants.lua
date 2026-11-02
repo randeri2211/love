@@ -91,6 +91,7 @@ PLAYER_FILENAME = "player"
 MAP_FILENAME = "map"
 ENTITIES_FILENAME = "entities_file"
 SPELLS_FILENAME = "spells"
+INVENTORY_FILENAME = "inventory"
 SAVE_FOLDER = "saves"
 
 SPAWN_X = 0.5       -- Relative to world so on a scale of 0-1
@@ -139,6 +140,22 @@ ORE_START_DEPTH = 20    -- Ore only this deep under the surface
 ORE_THRESHOLD = 0.74    -- Noise above this is ore, 0.74 is about 2% of the deep stone(0.70 is about 5%)
 BEDROCK_ROWS = 3        -- Unbreakable rows at the bottom of the world
 
+-- Items and inventory(see items/ and world_utils/drops)
+INVENTORY_SIZE = 40             -- Slots, 4 rows of 10
+ITEM_STACK = 99                 -- Most items in one slot, items can set their own maxStack
+ITEM_DROP_SIZE = 14             -- Pixels, the icon of an item lying in the world
+ITEM_POP_SPEED = 3 * TILE_SIZE  -- How hard a drop jumps out of a broken block
+ITEM_DROP_DAMPING = 0.5
+ITEM_PICKUP_DELAY = 0.4         -- Seconds before a new drop can fly to the player, so it is seen popping out
+ITEM_THROW_DELAY = 2            -- Seconds before a thrown item can be picked up again, so it doesnt come right back
+ITEM_MAGNET_DISTANCE = 3 * TILE_SIZE    -- Drops this close fly to the player
+ITEM_MAGNET_SPEED = 9 * TILE_SIZE
+ITEM_PICKUP_DISTANCE = 0.75 * TILE_SIZE -- Drops this close go into the inventory
+ITEM_MERGE_DISTANCE = 0.8 * TILE_SIZE   -- Drops of the same item this close become one
+ITEM_MERGE_INTERVAL = 0.5       -- Seconds between merge checks
+ITEM_LIFETIME = 300             -- Seconds a drop lies in the world before it disappears
+ITEM_PICKUP_SHOW_TIME = 1.2     -- Seconds the "+3 Dirt" line shows over the player
+
 -- Day and night(see world_utils/worldClock)
 DAY_LENGTH = 20 * 60            -- Seconds in a day for new worlds, saved with the world so changing it never changes old ones
 DAY_START = 0.35                -- Part of the day a new world starts at, morning
@@ -172,6 +189,7 @@ PLAYER_CATEGORY = 2
 BLOCKS_CATEGORY = 3
 SPELLS_CATEGORY = 4
 ENEMY_CATEGORY = 5
+ITEM_CATEGORY = 6       -- Dropped items, they only collide with blocks
 
 IN_WORLD_STATE = "IN_WORLD"
 PICK_WORKD_STATE = "PICK_WORLD"
