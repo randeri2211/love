@@ -27,9 +27,12 @@ function Enemies:draw()
         if x > - CAMERA_RENDER_OFFSET and x < SCREEN_X + CAMERA_RENDER_OFFSET and y > - CAMERA_RENDER_OFFSET and y < SCREEN_Y + CAMERA_RENDER_OFFSET then
             enemy:draw()
             -- The same hp bar as the player hud, small over the head(the hud keeps the trail per enemy)
-            enemy.hud = enemy.hud or Hud:new(enemy)
-            local ex, ey = enemy.body:getWorldCenter()
-            enemy.hud:drawOverhead(ex, ey - (enemy.height or 0) / 2)
+            -- Dead enemies drop their bar
+            if not enemy.dying then
+                enemy.hud = enemy.hud or Hud:new(enemy)
+                local ex, ey = enemy.body:getWorldCenter()
+                enemy.hud:drawOverhead(ex, ey - (enemy.height or 0) / 2)
+            end
         end
     end
 end

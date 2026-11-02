@@ -30,6 +30,7 @@ function AreaRune:defaults()
         expandTime = 0.25,      -- Seconds to grow to full size
         lifetime = 0.5,
         pull = 0,               -- Gravity rune turns it into a gravity well
+        knockback = 1.5,        -- Blasts things outward
         spread = math.rad(90),  -- Split copies spread wide like a cluster bomb
     }
 end

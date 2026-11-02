@@ -104,7 +104,7 @@ function Laser:fire()
             local key = hit.entity or hit.fixture
             if not damaged[key] then
                 damaged[key] = true
-                self:hit(hit.entity, hit.x, hit.y, rx, ry)
+                self:hit(hit.entity, hit.x, hit.y, rx, ry, dx, dy)
             end
 
             if bounces <= 0 then

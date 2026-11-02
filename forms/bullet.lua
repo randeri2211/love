@@ -168,7 +168,7 @@ function Bullet:onContact(fixture, entity, contact)
     if x == nil then
         x, y = self.body:getWorldCenter()
     end
-    self:hit(entity, x, y, dx - 2 * dot * nx, dy - 2 * dot * ny)
+    self:hit(entity, x, y, dx - 2 * dot * nx, dy - 2 * dot * ny, dx, dy)
 
     if self.bounces > 0 then
         -- Rebound, the physics bounces the body off the surface

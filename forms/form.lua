@@ -72,11 +72,18 @@ function Form:digStrength()
     return self.damage * self.terrainDamage / BASE_SPELL_PARAMS.terrainDamage
 end
 
-function Form:hit(entity, x, y, dirX, dirY)
-    -- Damages what was hit and casts the onHit child spells from there
+function Form:hit(entity, x, y, dirX, dirY, pushX, pushY)
+    -- Damages what was hit and casts the onHit child spells from there(dirX, dirY is the way they go)
     -- Blocks check hardness against the dig strength, so weak fast hits still dig slowly
+    -- pushX, pushY is the way the hit shoves, the way the spell was going(defaults to dirX, dirY)
     if entity ~= nil then
         entity:damage(self:damageFor(entity), self:digStrength())
+        -- Knockback from the spell, only things that can be pushed(enemies, not blocks), with a little hop
+        if entity.push ~= nil and (self.knockback or 0) > 0 then
+            pushX, pushY = pushX or dirX, pushY or dirY
+            local speed = self.knockback * KNOCKBACK_SPEED
+            entity:push(pushX * speed, (pushY * KNOCKBACK_VERTICAL - KNOCKBACK_LIFT) * speed)
+        end
     end
     spells:trigger(self, "onHit", dirX, dirY, x, y)
 end

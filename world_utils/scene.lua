@@ -164,8 +164,11 @@ function saveEntities()
     -- Plain data of every entity in the world
     local data = {}
     for i, entity in pairs(map.enemies.enemies) do
-        entity:prepSave()
-        table.insert(data, plainCopy(entity))
+        -- Dying entities are gone by the time the save loads
+        if not entity.dying then
+            entity:prepSave()
+            table.insert(data, plainCopy(entity))
+        end
     end
     return data
 end

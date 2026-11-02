@@ -19,6 +19,7 @@ Humanoid.SHEET = {
 }
 Humanoid.ART_SCALE = 2      -- Screen pixels per art pixel, the same as the 16 pixel block tiles drawn at 32
 Humanoid.FAR_SHADE = 0.7    -- The far arm and leg are drawn darker, they are behind the body
+Humanoid.LIE_LIFT = 8       -- Pixels a body lying down is raised, about half the torso width
 
 local PART_OF = {head = "head", torso = "torso", right_hand = "arm", left_hand = "arm", right_leg = "leg", left_leg = "leg"}
 
@@ -113,6 +114,7 @@ function Humanoid.build(width, height, skin)
         anim:SetAttachment(bone)
     end
     anim.shade = {}     -- Brightness per bone, the far limbs are darker(see face)
+    anim.tint = {1, 1, 1}
     anim.alpha = 1
 
     -- The skeleton is built pointing right, turned so it stands up(bone angle 0 then points down)
@@ -137,9 +139,11 @@ end
 
 
 local function applyColors(anim)
+    -- Far limb shade, tint(hit flash) and alpha(blink, fade) together
+    local tint = anim.tint
     for i, bone in ipairs(Humanoid.BONES) do
         local shade = anim.shade[bone] or 1
-        anim.attachments[bone]:SetColor(shade, shade, shade, anim.alpha)
+        anim.attachments[bone]:SetColor(shade * tint[1], shade * tint[2], shade * tint[3], anim.alpha)
     end
 end
 
@@ -183,6 +187,26 @@ function Humanoid.setAlpha(anim, alpha)
         anim.alpha = alpha
         applyColors(anim)
     end
+end
+
+
+function Humanoid.setTint(anim, r, g, b)
+    -- Color multiplied over the whole body, like the red flash when hit
+    local tint = anim.tint
+    if tint[1] ~= r or tint[2] ~= g or tint[3] ~= b then
+        anim.tint = {r, g, b}
+        applyColors(anim)
+    end
+end
+
+
+function Humanoid.tilt(anim, feetX, feetY, angle)
+    -- Turns the whole body around its feet, angle 0 stands and 90 degrees lies with the head to the right
+    -- Lying bodies are lifted a little so they rest on the ground instead of half in it
+    local root = anim.actor:GetTransformer():GetRoot()
+    root.rotation = math.pi / 2 + angle
+    local lift = math.abs(math.sin(angle)) * Humanoid.LIE_LIFT
+    root.translation = {feetX - math.cos(root.rotation) * anim.feetDrop, feetY - lift - math.sin(root.rotation) * anim.feetDrop}
 end
 
 

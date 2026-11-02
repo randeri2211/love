@@ -12,6 +12,8 @@ local ARM_REACH = math.rad(12)      -- Arms point a little below level, reaching
 local ARM_SPREAD = math.rad(6)      -- Small angle between the arms so they dont draw on top of each other
 local ARM_BOB = math.rad(7)         -- How far the arms sway while it walks
 local WALK_CYCLE = 1.4              -- Seconds per shuffling step cycle
+local ATTACK_RAISE = math.rad(65)   -- How far the arms go up in the wind-up
+local ATTACK_STRIKE = math.rad(40)  -- How far past level they swing down
 
 -- Short dragging steps with a nodding head, the arms come from the arm pose instead(see armSetup)
 local WALK = {
@@ -124,6 +126,30 @@ function Zombie:face(direction)
 end
 
 
+function Zombie:attackArmAngle()
+    -- Extra arm angle for the swing: up during the wind-up, down past level on the swing, back while recovering
+    -- Positive is down in front for a zombie facing right, mirrored when facing left
+    local attack = self.attack
+    if attack == nil then
+        return 0
+    end
+    local t = attack.time
+    local raise, strike = -ATTACK_RAISE, ATTACK_STRIKE
+    local angle
+    if t < ZOMBIE_ATTACK_WINDUP then
+        local p = t / ZOMBIE_ATTACK_WINDUP
+        angle = raise * (1 - (1 - p) * (1 - p))     -- Eases up
+    elseif t < ZOMBIE_ATTACK_WINDUP + ZOMBIE_ATTACK_SWING then
+        local p = (t - ZOMBIE_ATTACK_WINDUP) / ZOMBIE_ATTACK_SWING
+        angle = raise + (strike - raise) * p        -- Fast swing down
+    else
+        local p = math.min(1, (t - ZOMBIE_ATTACK_WINDUP - ZOMBIE_ATTACK_SWING) / ZOMBIE_ATTACK_RECOVER)
+        angle = strike * (1 - p)
+    end
+    return attack.side * angle
+end
+
+
 function Zombie:updateAnimation(dt, walking)
     local transformer = self.anim.actor:GetTransformer()
     transformer:SetPower("walk", walking and 1 or 0)
@@ -136,17 +162,36 @@ function Zombie:updateAnimation(dt, walking)
     -- Bone angle 0 points down(the skeleton is turned to stand up), so reaching right is -90 degrees and left is 90
     local forward = self.facing == "right" and -math.pi / 2 + ARM_REACH or math.pi / 2 - ARM_REACH
     local sway = math.sin(self.walkTime * 2 * math.pi / WALK_CYCLE) * ARM_BOB
-    self.armPose.right_hand.rotation = forward - ARM_SPREAD + sway
-    self.armPose.left_hand.rotation = forward + ARM_SPREAD - sway
+    if self.attack ~= nil then
+        sway = 0
+    end
+    local swing = self:attackArmAngle()
+    self.armPose.right_hand.rotation = forward - ARM_SPREAD + sway + swing
+    self.armPose.left_hand.rotation = forward + ARM_SPREAD - sway + swing
 
-    local x, y = self.body:getWorldCenter()
-    Humanoid.place(self.anim, x, y, self.height)
+    -- Red flash after a hit
+    self.flashTime = math.max(0, (self.flashTime or 0) - dt)
+    if self.flashTime > 0 then
+        Humanoid.setTint(self.anim, HIT_TINT[1], HIT_TINT[2], HIT_TINT[3])
+    else
+        Humanoid.setTint(self.anim, 1, 1, 1)
+    end
+
+    if self.dying == nil then
+        local x, y = self.body:getWorldCenter()
+        Humanoid.place(self.anim, x, y, self.height)
+    end
     self.anim.actor:Update(dt)
 end
 
 
 -- Behavior
 function Zombie:update(dt)
+    if self.dying ~= nil then
+        self:updateDying(dt)
+        return
+    end
+
     -- Blocks only have hitboxes around the player, so a zombie further out waits frozen instead of falling through the ground
     local x, y = self.body:getWorldCenter()
     local active = map:inHitboxWindow(loveToMap(math.floor(x / TILE_SIZE) * TILE_SIZE, math.floor(y / TILE_SIZE) * TILE_SIZE))
@@ -163,12 +208,21 @@ function Zombie:update(dt)
     local px, py = player.body:getWorldCenter()
     local vx, vy = self.body:getLinearVelocity()
     local dx = px - x
+    local side = dx > 0 and 1 or -1
+    local inReach = math.abs(dx) <= ZOMBIE_ATTACK_REACH and math.abs(py - y) < self.height
+
+    -- Starts a swing when the player is in reach and the last one has cooled down
+    self.attackCooldown = math.max(0, (self.attackCooldown or 0) - dt)
+    if self.attack == nil and inReach and self.attackCooldown == 0 then
+        self.attack = {time = 0, side = side, struck = false}
+        self:face(side > 0 and "right" or "left")
+    end
 
     -- Shambles toward the player once it is close enough to notice them
-    local chasing = math.abs(dx) <= ZOMBIE_SIGHT and math.abs(py - y) <= ZOMBIE_SIGHT and math.abs(dx) > self.width / 2
+    local chasing = self.attack == nil and math.abs(dx) <= ZOMBIE_SIGHT and math.abs(py - y) <= ZOMBIE_SIGHT
+        and math.abs(dx) > self.width / 2
     vx = self.movement.pushX or 0
     if chasing then
-        local side = dx > 0 and 1 or -1
         self:face(side > 0 and "right" or "left")
         vx = vx + side * self.movement.maxSpeed
         -- A block in front at its feet with room above it gets stepped up with a hop
@@ -179,10 +233,80 @@ function Zombie:update(dt)
                 vy = -self.movement.jumpHeight
             end
         end
+    elseif self.attack ~= nil then
+        vx = vx + self:updateAttack(dt, inReach)
     end
     self.body:setLinearVelocity(vx, vy)
 
     self:updateAnimation(dt, chasing)
+end
+
+
+function Zombie:updateAttack(dt, inReach)
+    -- Wind-up, swing and recover, the hit lands as the swing starts if the player is still in reach
+    -- Returns the lunge speed forward during the swing
+    local attack = self.attack
+    attack.time = attack.time + dt
+    local swingStart = ZOMBIE_ATTACK_WINDUP
+    local swingEnd = swingStart + ZOMBIE_ATTACK_SWING
+
+    if attack.time >= swingStart and not attack.struck then
+        attack.struck = true
+        -- Melee shares the immunity window with contact, so a bump and a swing cant land back to back
+        if inReach then
+            player:meleeHit(self, ZOMBIE_ATTACK_DAMAGE, ZOMBIE_ATTACK_KNOCKBACK)
+        end
+    end
+    if attack.time >= swingEnd + ZOMBIE_ATTACK_RECOVER then
+        self.attack = nil
+        self.attackCooldown = ZOMBIE_ATTACK_COOLDOWN
+    end
+    if attack.time >= swingStart and attack.time < swingEnd then
+        return attack.side * ZOMBIE_LUNGE_SPEED
+    end
+    return 0
+end
+
+
+-- Hit and Death
+function Zombie:damage(damage)
+    if self.dying ~= nil then
+        return
+    end
+    self.flashTime = HIT_FLASH_TIME
+    Entity.damage(self, damage)
+end
+
+
+function Zombie:die()
+    -- Falls over backwards from where it faced, then fades out(see updateDying)
+    local x, y = self.body:getWorldCenter()
+    self.dying = 0
+    self.attack = nil
+    self.contactDamage = 0
+    self.deathFeet = {x, y + self.height / 2}
+    self.deathSide = self.facing == "right" and -1 or 1     -- Way the head falls
+end
+
+
+function Zombie:updateDying(dt)
+    -- Bodies cant be turned off inside the physics callback that killed it, so it happens here
+    if self.body:isActive() then
+        self.body:setActive(false)
+    end
+    self.dying = self.dying + dt
+
+    local fall = math.min(1, self.dying / DEATH_FALL_TIME)
+    fall = fall * fall      -- Speeds up as it tips over
+    Humanoid.tilt(self.anim, self.deathFeet[1], self.deathFeet[2], self.deathSide * fall * math.pi / 2)
+
+    local fade = math.max(0, (self.dying - DEATH_FALL_TIME) / DEATH_FADE_TIME)
+    Humanoid.setAlpha(self.anim, 1 - fade)
+    self:updateAnimation(dt, false)
+
+    if fade >= 1 then
+        self:destroy()
+    end
 end
 
 

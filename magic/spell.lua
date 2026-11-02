@@ -398,6 +398,7 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
         local instance = castParams.form:new(caster, castParams, x, y, dx, dy)
         if instance ~= nil then
             instance.spell = self   -- So triggers can find their child spells
+            instance.knockback = castParams.knockback   -- How hard its hits shove(see Form:hit)
             local t = {}
             t.spell = self
             t.instance = instance

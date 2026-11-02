@@ -45,7 +45,12 @@ BASE_SPELL_PARAMS = {
     repeats = 1,                -- Casts in a row per cast, Repeat rune multiplies it
     gravityX = 0,               -- Way gravity pulls the spell(bullets fall, lasers bend), an arrow on Gravity turns it
     gravityY = 1,
+    knockback = 1,              -- How hard a hit shoves what it hits, the way the spell was going
 }
+
+KNOCKBACK_SPEED = 8 * TILE_SIZE -- Push speed of a knockback 1 hit, about a tile and a third of shove
+KNOCKBACK_LIFT = 0.25           -- Small hop on every knockback, so knocked enemies leave the ground
+KNOCKBACK_VERTICAL = 0.35       -- Up and down pushes are weaker, sideways pushes fade fast but vertical ones only fight gravity
 
 REPEAT_DELAY = 0.1              -- Seconds between the casts of a Repeat
 RECOIL_SPEED = 6 * TILE_SIZE * math.sqrt(GRAVITY_MULTIPLIER)    -- Push speed of one Recoil rune on a normal cast(scaled so rocket jumps keep their height)
@@ -88,11 +93,25 @@ PLAYER_SKIN = "player"     -- Skin sheet in assets/skins(nil draws the plain col
 ZOMBIE_HP = 30
 ZOMBIE_SPEED = BASE_MOVE_SPEED * 0.45
 ZOMBIE_SIGHT = 14 * TILE_SIZE      -- How close the player has to be for it to start walking at them
-ZOMBIE_CONTACT_DAMAGE = 10
+ZOMBIE_CONTACT_DAMAGE = 5          -- A light bump, the swing is the real attack
+ZOMBIE_ATTACK_DAMAGE = 15
+ZOMBIE_ATTACK_REACH = 1.6 * TILE_SIZE      -- Center to center distance the swing reaches
+ZOMBIE_ATTACK_KNOCKBACK = 4 * TILE_SIZE
+ZOMBIE_ATTACK_WINDUP = 0.35         -- Seconds raising the arms, the player can step away
+ZOMBIE_ATTACK_SWING = 0.12          -- Seconds swinging down, the hit lands at the start
+ZOMBIE_ATTACK_RECOVER = 0.35
+ZOMBIE_ATTACK_COOLDOWN = 0.8        -- Seconds after a swing before the next one
+ZOMBIE_LUNGE_SPEED = 3 * TILE_SIZE  -- Step forward during the swing
+
+-- Hit reaction and death
+HIT_FLASH_TIME = 0.15               -- Seconds an enemy shows the hit tint
+HIT_TINT = {1, 0.35, 0.35}
+DEATH_FALL_TIME = 0.35              -- Seconds falling over
+DEATH_FADE_TIME = 0.6               -- Seconds fading out after it fell
 ZOMBIE_SKIN = "zombie"
 
 -- Contact damage, enemies with contactDamage hurt the player by touching them
-CONTACT_IMMUNITY_TIME = 0.8         -- Seconds after a contact hit when touching cant hurt again(spells still can)
+CONTACT_IMMUNITY_TIME = 0.8         -- Seconds after a melee hit(touch or swing) when no melee hit can land(spells still can)
 CONTACT_KNOCKBACK = 5 * TILE_SIZE   -- Push away from whatever hit, so the player isnt stuck inside it(0 turns it off)
 CONTACT_BLINK_RATE = 12             -- Blinks per second while immune
 

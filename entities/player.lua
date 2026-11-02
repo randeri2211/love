@@ -205,10 +205,9 @@ function Player:update(dt)
 end
 
 
--- Contact Damage
+-- Melee Damage
 function Player:checkContactDamage(dt)
-    -- Anything touching the player with contactDamage hurts it, then touching cant hurt again for a moment
-    -- The immunity is for contact only, spells and other damage still land
+    -- Anything touching the player with contactDamage hurts it(see meleeHit)
     self.contactImmunity = math.max(0, (self.contactImmunity or 0) - dt)
     if self.contactImmunity == 0 then
         for i, contact in ipairs(self.body:getContacts()) do
@@ -217,7 +216,7 @@ function Player:checkContactDamage(dt)
                 local other = a:getBody() == self.body and b or a
                 local attacker = other:getUserData()
                 if attacker ~= nil and (attacker.contactDamage or 0) > 0 then
-                    self:contactHit(attacker)
+                    self:meleeHit(attacker, attacker.contactDamage, CONTACT_KNOCKBACK)
                     break
                 end
             end
@@ -230,14 +229,20 @@ function Player:checkContactDamage(dt)
 end
 
 
-function Player:contactHit(attacker)
-    self:damage(attacker.contactDamage)
+function Player:meleeHit(attacker, damage, knockback)
+    -- Enemy bodies hitting the player, a touch or a swing, then no melee hit lands for a moment
+    -- The immunity is for melee only, spells and other damage still land, returns true when the hit landed
+    if (self.contactImmunity or 0) > 0 then
+        return false
+    end
+    self:damage(damage)
     self.contactImmunity = CONTACT_IMMUNITY_TIME
     -- Knocked away from the attacker and a little up
     local x = self.body:getWorldCenter()
     local ax = attacker.body:getWorldCenter()
     local side = x >= ax and 1 or -1
-    self:push(side * CONTACT_KNOCKBACK, -CONTACT_KNOCKBACK * 0.5)
+    self:push(side * knockback, -knockback * 0.5)
+    return true
 end
 
 

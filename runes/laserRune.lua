@@ -32,6 +32,7 @@ function LaserRune:defaults()
         bounces = 0,            -- Rebound rune reflects it
         bend = 0,               -- Gravity rune curves it down
         pierce = 0,             -- Pierce rune lets it pass through enemies and blocks
+        knockback = 0.1,        -- Small shove per beam, it hits many times a second
         lifetime = 0.08,        -- How long each beam stays visible, short so rapid casts blend together
         manaScale = 0.1,        -- 10% of the normal mana cost per cast
         cooldownScale = 0.25,   -- Casts 4 times as often
