@@ -33,10 +33,27 @@ Players can reach the whole skill tree early, but stronger and easier versions o
 | A Word Wall teaches the word | A glyph wall in a boss arena adds the rune to the grimoire |
 | A dragon soul unlocks it | A boss kill or quest unlocks the template |
 
-### Open
-- Do templates also set a minimum drawing quality, so a sloppy traced rune still works? Or do they only show the guide?
-- Where the walls go: arena structures in the biome that fits each rune (Gravity in deep caves, Speed on desert plains)?
-- What the grimoire screen looks like and what it shows beyond the shape (lore, mana cost, which forms the rune works with).
+### Templates (Decided)
+- A traced rune always counts as at least **about 70% quality**. Good freehand drawing can still reach 100%.
+  New players get spells that reliably work, skilled players stay ahead before and after the template.
+
+### Where the walls go (Decided)
+Each rune's wall sits in a structure in the biome that fits it (Gravity in deep caves, Speed on desert plains). Built in two steps:
+1. **Now:** shrine structures in world generation holding a wall, maybe guarded by tougher normal enemies.
+2. **Later:** bosses move into those arenas.
+
+Structure generation is the dependency (it doesn't exist yet, ruins and loot chests need it too).
+
+### The grimoire screen (Decided)
+For every discovered rune:
+- its shape and all of its marks
+- its state (discovered or templated)
+- which forms it works with
+- its mana cost and complexity
+- where its wall was found
+- one line of lore
+
+The shapes can reuse the spell editor's rune drawing code.
 
 ### Building notes
 - Knowledge is per world: `{runeName = "discovered" | "templated"}` on the player, saved with the world.
@@ -163,16 +180,46 @@ Some set items and trinkets are boss drops. Which ones and why is decided once b
 |---|---|---|
 | 1 | **Raw materials:** trees (wood), plants or silk (fibre), enemy drops (hides), gems | Every crafting station needs inputs, and they give biomes a reason to visit |
 | 2 | **Crafting core:** recipe registry, a "near a station" check, a crafting screen | Stations do nothing without it |
-| 3 | **Damage types, crit and status effects** | Forge resistances and tanning crit have nothing to work on yet |
+| 3 | **Damage types, crit and status effects** | Forge resistances and tanning crit have nothing to work on yet (elements are decided, see below) |
 | 4 | **Light:** torches and light from spells | Night and underground are dark, and deep ores are planned |
-| 5 | **Storage and home:** chests, spawn point or bed, what happens on death | Basic sandbox loop |
+| 5 | **Storage and home:** chests, spawn point or bed, the respawn timer | Basic sandbox loop (death itself is decided, see below) |
 | 6 | **Spawner and enemy roster:** biome and depth buckets, night spawns, enemies that cast runes | Materials and bosses depend on enemy variety |
 | 7 | **Consumables:** potions from an alchemy station | Mana economy, and a second use for plants |
 | 8 | **Sound and onboarding** | No audio yet. Drawing runes is a skill, so it needs teaching |
 
-### Open
-- Damage types: new element runes (Fire, Frost, Lightning), or properties of forms (Laser burns, Area blasts)?
-- Death: how punishing should it be, for a sandbox that rewards experimenting?
+### Damage types (Decided): element runes
+Elements are **modifier runes**, by the rule in `rune-marks.md`: a new behavior that makes sense on 2+ forms is a modifier rune.
+Tying elements to forms would remove a choice, a fire laser and a frost laser should both be possible builds.
+
+| Rune | Effect | Look |
+|---|---|---|
+| Fire | Burn damage over time | Red-orange glow, fire particles |
+| Frost (ice) | Slows the target (the Slow rune slows the spell itself) | Pale blue glow, frost particles |
+| Poison | Poison damage over time | Green glow, poison particles |
+| Lightning | Chains to a nearby enemy | Yellow-white glow, sparks |
+| (none) | Plain damage stays the default arcane type | As today |
+
+- **Every element changes how the spell looks on every form:** a fire laser has red particles along the beam, a fire bullet glows red and trails fire particles, and so on for each element.
+- Forge armor resists specific elements, biome enemies resist or are weak to them.
+- **Each element at most once per circle:** a second Fire rune in the same circle is refused (shown as blocked in the editor).
+  Each trigger circle counts on its own, so an OnHit child circle can have its own Fire.
+- **Different elements can share a circle:** a Fire + Frost bullet burns and slows.
+- **Other runes power up elements through the mana flow,** with the rune-to-rune `affects` that Focus already uses on Split:
+  a rune affects the elements placed **after** it, so Damage before Fire makes a stronger burn.
+
+### Death (Decided)
+For now **no punishment**: the player respawns after a respawn timer.
+
+Later: a **per-world death setting** chosen when making the world and saved with it, like the biome size:
+
+| Setting | On death |
+|---|---|
+| Gentle | Nothing lost, respawn after the timer (today's behavior) |
+| Normal | Inventory items drop where the player died, equipment stays on |
+| Hardcore | Both the character and the world are lost |
+
+Worlds made before the setting exists count as Gentle.
+Today the character is saved inside its world (`saves/<world>/`), so Hardcore death deletes that world folder. If characters ever become separate from worlds, Hardcore deletes both.
 
 ---
 
