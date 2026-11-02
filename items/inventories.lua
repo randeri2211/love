@@ -1,5 +1,6 @@
 local Items = require "items.items"
 local Inventory = require "components.inventory"
+local Tools = require "items.tools"
 
 -- Functions for inventory components(see components/inventory), the inventory itself is only data
 local Inventories = {}
@@ -30,6 +31,22 @@ function Inventories.add(inventory, name, count)
         end
     end
     return count
+end
+
+
+function Inventories.addStack(inventory, stack)
+    -- Puts a whole stack in, returns how many didnt fit
+    -- A stack with data(a wand) keeps it and goes in an empty slot of its own, others top up stacks like add
+    if stack.data == nil then
+        return Inventories.add(inventory, stack.item, stack.count)
+    end
+    for i, slot in ipairs(inventory.slots) do
+        if not slot then
+            inventory.slots[i] = Items.copy(stack)
+            return 0
+        end
+    end
+    return stack.count
 end
 
 
@@ -80,7 +97,7 @@ end
 function Inventories.toData(inventory)
     local slots = {}
     for i, slot in ipairs(inventory.slots) do
-        slots[i] = slot and {item = slot.item, count = slot.count} or false
+        slots[i] = slot and Items.copy(slot) or false
     end
     return {size = inventory.size, slots = slots}
 end
@@ -95,7 +112,10 @@ function Inventories.fromData(data)
         end
         if type(slot) == "table" and ITEM_REGISTRY[slot.item] ~= nil and type(slot.count) == "number" then
             local count = math.max(1, math.min(Items.maxStack(slot.item), math.floor(slot.count)))
-            inventory.slots[i] = {item = slot.item, count = count}
+            -- Tools whose parts dont exist anymore are dropped too
+            if ITEM_REGISTRY[slot.item].tool == nil or Tools.isValid(slot) then
+                inventory.slots[i] = Items.copy(slot, count)
+            end
         end
     end
     return inventory

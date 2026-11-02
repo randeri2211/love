@@ -238,10 +238,10 @@ function love.keypressed(key)
                     player.hotbarSlot = key == "0" and 10 or tonumber(key)
                 end
             elseif DEBUG and key == DEBUG_GIVE_KEY then
-                -- Every armor piece, to test equipment
+                -- Every armor piece and every wand part, to test equipment
                 local Inventories = require "items.inventories"
                 for name, item in pairs(ITEM_REGISTRY) do
-                    if item.armor ~= nil then
+                    if item.armor ~= nil or item.part ~= nil then
                         Inventories.add(player.inventory, name, 1)
                     end
                 end

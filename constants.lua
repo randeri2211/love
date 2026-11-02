@@ -156,7 +156,19 @@ ARMOR_SLOTS = {
     {name = "legs", label = "Leggings"},
     {name = "feet", label = "Boots"},
 }
-DEFENSE_SCALE = 50              -- Damage blocked is defense / (defense + this): 10 defense blocks about 17%, 50 blocks half
+-- Hand slots next to the armor: wands and staves(see items/tools), a staff takes both hands
+HAND_SLOTS = {
+    {name = "mainHand", label = "Main"},
+    {name = "offHand", label = "Off"},
+}
+BARE_HANDS_DIG_CAP = 10         -- Most dig strength a spell has without a wand or staff(dirt, sand and snow, not stone)
+OFF_HAND_SHARE = 0.5            -- How much of its bonuses an off hand wand adds to the main one
+-- What the tool kind does to every spell before its parts: wands are faster and weaker, staves slower and stronger
+TOOL_KINDS = {
+    Wand = {damage = 0.85, cooldown = 0.8},
+    Staff = {damage = 1.3, cooldown = 1.25},
+}
+DEFENSE_SCALE = 50             -- Damage blocked is defense / (defense + this): 10 defense blocks about 17%, 50 blocks half
 ITEM_STACK = 99                 -- Most items in one slot, items can set their own maxStack
 ITEM_DROP_SIZE = 14             -- Pixels, the icon of an item lying in the world
 ITEM_POP_SPEED = 3 * TILE_SIZE  -- How hard a drop jumps out of a broken block

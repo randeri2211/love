@@ -19,12 +19,3 @@ for i, bar in ipairs(BARS) do
     registerItem(bar.name, {icon = "bar", tint = bar.tint})
 end
 
--- Wand and staff rods from the woodworking station(see docs/game-design), tinted by their wood
-local WOODS = {
-    {name = "Oak", tint = {0.78, 0.58, 0.38, 1}},
-    {name = "Pine", tint = {0.62, 0.42, 0.3, 1}},
-}
-for i, wood in ipairs(WOODS) do
-    registerItem(wood.name .. "Rod", {displayName = wood.name .. " Rod", icon = "rod", tint = wood.tint})
-    registerItem("Large" .. wood.name .. "Rod", {displayName = "Large " .. wood.name .. " Rod", icon = "largeRod", tint = wood.tint})
-end

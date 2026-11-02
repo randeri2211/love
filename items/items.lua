@@ -1,5 +1,6 @@
 -- Helpers for items(ITEM_REGISTRY): names and icons
 -- An item is a table registered by name: {displayName, maxStack, block(the block it places and looks like), tile}
+-- A stack is {item, count} and can carry data of its own(a wand keeps its parts in data), items with data never stack
 local Items = {}
 
 local sampleBlocks = {}     -- One block of each block item, drawn as its icon
@@ -16,6 +17,34 @@ function Items.maxStack(name)
 end
 
 
+local function copyData(value)
+    if type(value) ~= "table" then
+        return value
+    end
+    local copy = {}
+    for k, v in pairs(value) do
+        copy[k] = copyData(v)
+    end
+    return copy
+end
+
+
+function Items.copy(stack, count)
+    -- A new stack of the same item with its own copy of the data, count defaults to the same count
+    return {item = stack.item, count = count or stack.count, data = copyData(stack.data)}
+end
+
+
+function Items.stackName(stack)
+    -- Name of a stack, items can name it from its data(a wand is named after its rod)
+    local item = ITEM_REGISTRY[stack.item]
+    if item ~= nil and item.describe ~= nil and stack.data ~= nil then
+        return item.describe(stack)
+    end
+    return Items.displayName(stack.item)
+end
+
+
 function Items.displayName(name)
     -- The given display name, or the registry name with spaces before capitals("CopperOre" is "Copper Ore")
     local item = ITEM_REGISTRY[name]
@@ -26,8 +55,9 @@ function Items.displayName(name)
 end
 
 
-function Items.drawIcon(name, x, y, size)
+function Items.drawIcon(name, x, y, size, stack)
     -- Icon of an item in a size x size square, block items look like their block(ores with their nuggets)
+    -- stack is optional, items can tint their icon from its data(a wand takes the color of its rod)
     local item = ITEM_REGISTRY[name]
     if item == nil then
         love.graphics.draw(BLOCK_IMG.FALLBACK, x, y, 0, size / BLOCK_IMG.FALLBACK:getWidth(), size / BLOCK_IMG.FALLBACK:getHeight())
@@ -46,7 +76,7 @@ function Items.drawIcon(name, x, y, size)
         local quad = ITEM_TILES[item.icon]
         local _, _, qw, qh = quad:getViewport()
         local r, g, b, a = love.graphics.getColor()
-        local tint = item.tint or {1, 1, 1, 1}
+        local tint = (stack ~= nil and stack.data ~= nil and item.stackTint ~= nil and item.stackTint(stack)) or item.tint or {1, 1, 1, 1}
         love.graphics.setColor(r * tint[1], g * tint[2], b * tint[3], a * (tint[4] or 1))
         love.graphics.draw(ITEM_SHEET, quad, x, y, 0, size / qw, size / qh)
         love.graphics.setColor(r, g, b, a)

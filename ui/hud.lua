@@ -138,7 +138,7 @@ function Hud:drawHotbar()
         local stack = entity.inventory.slots[i]
         if stack then
             love.graphics.setColor(1, 1, 1, 1)
-            Items.drawIcon(stack.item, x + 6, y0 + 6, size - 12)
+            Items.drawIcon(stack.item, x + 6, y0 + 6, size - 12, stack)
             if stack.count > 1 then
                 love.graphics.setColor(TEXT_COLOR)
                 love.graphics.print(stack.count, x + size - font:getWidth(tostring(stack.count)) - 3, y0 + size - font:getHeight() - 1)
@@ -150,7 +150,7 @@ function Hud:drawHotbar()
     end
     local stack = entity.inventory.slots[entity.hotbarSlot]
     if stack then
-        local name = Items.displayName(stack.item)
+        local name = Items.stackName(stack)
         love.graphics.setColor(TEXT_COLOR)
         love.graphics.print(name, math.floor(w / 2 - font:getWidth(name) / 2), y0 - font:getHeight() - 4)
     end
@@ -177,7 +177,7 @@ function Hud:draw(spellEntry)
     if entity.manaBar ~= nil then
         local manaCost = nil
         if spell ~= nil then
-            manaCost = spell:getParams().manaCost
+            manaCost = spell:getManaCost(entity)
         end
         self:drawBar("mana", x, y, "Mana", entity.manaBar.currentMana, entity.manaBar.maxMana, MANA_COLOR, manaCost)
         y = y + BAR_H + 3

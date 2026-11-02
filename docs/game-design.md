@@ -227,7 +227,7 @@ Today the character is saved inside its world (`saves/<world>/`), so Hardcore de
 
 1. Trees, plants and enemy drops (materials)
 2. Crafting core (recipes, stations, screen)
-3. Wands and staves with the dig cap (parts, hand slots, dual wield, woodworking station, arcane table)
+3. Wands and staves with the dig cap (parts, hand slots, dual wield, woodworking station, arcane table) **Done**
 4. Damage types, crit and resistances
 5. Spawner and enemy variety
 6. Rune knowledge, glyph walls and the grimoire

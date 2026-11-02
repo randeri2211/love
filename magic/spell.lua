@@ -270,7 +270,19 @@ function Spell:getCooldown(caster)
         cooldownReduction = caster.combatStats.cooldownReduction
     end
     local params = self:getParams()
-    return params.complexity * COOLDOWN_PER_COMPLEXITY * params.cooldownScale * (1 - cooldownReduction)
+    return params.complexity * COOLDOWN_PER_COMPLEXITY * params.cooldownScale * (1 - cooldownReduction) * Spell.toolEffect(caster).cooldown
+end
+
+
+function Spell.toolEffect(caster)
+    -- What the caster wand or staff does to spells(see items/tools), casters without combat stats cast plainly
+    return caster.combatStats and caster.combatStats.tool or {damage = 1, cooldown = 1, manaCost = 1, knockback = 0}
+end
+
+
+function Spell:getManaCost(caster)
+    -- Mana a cast takes from this caster, the tool can make it cheaper(rounded like the compiled cost)
+    return math.floor(self:getParams().manaCost * Spell.toolEffect(caster).manaCost * 10 + 0.5) / 10
 end
 
 
@@ -293,7 +305,7 @@ function Spell:canCast(caster)
     if self:cooldownLeft() > 0 then
         return false, "cooldown"
     end
-    if caster.manaBar.currentMana < params.manaCost then
+    if caster.manaBar.currentMana < self:getManaCost(caster) then
         return false, "mana"
     end
     return true
@@ -317,7 +329,7 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
 
     if triggered then
         -- Child spells still pay their own mana, and fizzle without enough
-        if caster.manaBar.currentMana < params.manaCost then
+        if caster.manaBar.currentMana < self:getManaCost(caster) then
             return
         end
     else
@@ -327,7 +339,7 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
         self.cooldownEnd = spells.time + self:getCooldown(caster)
         self.cooldownClock = spells
     end
-    caster.manaBar.currentMana = caster.manaBar.currentMana - params.manaCost
+    caster.manaBar.currentMana = caster.manaBar.currentMana - self:getManaCost(caster)
 
     -- Default origin and direction
     local defaultOrigin = x == nil or y == nil
@@ -379,7 +391,10 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
     -- Params for this cast only, reads everything else from the compiled params
     -- triggered tells forms the cast came from a trigger(like an Area centering on the hit point)
     -- target is what a trigger happened to, Self spells go on it(see Spells:trigger)
-    local castParams = setmetatable({damage = params.damage * magicDamage, triggered = triggered == true, target = target}, {__index = params})
+    -- The wand or staff makes it stronger or weaker and adds its knockback
+    local tool = Spell.toolEffect(caster)
+    local castParams = setmetatable({damage = params.damage * magicDamage * tool.damage, knockback = params.knockback + tool.knockback,
+        triggered = triggered == true, target = target}, {__index = params})
 
     self:spawnVolley(caster, castParams, x, y, dirX, dirY)
 
@@ -414,6 +429,7 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
         if instance ~= nil then
             instance.spell = self   -- So triggers can find their child spells
             instance.knockback = castParams.knockback   -- How hard its hits shove(see Form:hit)
+            instance.digCap = caster.combatStats and caster.combatStats.digCap    -- Most dig strength it has(see Form:digStrength)
             local t = {}
             t.spell = self
             t.instance = instance

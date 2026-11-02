@@ -19,18 +19,19 @@ function Drops:new()
 end
 
 
-function Drops:spawn(name, count, x, y, popped, pickupDelay)
+function Drops:spawn(name, count, x, y, popped, pickupDelay, data)
     -- Queues a drop at love x, y, popped ones jump out a little(from a broken block)
     -- pickupDelay is how long before it flies to the player(thrown items wait longer so they dont come right back)
+    -- data is the stack data of items that have it(a thrown wand keeps its parts)
     if ITEM_REGISTRY[name] == nil or count <= 0 then
         return
     end
-    table.insert(self.queue, {item = name, count = count, x = x, y = y, popped = popped ~= false, pickupDelay = pickupDelay})
+    table.insert(self.queue, {item = name, count = count, x = x, y = y, popped = popped ~= false, pickupDelay = pickupDelay, data = data})
 end
 
 
 function Drops:make(entry)
-    local drop = {item = entry.item, count = entry.count, age = 0, magnet = false, pickupDelay = entry.pickupDelay or ITEM_PICKUP_DELAY}
+    local drop = {item = entry.item, count = entry.count, data = entry.data, age = 0, magnet = false, pickupDelay = entry.pickupDelay or ITEM_PICKUP_DELAY}
     local r = ITEM_DROP_SIZE / 2
     drop.body = love.physics.newBody(p_world, entry.x, entry.y, "dynamic")
     drop.body:setFixedRotation(true)
@@ -59,16 +60,16 @@ end
 
 function Drops:collect(drop)
     -- Puts what fits into the inventory, returns true when all of it went in
-    local left = Inventories.add(player.inventory, drop.item, drop.count)
+    local left = Inventories.addStack(player.inventory, drop)
     local taken = drop.count - left
     if taken > 0 then
         -- Pickups of the same item close together show as one line
         local last = self.pickups[#self.pickups]
-        if last ~= nil and last.item == drop.item and last.time < ITEM_PICKUP_SHOW_TIME * 0.5 then
+        if last ~= nil and last.item == drop.item and not drop.data and last.time < ITEM_PICKUP_SHOW_TIME * 0.5 then
             last.count = last.count + taken
             last.time = 0
         else
-            table.insert(self.pickups, {item = drop.item, count = taken, time = 0})
+            table.insert(self.pickups, {item = drop.item, name = Items.stackName(drop), count = taken, time = 0})
         end
     end
     drop.count = left
@@ -82,7 +83,7 @@ function Drops:merge()
         local a = self.list[i]
         for j = i - 1, 1, -1 do
             local b = self.list[j]
-            if not a.magnet and not b.magnet and a.item == b.item and b.count + a.count <= Items.maxStack(a.item) then
+            if not a.magnet and not b.magnet and a.item == b.item and not a.data and not b.data and b.count + a.count <= Items.maxStack(a.item) then
                 local ax, ay = a.body:getPosition()
                 local bx, by = b.body:getPosition()
                 if distance(ax, ay, bx, by) <= ITEM_MERGE_DISTANCE then
@@ -159,7 +160,7 @@ function Drops:draw()
         local x, y = drop.body:getPosition()
         local bob = drop.magnet and 0 or math.sin(drop.age * 3) * 1.5
         love.graphics.setColor(1, 1, 1, 1)
-        Items.drawIcon(drop.item, math.floor(x - size / 2), math.floor(y - size / 2 + bob), size)
+        Items.drawIcon(drop.item, math.floor(x - size / 2), math.floor(y - size / 2 + bob), size, drop)
         if drop.count > 1 then
             love.graphics.setColor(1, 1, 1, 1)
             love.graphics.print(drop.count, math.floor(x + size / 2 - 2), math.floor(y - 2), 0, 0.5, 0.5)
@@ -170,7 +171,7 @@ function Drops:draw()
     for i, pickup in ipairs(self.pickups) do
         local rise = pickup.time * 12 + (#self.pickups - i) * 12
         local alpha = 1 - pickup.time / ITEM_PICKUP_SHOW_TIME
-        local text = "+" .. pickup.count .. " " .. Items.displayName(pickup.item)
+        local text = "+" .. pickup.count .. " " .. (pickup.name or Items.displayName(pickup.item))
         local font = love.graphics.getFont()
         love.graphics.setColor(0, 0, 0, alpha * 0.7)
         love.graphics.print(text, math.floor(px - font:getWidth(text) / 2) + 1, math.floor(py - PLAYER_HEIGHT - rise) + 1)
@@ -185,10 +186,10 @@ function Drops:toData()
     local list = {}
     for i, drop in ipairs(self.list) do
         local x, y = drop.body:getPosition()
-        table.insert(list, {item = drop.item, count = drop.count, x = x, y = y})
+        table.insert(list, {item = drop.item, count = drop.count, data = drop.data, x = x, y = y})
     end
     for i, entry in ipairs(self.queue) do
-        table.insert(list, {item = entry.item, count = entry.count, x = entry.x, y = entry.y})
+        table.insert(list, {item = entry.item, count = entry.count, data = entry.data, x = entry.x, y = entry.y})
     end
     return list
 end
@@ -198,7 +199,7 @@ function Drops:loadData(list)
     -- Saved drops come back lying where they were
     for i, data in ipairs(type(list) == "table" and list or {}) do
         if type(data.item) == "string" and type(data.count) == "number" and type(data.x) == "number" and type(data.y) == "number" then
-            self:spawn(data.item, math.floor(data.count), data.x, data.y, false)
+            self:spawn(data.item, math.floor(data.count), data.x, data.y, false, nil, type(data.data) == "table" and data.data or nil)
         end
     end
 end

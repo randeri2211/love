@@ -1,4 +1,5 @@
 local Equipments = require "items.equipments"
+local Tools = require "items.tools"
 
 local function clampValue(value, low, high)
     return math.max(low, math.min(high, value))
@@ -28,6 +29,10 @@ local function combatStats(entity)
     combatStats.defense = entity.equipment and Equipments.defense(entity.equipment) or 0
     combatStats.damageReduction = Equipments.damageReduction(combatStats.defense)
 
+    -- The wand or staff in the hands: the dig cap and what it does to every spell(see items/tools, Spell:shoot)
+    combatStats.tool = Tools.effect(entity.equipment)
+    combatStats.digCap = combatStats.tool.digCap
+
     -- Fallback for saves made before base values existed
     entity.hpBar.baseMaxHP = entity.hpBar.baseMaxHP or BASE_HP
     entity.hpBar.baseRegen = entity.hpBar.baseRegen or entity.hpBar.regen
@@ -50,7 +55,7 @@ local function combatStats(entity)
     combatStats.magicDamage = 1 + intelligenceMagicDamageModifier * stats.intelligence
 
     local intelligenceComplexityModifier = 2
-    combatStats.maxComplexity = BASE_MAX_COMPLEXITY + intelligenceComplexityModifier * stats.intelligence
+    combatStats.maxComplexity = BASE_MAX_COMPLEXITY + intelligenceComplexityModifier * stats.intelligence + combatStats.tool.complexity
 
     -- Wisdom
     local wisdomMaxManaModifier = 1

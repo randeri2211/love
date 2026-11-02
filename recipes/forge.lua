@@ -22,3 +22,13 @@ for i, metal in ipairs(METALS) do
             station = "Forge", tier = metal.tier, category = "Armor"})
     end
 end
+
+-- Metal wand and staff parts: cores open the next ore, caps and tips change how spells cast(see items/wandParts)
+local PART_METALS = {{name = "Copper", tier = 2}, {name = "Iron", tier = 3}, {name = "Gold", tier = 4}}
+local PART_BARS = {Core = 4, Cap = 2, Tip = 4}
+for i, metal in ipairs(PART_METALS) do
+    for _, part in ipairs({"Core", "Cap", "Tip"}) do
+        registerRecipe({output = metal.name .. part, inputs = {{item = metal.name .. "Bar", count = PART_BARS[part]}},
+            station = "Forge", tier = metal.tier, category = "Wand parts"})
+    end
+end

@@ -68,8 +68,9 @@ end
 
 function Form:digStrength()
     -- Strength checked against block hardness: terrain damage compared to a normal spell
-    -- A plain spell digs with its full damage, every Dig rune doubles it
-    return self.damage * self.terrainDamage / BASE_SPELL_PARAMS.terrainDamage
+    -- A plain spell digs with its full damage, every Dig rune doubles it, the caster wand or staff caps it(digCap)
+    local strength = self.damage * self.terrainDamage / BASE_SPELL_PARAMS.terrainDamage
+    return math.min(strength, self.digCap or math.huge)
 end
 
 function Form:hit(entity, x, y, dirX, dirY, pushX, pushY)

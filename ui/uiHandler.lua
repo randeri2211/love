@@ -166,6 +166,19 @@ function UIHandler:toggleCharacterScreen()
 end
 
 
+function UIHandler:openStation(block)
+    -- Interacting with a block that has slots(an arcane table) opens it next to the inventory
+    if self.showQuitConfirm or self.showPauseMenu or self.spellEditor ~= nil then
+        return
+    end
+    if self.characterScreen == nil then
+        self.characterScreen = CharacterScreen:new(player, block)
+    else
+        self.characterScreen.block = block
+    end
+end
+
+
 function UIHandler:checkKeyIngame(key)
     -- This will handle things like opening inventory on pressing the inventory
     if key == MINIMAP_KEY then
@@ -219,9 +232,10 @@ end
 
 
 function UIHandler:drawTop()
-    -- Drawn after Slab, over every window: the item stack held in the character screen
+    -- Drawn after Slab, over every window: the item stack held in the character screen, or the tooltip of the hovered item
     if self.characterScreen ~= nil then
         self.characterScreen:drawHeld()
+        self.characterScreen:drawTooltip()
     end
 end
 
