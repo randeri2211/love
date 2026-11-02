@@ -27,8 +27,6 @@ function Bullet:new(caster, params, x, y, dirX, dirY)
     bullet.pierced = {}                         -- Fixtures it is passing through, their contacts stay off
     bullet.piercedBlocks = {}                   -- Blocks already pierced, so a block is only hit once
     bullet.inTerrain = nil                      -- Last checked position once it pierced a block(see pierceTerrain)
-    bullet.imagePath = params.imagePath
-    bullet.image = BLOCK_IMG[bullet.imagePath]
 
     bullet:shoot(x, y, dirX, dirY)
     return bullet
@@ -188,24 +186,16 @@ end
 
 
 function Bullet:draw()
-    function circleStencil()
-        local x, y = self.body:getWorldCenter()
-        local radius = self.shape:getRadius()
-        love.graphics.circle("fill", x, y, radius)
-    end
-    local vx, vy = self.body:getLinearVelocity()
-    local s = math.sqrt(vx * vx + vy * vy)
-    -- Apply the stencil
-    love.graphics.stencil(circleStencil, "replace", 1)
-    love.graphics.setStencilTest("greater", 0)
-
+    -- A glowing orb in the spell color: a soft halo, the orb, and a bright core
     local x, y = self.body:getWorldCenter()
-    -- Draw the square image tinted with the spell color
-    love.graphics.setColor(self.color)
-    love.graphics.draw(self.image, x - self.radius, y - self.radius, 0, self.radius * 2 / self.image:getWidth(), self.radius * 2 / self.image:getHeight())
+    local c = self.color
+    love.graphics.setColor(c[1], c[2], c[3], 0.25)
+    love.graphics.circle("fill", x, y, self.radius * 1.5)
+    love.graphics.setColor(c[1], c[2], c[3], 1)
+    love.graphics.circle("fill", x, y, self.radius)
+    love.graphics.setColor(0.5 + c[1] * 0.5, 0.5 + c[2] * 0.5, 0.5 + c[3] * 0.5, 1)
+    love.graphics.circle("fill", x, y, self.radius * 0.5)
     love.graphics.setColor(1, 1, 1, 1)
-    -- Remove the stencil
-    love.graphics.setStencilTest()
 end
 
 

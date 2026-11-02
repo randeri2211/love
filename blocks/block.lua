@@ -17,7 +17,7 @@ function Block:new(x, y, width, height)
     block.name = "Block"
     block.type = "Block"
     block.hpBar = HPBar(BASE_BLOCK_HP, BASE_BLOCK_HP, 0)
-    block.imagePath = "GRASS"
+    block.imagePath = "FALLBACK"
     block.image = BLOCK_IMG[block.imagePath]
     block.tile = nil        -- Name in BLOCK_TILES, when set the block draws that part of the tilesheet instead of its image
     block.tint = nil        -- Color multiplied into the tile, lets one tile serve several blocks
@@ -79,6 +79,14 @@ function Block:hasOwnState()
     -- True when saving only the block type would lose something, then the map saves the whole block
     -- Block types with more state(like a chest) should add their own check here
     return self.hpBar.currentHP < self.hpBar.maxHP or self.width ~= TILE_SIZE or self.height ~= TILE_SIZE
+end
+
+
+function Block:variant(count, salt)
+    -- Repeatable pick from 1 to count for this block, from its map position(salt makes separate picks unrelated)
+    -- Neighbors look different but a block always looks the same, so nothing about it needs saving
+    local v = math.sin(self.mx * 127.1 + self.my * 311.7 + (salt or 0) * 74.7) * 43758.5453
+    return math.floor((v - math.floor(v)) * count) + 1
 end
 
 

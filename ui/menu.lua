@@ -7,6 +7,7 @@ local worldToDelete = nil       -- World waiting for the delete confirmation
 local creatingWorld = false     -- New world name window is open
 local newWorldText = ""         -- Name typed for the new world
 local focusNameBox = false      -- Gives the name box keyboard focus on the first frame of the new world window
+local biomeSize = DEFAULT_BIOME_SIZE    -- Picked biome size, an index in BIOME_SIZES
 
 local ERROR_COLOR = {1, 0.4, 0.4, 1}
 
@@ -75,7 +76,7 @@ end
 
 local function newWorldDialog()
     -- Name box for a new world, the world is created and saved right away
-    Slab.BeginWindow("NewWorld", dialogOptions("New world", 340, 150))
+    Slab.BeginWindow("NewWorld", dialogOptions("New world", 340, 200))
         Slab.BeginLayout("NewWorldLayout", {AlignX = "center"})
             Slab.Text("World name")
             -- Focus has to be set inside the window the box is in, Slab looks the box up in the current window
@@ -89,6 +90,17 @@ local function newWorldDialog()
                 newWorldText = Slab.GetInputText()
             end
 
+            -- Biome size, the world saves the width it stands for
+            Slab.Text("Biome size")
+            for i, size in ipairs(BIOME_SIZES) do
+                if i > 1 then
+                    Slab.SameLine()
+                end
+                if Slab.RadioButton(size[1], {Index = i, SelectedIndex = biomeSize}) then
+                    biomeSize = i
+                end
+            end
+
             local problem = worldNameProblem(newWorldText)
             if problem ~= nil then
                 Slab.Text(problem, {Color = ERROR_COLOR})
@@ -99,7 +111,7 @@ local function newWorldDialog()
             if Slab.Button("Create", {Disabled = problem ~= nil}) then
                 -- Builds and saves the world, then stays in the world list where it now shows up
                 closeNewWorld()
-                initVars()      -- New random seed, the generator builds the terrain from it
+                initVars({biomeWidth = BIOME_SIZES[biomeSize][2]})      -- New random seed, the generator builds the terrain from it
                 saveScene(newWorldText)
             end
             Slab.SameLine()

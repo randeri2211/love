@@ -9,9 +9,8 @@ function InteractiveBlock:new(x, y, width, height)
     setmetatable(iblock, self)
     self.__index = self
 
-    iblock.imagePath = "PANELING_SMALL"
     iblock.name = "Interactive"
-    iblock.image = BLOCK_IMG[iblock.imagePath]
+    iblock.tile = "slab"
     iblock.tooltipText = "Interactive block"  -- Default tooltip
 
     return iblock

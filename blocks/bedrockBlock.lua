@@ -11,8 +11,7 @@ function BedrockBlock:new(x, y, width, height)
     self.__index = self
 
     block.name = "Bedrock"
-    block.tile = "stone"
-    block.tint = {0.35, 0.32, 0.4, 1}
+    block.tile = "bedrock" .. block:variant(3)
     block.damageThreshold = math.huge
     block.hpBar = HPBar(1, 1, 0)
 

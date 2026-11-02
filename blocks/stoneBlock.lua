@@ -11,8 +11,7 @@ function StoneBlock:new(x, y, width, height)
     self.__index = self
 
     block.name = "Stone"
-    block.tile = "stone"
-    block.tint = {0.85, 0.85, 0.9, 1}
+    block.tile = "stone" .. block:variant(3)
     block.damageThreshold = 12
     block.hpBar = HPBar(10, 10, 0)
 

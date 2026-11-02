@@ -1,39 +1,59 @@
 local Block = require "blocks.block"
 local HPBar = require "components.hpBar"
 
+-- Every ore is the same block: a stone tile with nuggets drawn over it in the ore color
+-- The stone variant and the nugget pattern are picked from the block position, so neighbors look different
 local OreBlock = Block:new()
-registerBlock("Ore", OreBlock)
 
-local SPECK_COLOR = {1, 0.82, 0.3, 1}
+-- Ores by block name: nugget color, the stone they sit in, and how hard they are to dig
+-- "Ore" is the gold ore of worlds saved before there were more ores
+local ORES = {
+    {name = "Ore", color = {1, 0.82, 0.25, 1}, host = "stone", threshold = 25, hp = 15},
+    {name = "CopperOre", color = {0.85, 0.5, 0.25, 1}, host = "stone", threshold = 14, hp = 12},
+    {name = "IronOre", color = {0.82, 0.74, 0.68, 1}, host = "stone", threshold = 20, hp = 14},
+    {name = "GoldOre", color = {1, 0.82, 0.25, 1}, host = "stone", threshold = 25, hp = 15},
+    {name = "DeepGoldOre", color = {1, 0.82, 0.25, 1}, host = "deepstone", threshold = 30, hp = 18},
+    {name = "ArcaniteOre", color = {0.4, 0.85, 1, 1}, host = "deepstone", threshold = 35, hp = 20},
+}
+local PATTERNS = 4      -- ore1 to ore4 in the tilesheet
+local HOST_VARIANTS = 3 -- stone1 to stone3, deepstone1 to deepstone3
+
 
 function OreBlock:new(x, y, width, height)
-    -- Pockets in the deep stone, needs a strong Dig spell
     local block = Block:new(x, y, width, height)
     setmetatable(block, self)
     self.__index = self
+    if x == nil then
+        return block
+    end
 
-    block.name = "Ore"
-    block.tile = "stone"
-    block.tint = {0.75, 0.7, 0.65, 1}
-    block.damageThreshold = 25
-    block.hpBar = HPBar(15, 15, 0)
+    local ore = self.ore
+    block.name = ore.name
+    block.tile = ore.host .. block:variant(HOST_VARIANTS, 1)
+    block.pattern = "ore" .. block:variant(PATTERNS, 2)
+    block.damageThreshold = ore.threshold
+    block.hpBar = HPBar(ore.hp, ore.hp, 0)
 
     return block
 end
 
 
 function OreBlock:draw()
-    -- Stone with gold specks, placed from the block position so every ore block keeps the same look
+    -- The stone, then the nuggets tinted with the ore color(the pattern tile is grayscale)
     Block.draw(self)
-    local s = self.width / 8
-    love.graphics.setColor(SPECK_COLOR)
-    for i = 1, 3 do
-        local hash = (self.mx * 73 + self.my * 151 + i * 47) % 64
-        local px = hash % 7
-        local py = math.floor(hash / 8) % 7
-        love.graphics.rectangle("fill", self.x + px * s, self.y + py * s, s, s)
-    end
+    local quad = BLOCK_TILES[self.pattern]
+    local _, _, qw, qh = quad:getViewport()
+    love.graphics.setColor(self.ore.color)
+    love.graphics.draw(TILESHEET, quad, self.x, self.y, 0, self.width / qw, self.height / qh)
     love.graphics.setColor(1, 1, 1, 1)
+end
+
+
+-- One block class per ore, they only differ in their ore table
+for i, ore in ipairs(ORES) do
+    local class = OreBlock:new()
+    class.ore = ore
+    registerBlock(ore.name, class)
 end
 
 return OreBlock

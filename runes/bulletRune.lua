@@ -32,7 +32,6 @@ function BulletRune:defaults()
         gravityScale = 0,           -- Gravity rune makes it fall
         bounces = 0,                -- Rebound rune makes it bounce
         pierce = 0,                 -- Enemies and blocks it passes through before it stops, Pierce rune raises it
-        imagePath = "GRASS",
     }
 end
 

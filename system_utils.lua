@@ -6,13 +6,14 @@ local Block = require "blocks.block"
 local Enemy = require "entities.enemy"
 local Enemy1 = require "entities.enemy1"
 
-function initVars()
+function initVars(settings)
+    -- settings are the world generation choices of a new world, loading a world replaces them with the saved ones
     player_control = true
     paused = false
 
     game_cam = camera()
     -- New random seed, loading a world replaces it with the saved one
-    map = Map:new(MAP_Y)
+    map = Map:new(MAP_Y, nil, settings or {biomeWidth = BIOME_SIZES[DEFAULT_BIOME_SIZE][2]})
     spells = Spells:new()
     -- Physics init
     love.physics.setMeter(TILE_SIZE * TILES_PER_METER)
@@ -178,6 +179,17 @@ function debugPrint()
     printGrounded()
     printUp()
     printJumping()
+    printBiome()
+end
+
+function printBiome()
+    local Biomes = require "world_utils.biomes"
+    local Generator = require "world_utils.generator"
+    local x, y = player.body:getWorldCenter()
+    local tx, ty = math.floor(x / TILE_SIZE), math.floor(y / TILE_SIZE)
+    local biome = Biomes.at(tx, ty, map.seed, map.settings, Generator.surfaceRow(tx, map.seed, map.settings))
+    love.graphics.print("biome: " .. biome.name, 0, order * 10)
+    order = order + 1
 end
 
 function printPosition()

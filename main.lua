@@ -16,8 +16,8 @@ function love.load(args)
     -- love.graphics.setFont(font)
     game_state = MENU_STATE
     Slab.Initialize(args)
+    registerAll()       -- Before the first world, placing the player on the ground asks the biomes
     initVars()
-    registerAll()
 
     fpsTimer = love.timer.getTime()
 

@@ -1,22 +1,21 @@
 BLOCK_IMG = {}
-BLOCK_IMG["GRASS"] = love.graphics.newImage("assets/grass.png")
+BLOCK_IMG["FALLBACK"] = love.graphics.newImage("assets/blockFallback.png")    -- Blocks without a tile, a "?" so it stands out
+BLOCK_IMG["FALLBACK"]:setFilter("nearest", "nearest")
 
-BLOCK_IMG["PANELING_SMALL"] = love.graphics.newImage("assets/paneling_small.png")
-
--- Tilesheet with 16px tiles and a 1px gap after each one, blocks draw their part of it by name
-TILESHEET = love.graphics.newImage("assets/tilesheet.png")
+-- Tilesheet with 16px tiles in a row and a 1px gap after each one, blocks draw their part of it by name
+TILESHEET = love.graphics.newImage("assets/blocks.png")
 TILESHEET:setFilter("nearest", "nearest")    -- Keeps the pixel art sharp when scaled up
-local function tile(x, y, w, h)
-    return love.graphics.newQuad(x, y, w, h, TILESHEET:getDimensions())
+-- Numbered tiles are variants(stone1-3, see Block:variant) or ore nugget patterns drawn over stone(ore1-4, see OreBlock)
+local TILE_ORDER = {"grass", "dirt", "stone1", "stone2", "stone3", "deepstone1", "deepstone2", "deepstone3",
+    "bedrock1", "bedrock2", "bedrock3", "sand", "sandstone", "snow", "ice", "bricks", "slab", "ore1", "ore2", "ore3", "ore4"}
+BLOCK_TILES = {}
+for i, name in ipairs(TILE_ORDER) do
+    if name == "slab" then
+        BLOCK_TILES[name] = love.graphics.newQuad((i - 1) * 17, 8, 16, 8, TILESHEET:getDimensions())    -- Only the lower half, a half height block
+    else
+        BLOCK_TILES[name] = love.graphics.newQuad((i - 1) * 17, 0, 16, 16, TILESHEET:getDimensions())
+    end
 end
-BLOCK_TILES = {
-    bricks = tile(0, 0, 16, 16),
-    grass = tile(17, 0, 16, 16),
-    dirt = tile(17, 8, 16, 8),          -- Lower half of the grass tile, only the dirt
-    stone = tile(34, 0, 16, 16),
-    ice = tile(51, 0, 16, 16),
-    slab = tile(68, 8, 16, 8),
-}
 
 
 -- UI

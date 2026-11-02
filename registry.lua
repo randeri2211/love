@@ -1,12 +1,14 @@
 BLOCK_REGISTRY = {}
 ENTITY_REGISTRY = {}
 RUNE_REGISTRY = {}
+BIOME_REGISTRY = {}
 
 
 function registerAll()
     registerFolder("blocks")
     registerFolder("entities")
     registerFolder("runes")
+    registerFolder("biomes")
 end
 
 
@@ -31,6 +33,12 @@ function registerRune(runeName, rune)
         RUNE_REGISTRY = {}
     end
     RUNE_REGISTRY[runeName] = rune
+end
+
+
+function registerBiome(biomeName, biome)
+    biome.name = biomeName
+    BIOME_REGISTRY[biomeName] = biome
 end
 
 

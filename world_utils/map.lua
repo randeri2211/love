@@ -2,14 +2,16 @@ local Enemies = require "entities.enemies"
 local Generator = require "world_utils.generator"
 local Map = {}
 
-function Map:new(height, seed)
+function Map:new(height, seed, settings)
     -- Infinite sideways map, a chunk is generated from the seed the first time it is visited,
     -- after that the whole chunk is saved and loaded as it is(generator changes only affect unvisited places)
+    -- settings are the world generation choices, saved with the seed({biomeWidth}), nil for worlds made before them
     map = {}
     setmetatable(map,self)
     self.__index = self
     map.height = height
     map.seed = seed or love.math.random(1, 1000000)
+    map.settings = settings
     map.center = {x = math.floor(MAP_X * SPAWN_X + 0.5),
                     y = math.floor(map.height * SPAWN_Y + 0.5)}
     map:emptyMap()
@@ -61,7 +63,7 @@ end
 
 function Map:surfaceY(tx)
     -- Love y of the top of the ground in a tile column, used for spawning on the surface
-    return Generator.surfaceRow(tx, self.seed) * TILE_SIZE
+    return Generator.surfaceRow(tx, self.seed, self.settings) * TILE_SIZE
 end
 
 
@@ -95,7 +97,7 @@ function Map:generateChunk(cx, cy)
         local x, y = cellOf(cx, cy, index)
         if y >= 1 and y <= self.height then
             local tx, ty = self:mapToTile(x, y)
-            local name = Generator.tile(tx, ty, self.seed, self.center.y)
+            local name = Generator.tile(tx, ty, self.seed, self.center.y, self.settings)
             if name ~= nil then
                 chunk[index] = self:newBlock(name, x, y)
             end
@@ -453,7 +455,7 @@ function Map:toData()
     for key, chunk in pairs(self.chunks) do
         chunks[key] = encodeChunk(chunk)
     end
-    return {seed = self.seed, chunks = chunks}
+    return {seed = self.seed, settings = self.settings, chunks = chunks}
 end
 
 
@@ -461,6 +463,7 @@ function Map:loadData(data)
     -- Saved chunks stay data until they are visited
     self:emptyMap()
     self.seed = data.seed
+    self.settings = data.settings       -- nil for worlds made before biomes, they stay all plains
     self.saved = data.chunks or {}
 end
 

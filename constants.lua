@@ -124,6 +124,21 @@ ORE_START_DEPTH = 20    -- Ore only this deep under the surface
 ORE_THRESHOLD = 0.74    -- Noise above this is ore, 0.74 is about 2% of the deep stone(0.70 is about 5%)
 BEDROCK_ROWS = 3        -- Unbreakable rows at the bottom of the world
 
+-- Biomes(see world_utils/biomes and the biomes folder)
+UNDERGROUND_DEPTH = 45  -- Tiles under the surface where the underground layers take over from the surface biome
+UNDERGROUND_WOBBLE = 8  -- Tiles the underground border moves up and down, so it isnt a straight line
+DEEP_DEPTH = 400        -- Tiles under the surface where the deep layer starts
+BIOME_BLEND = 12        -- Tiles on each side of a biome border where the terrain height blends
+BIOME_BLOCK_WOBBLE = 5  -- Tiles the block side of a biome border moves left and right from row to row
+BIOME_BORDER_JITTER = 0.6   -- How much biome borders move, as a part of the biome width(below 1 keeps them in order)
+-- Biome size choices when making a world, the world saves the width itself so changing these never changes old worlds
+BIOME_SIZES = {
+    {"Small", 90},
+    {"Medium", 220},
+    {"Large", 600},
+}
+DEFAULT_BIOME_SIZE = 2      -- Index in BIOME_SIZES
+
 PLAYER_CATEGORY = 2
 BLOCKS_CATEGORY = 3
 SPELLS_CATEGORY = 4
