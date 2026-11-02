@@ -9,6 +9,15 @@ registerBiome("Desert", {
         {block = "CopperOre", minDepth = ORE_START_DEPTH, threshold = 0.77},
         {block = "GoldOre", minDepth = 30, threshold = 0.8},
     },
+    -- Sky and the far, mid and near silhouettes behind it(see world_utils/background), height scales the peaks
+    background = {
+        skyTop = {0.42, 0.6, 0.9}, skyBottom = {1, 0.88, 0.7}, height = 0.6,
+        layers = {
+            {color = {0.86, 0.72, 0.64}, rim = {0.95, 0.83, 0.74}},
+            {color = {0.88, 0.72, 0.5}, rim = {0.96, 0.83, 0.6}},
+            {color = {0.8, 0.62, 0.4}, rim = {0.92, 0.76, 0.5}},
+        },
+    },
     spawns = {
         {entity = "Zombie", weight = 6, where = "surface", group = {1, 1}},
     },

@@ -13,6 +13,15 @@ registerBiome("Plains", {
         {block = "CopperOre", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD},
         {block = "IronOre", minDepth = 28, threshold = 0.79},
     },
+    -- Sky and the far, mid and near silhouettes behind it(see world_utils/background), height scales the peaks
+    background = {
+        skyTop = {0.33, 0.55, 0.9}, skyBottom = {0.72, 0.86, 1}, height = 1,
+        layers = {
+            {color = {0.56, 0.66, 0.84}, rim = {0.7, 0.78, 0.92}},
+            {color = {0.38, 0.56, 0.55}, rim = {0.47, 0.66, 0.6}},
+            {color = {0.26, 0.47, 0.3}, rim = {0.36, 0.6, 0.33}},
+        },
+    },
     -- What can appear here, read by the spawner: entity, weight, where("surface" or "cave"), group size
     spawns = {
         {entity = "Zombie", weight = 10, where = "surface", group = {1, 2}},

@@ -9,6 +9,7 @@ local Slab = require "libraries.Slab"
 local debugWorldDraw = require "libraries.debugWorldDraw"
 local UIHandler = require "ui.uiHandler"
 local Spellbooks = require "magic.spellbooks"
+local Background = require "world_utils.background"
 local new_frame = false
 
 function love.load(args)
@@ -81,8 +82,13 @@ function love.draw()
     if game_state == MENU_STATE then
 
     elseif game_state == IN_WORLD_STATE then
+        -- Sky and distant hills first, they move slower than the camera
+        local camX, camY = game_cam:position()
+        Background.drawSky(camX, camY)
         -- Drawing everything in regard to the camera
         game_cam:attach()
+            -- Rock walls behind the caves, then the blocks over them
+            Background.drawWalls(camX, camY)
             -- Map draws entities aswell
             map:draw() 
             spells:draw()
