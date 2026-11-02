@@ -144,6 +144,10 @@ BEDROCK_ROWS = 3        -- Unbreakable rows at the bottom of the world
 
 -- Items and inventory(see items/ and world_utils/drops)
 INVENTORY_SIZE = 40             -- Slots, 4 rows of 10
+PLACE_REACH = 6 * TILE_SIZE     -- How far from the player blocks can be placed
+PLACE_INTERVAL = 0.12           -- Seconds between blocks while the place button is held
+PLACE_OK_COLOR = {0.4, 1, 0.5, 0.9}
+PLACE_BLOCKED_COLOR = {1, 0.35, 0.35, 0.9}
 HOTBAR_SIZE = 10                -- The first row of the inventory is the hotbar, picked with 1-9 and 0
 -- Armor slots in the order they show, name is the key in the equipment component and armor.slot of the items
 ARMOR_SLOTS = {

@@ -100,6 +100,17 @@ function Spellbooks.keyFor(book, id)
 end
 
 
+function Spellbooks.selectStep(book, step)
+    -- Selects the spell step places further down the list(negative goes up), wrapping around the ends
+    if #book.spells == 0 then
+        return
+    end
+    local _, index = Spellbooks.find(book, book.selected)
+    index = ((index or 1) - 1 + step) % #book.spells + 1
+    book.selected = book.spells[index].id
+end
+
+
 function Spellbooks.selectByKey(book, key)
     -- Selects the spell bound to this key, false when the key isnt bound
     local id = book.bindings[key]

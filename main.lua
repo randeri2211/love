@@ -11,6 +11,8 @@ local UIHandler = require "ui.uiHandler"
 local Spellbooks = require "magic.spellbooks"
 local Background = require "world_utils.background"
 local WorldClock = require "world_utils.worldClock"
+local Building = require "world_utils.building"
+local placeTimer = 0        -- Time until the held place button places the next block
 local worldCanvas = nil     -- The world is drawn here first so the time of day light can tint it(see love.draw)
 local new_frame = false
 
@@ -43,10 +45,24 @@ function love.update(dt)
             if player_control then
                 player:update(dt)
 
-                -- Holding the shoot key keeps casting, the spell cooldown sets the fire rate
+                -- The mouse acts on the world only when it isnt over a window
+                local overWindow = not Slab.IsVoidHovered()
+                local holdingStack = uihandler.characterScreen ~= nil and uihandler.characterScreen.held ~= nil
+
+                -- Holding the cast button keeps casting, the spell cooldown sets the fire rate
+                -- (with a stack in the hand of the character screen the click throws it instead)
                 local spell = Spellbooks.selectedSpell(player.spellbook)
-                if spell ~= nil and love.keyboard.isDown(SHOOT_KEY) then
+                if spell ~= nil and love.mouse.isDown(CAST_BUTTON) and not overWindow and not holdingStack then
                     spell:shoot(player)
+                end
+
+                -- Holding the place button places the selected hotbar block under the mouse, a few a second
+                placeTimer = math.max(0, placeTimer - dt)
+                if love.mouse.isDown(PLACE_BUTTON) and not overWindow and placeTimer == 0 then
+                    local mx, my = mouseToLove()
+                    if Building.place(player, mx, my) then
+                        placeTimer = PLACE_INTERVAL
+                    end
                 end
             end
 
@@ -111,9 +127,13 @@ function love.draw()
         love.graphics.draw(worldCanvas)
         love.graphics.pop()
 
-        -- Spells over the light, so magic glows at night
+        -- Spells over the light, so magic glows at night, then where the selected block would go
         game_cam:attach()
             spells:draw()
+            if not paused and Slab.IsVoidHovered() then
+                local mx, my = mouseToLove()
+                Building.drawPreview(player, mx, my)
+            end
             if not new_frame then
                 new_frame = true
             end
@@ -139,10 +159,15 @@ function love.draw()
 end
 
 function love.wheelmoved(x, y)
-    -- The mouse wheel moves the hotbar selection, unless a window is open(Slab uses the wheel to scroll)
+    -- The mouse wheel moves the hotbar selection, with shift held it moves through the spells instead
+    -- Nothing while a window is open(Slab uses the wheel to scroll)
     if game_state == IN_WORLD_STATE and not paused and uihandler.characterScreen == nil and uihandler.spellEditor == nil and y ~= 0 then
         local step = y > 0 and -1 or 1
-        player.hotbarSlot = (player.hotbarSlot - 1 + step) % HOTBAR_SIZE + 1
+        if love.keyboard.isDown("lshift", "rshift") then
+            Spellbooks.selectStep(player.spellbook, step)
+        else
+            player.hotbarSlot = (player.hotbarSlot - 1 + step) % HOTBAR_SIZE + 1
+        end
     end
 end
 
