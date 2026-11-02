@@ -17,7 +17,7 @@ function Rune:new(name, kind, complexity, manaCost, color)
     rune.color = color or {1, 1, 1}  -- Used to color the spell and the magic circle
     rune.glyph = nil                -- Symbol drawn in the circle slot, set by each rune file
     -- Modifiers set effects to a function per form name, "default" works on any form
-    -- Forms without an effect(and no default) cant use the modifier
+    -- Forms without an effect(and no default) cant use the modifier, false blocks a form the default would cover
     rune.effects = nil
     -- Forms list their own params for the editor to show, as {label, param name, format}
     rune.stats = nil
@@ -44,7 +44,11 @@ function Rune:worksWith(formName)
     if self.effects == nil then
         return true
     end
-    return self.effects[formName] ~= nil or self.effects.default ~= nil
+    local effect = self.effects[formName]
+    if effect == false then
+        return false
+    end
+    return effect ~= nil or self.effects.default ~= nil
 end
 
 
@@ -111,7 +115,7 @@ end
 -- Repeats and pierce are counted from marks, their quality is already in the count
 -- The gravity direction is a direction, blending it would also weaken it
 Rune.FULL_PARAMS = {manaScale = true, complexityScale = true, cooldownScale = true, bounces = true, repeats = true, pierce = true,
-    gravityX = true, gravityY = true}
+    gravityX = true, gravityY = true, recoilDirX = true, recoilDirY = true}
 -- Params that scale with quality but have to stay whole numbers(a Split drawn at 70% makes fewer projectiles)
 Rune.WHOLE_PARAMS = {count = true}
 
@@ -150,7 +154,11 @@ function Rune:apply(params, formName, quality, settings)
     if self.effects == nil then
         return
     end
-    local effect = self.effects[formName] or self.effects.default
+    local effect = self.effects[formName]
+    if effect == false then
+        return
+    end
+    effect = effect or self.effects.default
     if effect == nil then
         return
     end

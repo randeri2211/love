@@ -206,18 +206,15 @@ function Zombie:update(dt)
         return
     end
 
-    -- Blocks only have hitboxes around the player, so a zombie further out waits frozen instead of falling through the ground
-    local x, y = self.body:getWorldCenter()
-    local active = map:inHitboxWindow(loveToMap(math.floor(x / TILE_SIZE) * TILE_SIZE, math.floor(y / TILE_SIZE) * TILE_SIZE))
-    if self.body:isActive() ~= active then
-        self.body:setActive(active)
-    end
-    if not active then
+    -- Far from the player it freezes on the ground, unless something is happening to it(see Enemy:keepLoaded)
+    if not self:keepLoaded() then
         return
     end
+    local x, y = self.body:getWorldCenter()
 
     Entity.update(self, dt)
     groundRay(self)
+    self.body:setGravityScale(self:selfBuff("lightness"))     -- Self spells on it can make it lighter
 
     local px, py = player.body:getWorldCenter()
     local vx, vy = self.body:getLinearVelocity()
@@ -229,7 +226,7 @@ function Zombie:update(dt)
     vx = self.movement.pushX or 0
     if chasing then
         self:face(side > 0 and "right" or "left")
-        vx = vx + side * self.movement.maxSpeed
+        vx = vx + side * self.movement.maxSpeed * self:selfBuff("haste")
         -- A block in front at its feet with room above it gets stepped up with a hop
         if self.grounded then
             local frontX = x + side * (self.width / 2 + 4)
@@ -251,6 +248,7 @@ function Zombie:damage(damage)
         return
     end
     self.flashTime = HIT_FLASH_TIME
+    self.lastHitTime = spells.time      -- Keeps it awake for a while(see Enemy:isAwake)
     Entity.damage(self, damage)
 end
 
@@ -296,6 +294,7 @@ function Zombie:load(data)
     -- Position comes from new(x, y), the rest from the save
     self.hpBar = data.hpBar or self.hpBar
     self.statsDirty = true
+    self.lastHitTime = nil      -- The game clock starts over when a world loads
 end
 
 return Zombie

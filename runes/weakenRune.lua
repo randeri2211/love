@@ -16,6 +16,13 @@ WeakenRune.effects = {
         params.complexityScale = params.complexityScale * 0.8
         params.manaScale = params.manaScale * 0.8
     end,
+    -- On the caster it is a weaker, cheaper buff
+    Self = function(params)
+        params.heal = params.heal * 0.6
+        params.lifetime = params.lifetime * 0.8
+        params.complexityScale = params.complexityScale * 0.8
+        params.manaScale = params.manaScale * 0.8
+    end,
 }
 
 return WeakenRune

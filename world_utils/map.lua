@@ -33,7 +33,8 @@ function Map:emptyMap()
         end
     end
     self.chunkBodies = {}
-    self.hitboxWindow = nil     -- Map area that has hitboxes, {x1, y1, x2, y2}(see updateHitboxes)
+    -- Map areas that have hitboxes by owner, {x1, y1, x2, y2}: the player and enemies that are awake(see updateHitboxes)
+    self.hitboxWindows = {}
     self.pendingHitboxes = {}   -- Cells changed during a physics callback, refreshed on the next update
 end
 
@@ -311,8 +312,28 @@ end
 
 
 function Map:inHitboxWindow(x, y)
-    local w = self.hitboxWindow
-    return w ~= nil and x >= w[1] and x <= w[3] and y >= w[2] and y <= w[4]
+    -- True when a cell is inside any area with hitboxes
+    for owner, w in pairs(self.hitboxWindows) do
+        if x >= w[1] and x <= w[3] and y >= w[2] and y <= w[4] then
+            return true
+        end
+    end
+    return false
+end
+
+
+local function dropHitboxes(map, w)
+    -- Cells of an area that are no longer in any area lose their hitbox
+    for x = w[1], w[3] do
+        for y = w[2], w[4] do
+            if not map:inHitboxWindow(x, y) then
+                local block = map:get(x, y)
+                if block ~= nil then
+                    block:destroyHitbox()
+                end
+            end
+        end
+    end
 end
 
 
@@ -342,9 +363,11 @@ function Map:refreshHitbox(x, y)
 end
 
 
-function Map:updateHitboxes(x1, y1, x2, y2)
-    -- Moves the area with hitboxes, only the cells that left or joined it change
+function Map:updateHitboxes(x1, y1, x2, y2, owner)
+    -- Moves an area with hitboxes, only the cells that left or joined it change
+    -- owner is who the area is for, the player by default, awake enemies keep their own(see Enemy:keepLoaded)
     -- (placing and breaking blocks inside it is handled by set)
+    owner = owner or "player"
     y1, y2 = math.max(y1, 1), math.min(y2, self.height)
     local pending = self.pendingHitboxes
     self.pendingHitboxes = {}
@@ -352,23 +375,14 @@ function Map:updateHitboxes(x1, y1, x2, y2)
         self:refreshHitbox(cell[1], cell[2])
     end
 
-    local old = self.hitboxWindow
+    local old = self.hitboxWindows[owner]
     if old ~= nil and old[1] == x1 and old[2] == y1 and old[3] == x2 and old[4] == y2 then
         return
     end
-    self.hitboxWindow = {x1, y1, x2, y2}
+    self.hitboxWindows[owner] = {x1, y1, x2, y2}
 
     if old ~= nil then
-        for x = old[1], old[3] do
-            for y = old[2], old[4] do
-                if not self:inHitboxWindow(x, y) then
-                    local block = self:get(x, y)
-                    if block ~= nil then
-                        block:destroyHitbox()
-                    end
-                end
-            end
-        end
+        dropHitboxes(self, old)
     end
     for x = x1, x2 do
         for y = y1, y2 do
@@ -413,14 +427,35 @@ local function encodeChunk(chunk)
 end
 
 
+function Map:releaseHitboxes(owner)
+    -- Removes an area with hitboxes, its cells keep theirs only if another area covers them
+    local old = self.hitboxWindows[owner]
+    if old ~= nil then
+        self.hitboxWindows[owner] = nil
+        dropHitboxes(self, old)
+    end
+end
+
+
 function Map:unloadFarChunks(x, y)
     -- Turns chunks far from map coordinates x, y back into compact data and frees their blocks,
     -- they are rebuilt exactly as they were when the player comes back
+    -- Chunks under an awake enemy area stay, so a launched enemy doesnt lose the ground under it
     local _, pcx, pcy = chunkOf(x, y)
+    local kept = {}
+    for owner, w in pairs(self.hitboxWindows) do
+        local _, cx1, cy1 = chunkOf(w[1], w[2])
+        local _, cx2, cy2 = chunkOf(w[3], w[4])
+        for cx = cx1, cx2 do
+            for cy = cy1, cy2 do
+                kept[cx .. "," .. cy] = true
+            end
+        end
+    end
     for key, chunk in pairs(self.chunks) do
         local cx, cy = key:match("^(-?%d+),(-?%d+)$")
         cx, cy = tonumber(cx), tonumber(cy)
-        if math.max(math.abs(cx - pcx), math.abs(cy - pcy)) > CHUNK_UNLOAD_DISTANCE then
+        if not kept[key] and math.max(math.abs(cx - pcx), math.abs(cy - pcy)) > CHUNK_UNLOAD_DISTANCE then
             -- Hitboxes go first, nothing far away should stay in the physics world
             for index, block in pairs(chunk) do
                 block:destroyHitbox()

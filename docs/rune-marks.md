@@ -44,7 +44,7 @@ Also:
 
 | Kind | Visual | Used by |
 |---|---|---|
-| `arrow` | Shaft with a head, direction read from the arrow itself | Split, Bullet, Laser, Gravity |
+| `arrow` | Shaft with a head, direction read from the arrow itself | Split, Bullet, Laser, Gravity, Recoil |
 | `dot` | Small circle | Repeat |
 | `line` | Straight stroke | (free) |
 | `pierce` | A line crossed by two short bars at its thirds | Pierce |
@@ -58,6 +58,7 @@ Also:
 | **Area** | One arrow | Where it appears: offset from in front of the caster the way the arrow points | Idea |
 | | Arrows out | Directed burst: a cone instead of a circle, aimed by the arrows' angle | Idea |
 | **Trap** | One arrow | Throw direction when placed | Idea |
+| **Self** | — | No marks yet: Self carries the effects of its modifiers (heal, haste, lightness, dash) on the caster, or on the enemy an OnHit put it on | — |
 | | Line | Tripwire: a line trigger instead of a radius | Idea |
 
 ## Modifier runes made from mark ideas
@@ -87,7 +88,7 @@ New behaviors that showed up as marks on several forms.
 | **Rebound** | Dots | Exact bounce count instead of doubling | Idea |
 | | Arrow in | Each bounce loses speed but gains damage | Idea |
 | | Arrow out | Each bounce gains speed | Idea |
-| **Recoil** | Arrow | Push direction relative to the aim; up gives rocket jumps | Idea |
+| **Recoil** | One arrow | Which way it pushes, drawn as if facing right: up stays up, forward follows the facing. On a projectile it pushes the caster that way (a down arrow is a pure rocket jump), on Self it is the dash direction, on a Self put on a hit enemy forward is away from the caster | **Done** |
 | **Dig** | Line | Tunnel: digs a line along the path instead of only at impact | Idea |
 | | Dots | Dig radius | Idea |
 | | Arrow in | Only digs, does no damage to enemies (cheaper) | Idea |

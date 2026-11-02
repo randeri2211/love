@@ -11,6 +11,7 @@ DigRune.glyph = {
 
 DigRune.effects = {
     -- Trades damage to enemies for damage to terrain, every form has both so it works on all of them
+    Self = false,   -- Nothing to dig with
     default = function(params)
         params.damage = params.damage * 0.5
         params.terrainDamage = params.terrainDamage * 4

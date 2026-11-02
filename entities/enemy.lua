@@ -62,7 +62,41 @@ end
 
 function Enemy:destroy()
     Entity.destroy(self)
+    map:releaseHitboxes(self)
     map.enemies:removeEnemy(self)
+end
+
+
+function Enemy:isAwake()
+    -- Something is happening to it: a Self spell is on it, it was hit a moment ago, or it is still flying from that
+    if next(self.selfEffects or {}) ~= nil then
+        return true
+    end
+    if self.lastHitTime ~= nil and spells.time - self.lastHitTime < ENEMY_AWAKE_TIME then
+        return true
+    end
+    return self.awake == true and not self.grounded
+end
+
+
+function Enemy:keepLoaded()
+    -- Blocks only have hitboxes around the player, an awake enemy keeps an area of its own so it can fly and land anywhere
+    -- Once nothing is happening and it is on the ground it lets go of it, and freezes there if the player is far
+    -- Returns true when it can move this frame
+    local x, y = self.body:getWorldCenter()
+    local mx, my = loveToMap(math.floor(x / TILE_SIZE) * TILE_SIZE, math.floor(y / TILE_SIZE) * TILE_SIZE)
+    self.awake = self:isAwake()
+    if self.awake then
+        local r = ENEMY_LOAD_RADIUS
+        map:updateHitboxes(mx - r, my - r, mx + r, my + r, self)
+    else
+        map:releaseHitboxes(self)
+    end
+    local active = map:inHitboxWindow(mx, my)
+    if self.body:isActive() ~= active then
+        self.body:setActive(active)
+    end
+    return active
 end
 
 function Enemy:update(dt)

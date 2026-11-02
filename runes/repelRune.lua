@@ -12,6 +12,7 @@ RepelRune.glyph = {
 
 RepelRune.effects = {
     -- Hits shove harder, the way the spell was going(see Form:hit), every form hits so this works on all of them
+    Self = false,   -- Nothing to hit
     default = function(params)
         params.knockback = params.knockback * 2
     end,

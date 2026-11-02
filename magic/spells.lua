@@ -98,8 +98,9 @@ function Spells:drawCircles()
 end
 
 
-function Spells:trigger(instance, event, dirX, dirY, x, y)
+function Spells:trigger(instance, event, dirX, dirY, x, y, target)
     -- Queues the child spells of an event(onHit, onExpire), from x, y or where the instance is
+    -- target is what the event happened to(the hit enemy), Self children go on it instead of the caster
     local triggers = instance.spell:getParams().triggers[event]
     if triggers == nil then
         return
@@ -112,7 +113,7 @@ function Spells:trigger(instance, event, dirX, dirY, x, y)
         dirX, dirY = instance:getDirection()
     end
     for i, childSpell in ipairs(triggers) do
-        table.insert(self.queue, {spell = childSpell, caster = instance.player, x = x, y = y, dirX = dirX, dirY = dirY})
+        table.insert(self.queue, {spell = childSpell, caster = instance.player, x = x, y = y, dirX = dirX, dirY = dirY, target = target})
     end
 end
 
@@ -122,7 +123,7 @@ function Spells:castQueued()
     local queue = self.queue
     self.queue = {}
     for i, cast in ipairs(queue) do
-        cast.spell:shoot(cast.caster, cast.x, cast.y, cast.dirX, cast.dirY, true)
+        cast.spell:shoot(cast.caster, cast.x, cast.y, cast.dirX, cast.dirY, true, cast.target)
     end
 end
 

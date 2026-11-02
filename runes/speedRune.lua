@@ -18,6 +18,10 @@ SpeedRune.effects = {
     Laser = function(params)
         params.reach = params.reach * 1.5
     end,
+    -- Haste, the caster walks faster while it lasts
+    Self = function(params)
+        params.haste = params.haste * 1.4
+    end,
     -- No Area or Trap entry, they dont travel
 }
 

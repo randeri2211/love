@@ -30,6 +30,10 @@ SizeRune.effects = {
     Trap = function(params)
         params.triggerRadius = params.triggerRadius * 1.4
     end,
+    -- On the caster it lasts longer
+    Self = function(params)
+        params.lifetime = params.lifetime * 1.5
+    end,
 }
 
 return SizeRune

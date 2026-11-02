@@ -121,7 +121,7 @@ function Player:move()
     local moved = false
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown(RIGHT_KEY) then
-        self.body:setLinearVelocity(self.movement.maxSpeed, y)
+        self.body:setLinearVelocity(self.movement.maxSpeed * self:selfBuff("haste"), y)
         moved = true
         if self.direction ~= 'right' then
             self.direction = 'right'
@@ -136,7 +136,7 @@ function Player:move()
     end
     local x,y = self.body:getLinearVelocity()
     if love.keyboard.isDown(LEFT_KEY) then
-        self.body:setLinearVelocity(-self.movement.maxSpeed, y)
+        self.body:setLinearVelocity(-self.movement.maxSpeed * self:selfBuff("haste"), y)
         moved = true
         if self.direction ~= 'left' then
             self.direction = 'left'
@@ -158,13 +158,13 @@ function Player:move()
             self.jumping = true
             self.body:setLinearVelocity(x, - self.movement.jumpHeight)
         elseif self.jumping and self.up then
-            self.body:setGravityScale(JUMP_GRAVITY_SCALE)
+            self.body:setGravityScale(JUMP_GRAVITY_SCALE * self:selfBuff("lightness"))
         else
-            self.body:setGravityScale(1)
+            self.body:setGravityScale(self:selfBuff("lightness"))
         end
     else
         self.jumping = false
-        self.body:setGravityScale(1)
+        self.body:setGravityScale(self:selfBuff("lightness"))
     end
 
     self:moveControl(moved)
@@ -405,6 +405,7 @@ end
 function Player:damage(damage)
     -- Takes damage like any entity, but dying respawns instead of destroying the body
     self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage)
+    self:selfHit()
     if self.hpBar.currentHP <= 0 then
         self:die()
     end

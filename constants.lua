@@ -12,6 +12,8 @@ GRAVITY = 9.8 * TILE_SIZE * TILES_PER_METER * GRAVITY_MULTIPLIER
 MAX_FALL_SPEED = 20 * TILE_SIZE -- Gravity stops speeding entities up past this, other pushes can still go faster
 LINEAR_DAMPING = 0.2
 JUMP_GRAVITY_SCALE = 0.4        -- Gravity while rising with the jump key held
+GROUND_RAY_SPOTS = {0, -0.4, 0.4}   -- Where the ground rays go across the feet, as a part of the body width
+GROUND_RAY_START = 0.3          -- How far inside the body the rays start, as a part of the width
 
 -- Jump launch speed, worked out from how high a held jump should go so changing gravity keeps the height
 JUMP_TILES = 4.5
@@ -47,7 +49,14 @@ BASE_SPELL_PARAMS = {
     gravityX = 0,               -- Way gravity pulls the spell(bullets fall, lasers bend), an arrow on Gravity turns it
     gravityY = 1,
     knockback = 1,              -- How hard a hit shoves what it hits, the way the spell was going
+    recoilDirX = 0,             -- Way an arrow on Recoil pushes, drawn as if facing right(see Spell.facingDirection)
+    recoilDirY = 0,             -- 0, 0 is no arrow: recoil pushes away from the aim and dashes go toward it
 }
+
+-- Self form(spells on the caster)
+SELF_HEAL = 20                  -- HP the first Damage rune heals over a Self spell, more runes heal more
+SELF_DASH_SPEED = 32 * TILE_SIZE    -- Push speed of a Recoil dash on Self, about 5 tiles of dash
+SELF_DASH_VERTICAL = 0.6        -- Up and down dashes are weaker, vertical pushes only fight gravity
 
 KNOCKBACK_SPEED = 8 * TILE_SIZE -- Push speed of a knockback 1 hit, about a tile and a third of shove
 KNOCKBACK_LIFT = 0.25           -- Small hop on every knockback, so knocked enemies leave the ground
@@ -102,6 +111,10 @@ HIT_TINT = {1, 0.35, 0.35}
 DEATH_FALL_TIME = 0.35              -- Seconds falling over
 DEATH_FADE_TIME = 0.6               -- Seconds fading out after it fell
 ZOMBIE_SKIN = "zombie"
+
+-- Enemies away from the player freeze where blocks have no hitboxes, unless something is happening to them
+ENEMY_AWAKE_TIME = 5            -- Seconds an enemy stays awake after it was last hit
+ENEMY_LOAD_RADIUS = 6           -- Tiles around an awake enemy that get hitboxes, so it lands on real ground
 
 -- Contact damage, enemies with contactDamage hurt the player by touching them
 CONTACT_IMMUNITY_TIME = 0.8         -- Seconds after a melee hit(touch or swing) when no melee hit can land(spells still can)

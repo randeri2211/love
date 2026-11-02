@@ -88,8 +88,25 @@ function Entity:damage(damage)
         return
     end
     self.hpBar.currentHP = self.hpBar.currentHP - damage
+    self:selfHit()
     if self.hpBar.currentHP <= 0 then
         self:die()
+    end
+end
+
+function Entity:selfBuff(key)
+    -- Product of a buff over every Self spell active on this entity(haste, lightness), 1 without any
+    local value = 1
+    for effect in pairs(self.selfEffects or {}) do
+        value = value * effect[key]
+    end
+    return value
+end
+
+function Entity:selfHit()
+    -- Tells the Self spells on this entity it was hurt, their onHit children fire
+    for effect in pairs(self.selfEffects or {}) do
+        effect:casterHit()
     end
 end
 

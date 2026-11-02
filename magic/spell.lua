@@ -300,7 +300,17 @@ function Spell:canCast(caster)
 end
 
 
-function Spell:shoot(caster, x, y, dirX, dirY, triggered)
+function Spell.facingDirection(params, side)
+    -- The Recoil arrow direction for something facing side(1 right, -1 left), nil when there is no arrow
+    -- The arrow is drawn as if facing right: up stays up and forward follows the side
+    if params.recoilDirX == 0 and params.recoilDirY == 0 then
+        return nil
+    end
+    return params.recoilDirX * side, params.recoilDirY
+end
+
+
+function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
     -- Casts the spell from x, y in the dirX, dirY direction(defaults to the caster aiming at the mouse)
     -- triggered is true for child spells, their complexity and cooldown were checked with the parent
     local params = self:getParams()
@@ -350,11 +360,15 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
         caster:castAt(dirX, dirY)
     end
 
-    -- Recoil pushes the caster away from the aim, only for casts the caster makes(not triggered children)
+    -- Recoil pushes the caster away from the aim, or the way an arrow on Recoil points, only for casts the caster makes
     -- Rapid fire forms push less per cast so holding them pushes about as hard
     if not triggered and params.recoil > 0 and caster.push ~= nil then
         local strength = params.recoil * RECOIL_SPEED * params.cooldownScale
-        caster:push(-dirX * strength, -dirY * strength)
+        local pushX, pushY = Spell.facingDirection(params, dirX < 0 and -1 or 1)
+        if pushX == nil then
+            pushX, pushY = -dirX, -dirY
+        end
+        caster:push(pushX * strength, pushY * strength)
     end
 
     -- Magic damage bonus from the caster stats
@@ -364,7 +378,8 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered)
     end
     -- Params for this cast only, reads everything else from the compiled params
     -- triggered tells forms the cast came from a trigger(like an Area centering on the hit point)
-    local castParams = setmetatable({damage = params.damage * magicDamage, triggered = triggered == true}, {__index = params})
+    -- target is what a trigger happened to, Self spells go on it(see Spells:trigger)
+    local castParams = setmetatable({damage = params.damage * magicDamage, triggered = triggered == true, target = target}, {__index = params})
 
     self:spawnVolley(caster, castParams, x, y, dirX, dirY)
 

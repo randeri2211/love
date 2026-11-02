@@ -122,20 +122,27 @@ end
 
 -- Ground Check Functions
 function groundRay(p)
-    function groundCallback(fixture, x, y, xn, yn, fraction)
-        if p.fixtures ~= nil then
-            for i = 1, #p.fixtures do
-                if fixture == p.fixtures[i] then
-                    return 0
-                end
-            end
+    -- Sets p.grounded when something is under its feet: short rays down at the left, middle and right of the feet
+    -- The rays start a little inside the body, standing on the edge of a block its corner is above the lowest point
+    -- of the round feet, and a ray that starts inside a block doesnt see it
+    local function groundCallback(fixture, x, y, xn, yn, fraction)
+        if fixture:getBody() == p.body or fixture:getCategory() == SPELLS_CATEGORY or fixture:isSensor() then
+            return -1   -- Its own body and spells arent ground, keep looking
         end
         p.grounded = true
         return 0
     end
     p.grounded = false
     local p_x, p_y = p.body:getWorldCenter()
-    p_world:rayCast(p_x, p_y + p.height / 2, p_x, p_y + p.height / 2 + 1, groundCallback)
+    local bottom = p_y + p.height / 2
+    local width = p.width or p.height / 2
+    for i, side in ipairs(GROUND_RAY_SPOTS) do
+        local x = p_x + side * width
+        p_world:rayCast(x, bottom - width * GROUND_RAY_START, x, bottom + 2, groundCallback)
+        if p.grounded then
+            return
+        end
+    end
 end
 
 

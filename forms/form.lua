@@ -85,7 +85,7 @@ function Form:hit(entity, x, y, dirX, dirY, pushX, pushY)
             entity:push(pushX * speed, (pushY * KNOCKBACK_VERTICAL - KNOCKBACK_LIFT) * speed)
         end
     end
-    spells:trigger(self, "onHit", dirX, dirY, x, y)
+    spells:trigger(self, "onHit", dirX, dirY, x, y, entity)
 end
 
 function Form:expire()

@@ -14,6 +14,14 @@ DamageRune.effects = {
     default = function(params)
         params.damage = params.damage * 1.5
     end,
+    -- On the caster it heals, the first rune heals SELF_HEAL over the spell and every other rune heals more
+    Self = function(params)
+        if params.heal == 0 then
+            params.heal = SELF_HEAL
+        else
+            params.heal = params.heal * 1.5
+        end
+    end,
 }
 
 return DamageRune

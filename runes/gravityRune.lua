@@ -95,6 +95,10 @@ GravityRune.effects = {
         pullWay(params, settings)
         discount(params)
     end,
+    -- On the caster it makes them lighter: higher jumps and slower falls(no discount, it helps the caster)
+    Self = function(params)
+        params.lightness = params.lightness * 0.6
+    end,
     Area = function(params)
         -- Gravity well that pulls enemies in, and lasts longer to do it
         params.pull = strengthen(params.pull)

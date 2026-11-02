@@ -26,6 +26,11 @@ SlowRune.effects = {
         params.reach = params.reach * 0.6
         discount(params)
     end,
+    -- On the caster it is a shorter, cheaper buff
+    Self = function(params)
+        params.lifetime = params.lifetime * 0.6
+        discount(params)
+    end,
 }
 
 return SlowRune
