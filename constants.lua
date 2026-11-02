@@ -93,15 +93,7 @@ PLAYER_SKIN = "player"     -- Skin sheet in assets/skins(nil draws the plain col
 ZOMBIE_HP = 30
 ZOMBIE_SPEED = BASE_MOVE_SPEED * 0.45
 ZOMBIE_SIGHT = 14 * TILE_SIZE      -- How close the player has to be for it to start walking at them
-ZOMBIE_CONTACT_DAMAGE = 5          -- A light bump, the swing is the real attack
-ZOMBIE_ATTACK_DAMAGE = 15
-ZOMBIE_ATTACK_REACH = 1.6 * TILE_SIZE      -- Center to center distance the swing reaches
-ZOMBIE_ATTACK_KNOCKBACK = 4 * TILE_SIZE
-ZOMBIE_ATTACK_WINDUP = 0.35         -- Seconds raising the arms, the player can step away
-ZOMBIE_ATTACK_SWING = 0.12          -- Seconds swinging down, the hit lands at the start
-ZOMBIE_ATTACK_RECOVER = 0.35
-ZOMBIE_ATTACK_COOLDOWN = 0.8        -- Seconds after a swing before the next one
-ZOMBIE_LUNGE_SPEED = 3 * TILE_SIZE  -- Step forward during the swing
+ZOMBIE_CONTACT_DAMAGE = 10         -- Touching the player hits them, shown as a swipe(see Zombie:onMeleeHit)
 
 -- Hit reaction and death
 HIT_FLASH_TIME = 0.15               -- Seconds an enemy shows the hit tint

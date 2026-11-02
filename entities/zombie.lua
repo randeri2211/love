@@ -12,8 +12,12 @@ local ARM_REACH = math.rad(12)      -- Arms point a little below level, reaching
 local ARM_SPREAD = math.rad(6)      -- Small angle between the arms so they dont draw on top of each other
 local ARM_BOB = math.rad(7)         -- How far the arms sway while it walks
 local WALK_CYCLE = 1.4              -- Seconds per shuffling step cycle
-local ATTACK_RAISE = math.rad(65)   -- How far the arms go up in the wind-up
-local ATTACK_STRIKE = math.rad(40)  -- How far past level they swing down
+-- Swipe shown when a touch hits the player: arms snap up, swing down past level, then settle back
+local SWIPE_RAISE = math.rad(65)    -- How far the arms go up
+local SWIPE_STRIKE = math.rad(40)   -- How far past level they swing down
+local SWIPE_UP_TIME = 0.08
+local SWIPE_DOWN_TIME = 0.1
+local SWIPE_RECOVER_TIME = 0.3
 
 -- Short dragging steps with a nodding head, the arms come from the arm pose instead(see armSetup)
 local WALK = {
@@ -126,27 +130,33 @@ function Zombie:face(direction)
 end
 
 
-function Zombie:attackArmAngle()
-    -- Extra arm angle for the swing: up during the wind-up, down past level on the swing, back while recovering
-    -- Positive is down in front for a zombie facing right, mirrored when facing left
-    local attack = self.attack
-    if attack == nil then
+function Zombie:swipeArmAngle()
+    -- Extra arm angle for the swipe, positive is down in front for a zombie facing right, mirrored when facing left
+    local swipe = self.swipe
+    if swipe == nil then
         return 0
     end
-    local t = attack.time
-    local raise, strike = -ATTACK_RAISE, ATTACK_STRIKE
+    local t = swipe.time
     local angle
-    if t < ZOMBIE_ATTACK_WINDUP then
-        local p = t / ZOMBIE_ATTACK_WINDUP
-        angle = raise * (1 - (1 - p) * (1 - p))     -- Eases up
-    elseif t < ZOMBIE_ATTACK_WINDUP + ZOMBIE_ATTACK_SWING then
-        local p = (t - ZOMBIE_ATTACK_WINDUP) / ZOMBIE_ATTACK_SWING
-        angle = raise + (strike - raise) * p        -- Fast swing down
+    if t < SWIPE_UP_TIME then
+        angle = -SWIPE_RAISE * t / SWIPE_UP_TIME
+    elseif t < SWIPE_UP_TIME + SWIPE_DOWN_TIME then
+        local p = (t - SWIPE_UP_TIME) / SWIPE_DOWN_TIME
+        angle = -SWIPE_RAISE + (SWIPE_STRIKE + SWIPE_RAISE) * p
     else
-        local p = math.min(1, (t - ZOMBIE_ATTACK_WINDUP - ZOMBIE_ATTACK_SWING) / ZOMBIE_ATTACK_RECOVER)
-        angle = strike * (1 - p)
+        local p = math.min(1, (t - SWIPE_UP_TIME - SWIPE_DOWN_TIME) / SWIPE_RECOVER_TIME)
+        angle = SWIPE_STRIKE * (1 - p)
     end
-    return attack.side * angle
+    return swipe.side * angle
+end
+
+
+function Zombie:onMeleeHit(target)
+    -- Its touch just hurt the target, the arms swipe at them
+    local x = self.body:getWorldCenter()
+    local side = target.body:getWorldCenter() >= x and 1 or -1
+    self:face(side > 0 and "right" or "left")
+    self.swipe = {time = 0, side = side}
 end
 
 
@@ -162,10 +172,14 @@ function Zombie:updateAnimation(dt, walking)
     -- Bone angle 0 points down(the skeleton is turned to stand up), so reaching right is -90 degrees and left is 90
     local forward = self.facing == "right" and -math.pi / 2 + ARM_REACH or math.pi / 2 - ARM_REACH
     local sway = math.sin(self.walkTime * 2 * math.pi / WALK_CYCLE) * ARM_BOB
-    if self.attack ~= nil then
+    if self.swipe ~= nil then
         sway = 0
+        self.swipe.time = self.swipe.time + dt
+        if self.swipe.time >= SWIPE_UP_TIME + SWIPE_DOWN_TIME + SWIPE_RECOVER_TIME then
+            self.swipe = nil
+        end
     end
-    local swing = self:attackArmAngle()
+    local swing = self:swipeArmAngle()
     self.armPose.right_hand.rotation = forward - ARM_SPREAD + sway + swing
     self.armPose.left_hand.rotation = forward + ARM_SPREAD - sway + swing
 
@@ -209,18 +223,9 @@ function Zombie:update(dt)
     local vx, vy = self.body:getLinearVelocity()
     local dx = px - x
     local side = dx > 0 and 1 or -1
-    local inReach = math.abs(dx) <= ZOMBIE_ATTACK_REACH and math.abs(py - y) < self.height
-
-    -- Starts a swing when the player is in reach and the last one has cooled down
-    self.attackCooldown = math.max(0, (self.attackCooldown or 0) - dt)
-    if self.attack == nil and inReach and self.attackCooldown == 0 then
-        self.attack = {time = 0, side = side, struck = false}
-        self:face(side > 0 and "right" or "left")
-    end
 
     -- Shambles toward the player once it is close enough to notice them
-    local chasing = self.attack == nil and math.abs(dx) <= ZOMBIE_SIGHT and math.abs(py - y) <= ZOMBIE_SIGHT
-        and math.abs(dx) > self.width / 2
+    local chasing = math.abs(dx) <= ZOMBIE_SIGHT and math.abs(py - y) <= ZOMBIE_SIGHT and math.abs(dx) > self.width / 2
     vx = self.movement.pushX or 0
     if chasing then
         self:face(side > 0 and "right" or "left")
@@ -233,38 +238,10 @@ function Zombie:update(dt)
                 vy = -self.movement.jumpHeight
             end
         end
-    elseif self.attack ~= nil then
-        vx = vx + self:updateAttack(dt, inReach)
     end
     self.body:setLinearVelocity(vx, vy)
 
     self:updateAnimation(dt, chasing)
-end
-
-
-function Zombie:updateAttack(dt, inReach)
-    -- Wind-up, swing and recover, the hit lands as the swing starts if the player is still in reach
-    -- Returns the lunge speed forward during the swing
-    local attack = self.attack
-    attack.time = attack.time + dt
-    local swingStart = ZOMBIE_ATTACK_WINDUP
-    local swingEnd = swingStart + ZOMBIE_ATTACK_SWING
-
-    if attack.time >= swingStart and not attack.struck then
-        attack.struck = true
-        -- Melee shares the immunity window with contact, so a bump and a swing cant land back to back
-        if inReach then
-            player:meleeHit(self, ZOMBIE_ATTACK_DAMAGE, ZOMBIE_ATTACK_KNOCKBACK)
-        end
-    end
-    if attack.time >= swingEnd + ZOMBIE_ATTACK_RECOVER then
-        self.attack = nil
-        self.attackCooldown = ZOMBIE_ATTACK_COOLDOWN
-    end
-    if attack.time >= swingStart and attack.time < swingEnd then
-        return attack.side * ZOMBIE_LUNGE_SPEED
-    end
-    return 0
 end
 
 
@@ -282,7 +259,7 @@ function Zombie:die()
     -- Falls over backwards from where it faced, then fades out(see updateDying)
     local x, y = self.body:getWorldCenter()
     self.dying = 0
-    self.attack = nil
+    self.swipe = nil
     self.contactDamage = 0
     self.deathFeet = {x, y + self.height / 2}
     self.deathSide = self.facing == "right" and -1 or 1     -- Way the head falls

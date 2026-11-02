@@ -216,7 +216,10 @@ function Player:checkContactDamage(dt)
                 local other = a:getBody() == self.body and b or a
                 local attacker = other:getUserData()
                 if attacker ~= nil and (attacker.contactDamage or 0) > 0 then
-                    self:meleeHit(attacker, attacker.contactDamage, CONTACT_KNOCKBACK)
+                    -- The attacker can show the hit, like a zombie swiping
+                    if self:meleeHit(attacker, attacker.contactDamage, CONTACT_KNOCKBACK) and attacker.onMeleeHit ~= nil then
+                        attacker:onMeleeHit(self)
+                    end
                     break
                 end
             end
