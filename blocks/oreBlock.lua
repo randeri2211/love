@@ -6,9 +6,7 @@ local HPBar = require "components.hpBar"
 local OreBlock = Block:new()
 
 -- Ores by block name: nugget color, the stone they sit in, and how hard they are to dig
--- "Ore" is the gold ore of worlds saved before there were more ores
 local ORES = {
-    {name = "Ore", color = {1, 0.82, 0.25, 1}, host = "stone", threshold = 25, hp = 15},
     {name = "CopperOre", color = {0.85, 0.5, 0.25, 1}, host = "stone", threshold = 14, hp = 12},
     {name = "IronOre", color = {0.82, 0.74, 0.68, 1}, host = "stone", threshold = 20, hp = 14},
     {name = "GoldOre", color = {1, 0.82, 0.25, 1}, host = "stone", threshold = 25, hp = 15},

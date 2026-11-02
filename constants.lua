@@ -203,6 +203,9 @@ BIOME_SIZES = {
 }
 DEFAULT_BIOME_SIZE = 2      -- Index in BIOME_SIZES
 
+-- Crafting(see items/crafting and the recipes folder)
+CRAFT_TIERS = {"Basic", "Copper", "Iron", "Gold", "Arcanite"}  -- Recipe tiers in the order the crafting list shows them
+
 -- Trees and plants(see world_utils/flora)
 FLORA_VERSION = 1       -- Saved with new worlds, worlds without it grow no trees or plants so their saved chunks still match
 TREE_CELL = 8           -- Columns per tree spot, each spot has at most one tree so canopies never touch

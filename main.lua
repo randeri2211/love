@@ -173,6 +173,8 @@ function love.wheelmoved(x, y)
         else
             player.hotbarSlot = (player.hotbarSlot - 1 + step) % HOTBAR_SIZE + 1
         end
+    elseif game_state == IN_WORLD_STATE and uihandler.characterScreen ~= nil then
+        uihandler.characterScreen:wheel(y)
     elseif game_state == PICK_WORKD_STATE then
         ScrollWorlds(y)
     end

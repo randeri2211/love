@@ -12,7 +12,7 @@ local LEGACY = {
     terrain = {baseRow = 0, hillHeight = HILL_HEIGHT, roughness = 1},
     blocks = {top = "Grass", filler = "Dirt", fillerDepth = DIRT_DEPTH, stone = "Stone"},
     caves = {startDepth = CAVE_START_DEPTH, tunnel = 0.06, cavern = 0.82},
-    ores = {{block = "Ore", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD}},
+    ores = {{block = "GoldOre", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD}},
     spawns = {},
 }
 

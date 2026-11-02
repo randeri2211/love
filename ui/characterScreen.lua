@@ -3,8 +3,9 @@ local Humanoid = require "animations.humanoid"
 local Items = require "items.items"
 local Inventories = require "items.inventories"
 local Equipments = require "items.equipments"
+local CraftingPanel = require "ui.craftingPanel"
 
--- Character screen: the character with its stats on the left, the inventory grid on the right
+-- Character screen: the character with its stats on the left, the inventory grid on the right with crafting under it
 -- Items move with a stack held in the hand: left click picks up, places, merges or swaps a whole stack,
 -- right click picks up half a stack or places one item, clicking outside the window throws the held stack
 local CharacterScreen = {}
@@ -18,6 +19,7 @@ local PREVIEW_H = 170
 local PREVIEW_SCALE = 2.2   -- The character preview drawn bigger than in the world
 local MARGIN = 16
 local STATS_H = 760         -- Tall enough for the preview, the armor slots and every stat line
+local INVENTORY_EXTRA_H = 78    -- Inventory window height over the grid: title and the hint lines
 
 -- Colors
 local SLOT_COLOR = {0.12, 0.13, 0.18, 1}
@@ -40,6 +42,7 @@ function CharacterScreen:new(owner)
     screen.owner = owner            -- The player whose stats and inventory it shows
     screen.held = nil               -- Stack in the hand, {item, count}
     screen.hovered = nil            -- Slot index under the mouse
+    screen.crafting = CraftingPanel:new(owner)
     -- Its own copy of the body for the preview, standing still and facing right
     screen.preview = Humanoid.build(owner.width, owner.height, PLAYER_SKIN)
     Humanoid.face(screen.preview, "right")
@@ -73,12 +76,21 @@ function CharacterScreen:update()
     local y = math.floor(h / 2 - STATS_H / 2)
 
     self:characterWindow(x, y)
-    self:inventoryWindow(x + STATS_W + MARGIN, y, gridW, gridH)
+    local inventoryX, inventoryH = x + STATS_W + MARGIN, gridH + INVENTORY_EXTRA_H
+    self:inventoryWindow(inventoryX, y, gridW, gridH)
+    -- Crafting fills the rest of the height under the inventory
+    self.crafting:update(inventoryX, y + inventoryH + MARGIN, gridW + 20, STATS_H - inventoryH - MARGIN, self.held ~= nil)
 
     -- A click on no window throws the held stack into the world
     if self.held ~= nil and Slab.IsVoidClicked(1) then
         self:throwHeld()
     end
+end
+
+
+function CharacterScreen:wheel(dy)
+    -- Mouse wheel while the screen is open, the crafting list scrolls under it
+    return self.crafting:wheel(dy)
 end
 
 
@@ -231,7 +243,7 @@ end
 
 -- Inventory
 function CharacterScreen:inventoryWindow(x, y, gridW, gridH)
-    Slab.BeginWindow("CharacterInventory", windowOptions("Inventory", x, y, gridW + 20, gridH + 78))
+    Slab.BeginWindow("CharacterInventory", windowOptions("Inventory", x, y, gridW + 20, gridH + INVENTORY_EXTRA_H))
         local ox, oy = Slab.GetCursorPos({Absolute = true})
         self.gridX, self.gridY = ox, oy     -- Where the grid is on screen
         self:handleGridMouse(ox, oy, gridW, gridH)

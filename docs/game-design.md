@@ -179,7 +179,7 @@ Some set items and trinkets are boss drops. Which ones and why is decided once b
 | # | Gap | Why it matters |
 |---|---|---|
 | 1 | **Raw materials:** trees (wood), plants or silk (fibre), enemy drops (hides), gems | Every crafting station needs inputs, and they give biomes a reason to visit. **Done:** oak, pine, cactus and tall grass (see `world_utils/flora`), enemy loot tables (empty for now). Still to come: hides, gems |
-| 2 | **Crafting core:** recipe registry, a "near a station" check, a crafting screen | Stations do nothing without it |
+| 2 | **Crafting core:** recipe registry, a "near a station" check, a crafting screen | Stations do nothing without it. **Done:** recipes folder (`registerRecipe`), stations within interaction distance, a crafting list in the Tab screen by tier and category, Woodworking Station and Forge, bars and rods |
 | 3 | **Damage types, crit and status effects** | Forge resistances and tanning crit have nothing to work on yet (elements are decided, see below) |
 | 4 | **Light:** torches and light from spells | Night and underground are dark, and deep ores are planned |
 | 5 | **Storage and home:** chests, spawn point or bed, the respawn timer | Basic sandbox loop (death itself is decided, see below) |

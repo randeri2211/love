@@ -3,6 +3,7 @@ ENTITY_REGISTRY = {}
 RUNE_REGISTRY = {}
 BIOME_REGISTRY = {}
 ITEM_REGISTRY = {}
+RECIPE_REGISTRY = {}    -- A list, recipes show in the order they were registered within their tier and category
 
 
 function registerAll()
@@ -11,6 +12,7 @@ function registerAll()
     registerFolder("runes")
     registerFolder("biomes")
     registerFolder("items")     -- After blocks, every block becomes an item(see items/blockItems)
+    registerFolder("recipes")   -- After items, recipes name them
 end
 
 
@@ -41,6 +43,14 @@ end
 function registerItem(itemName, item)
     item.name = itemName
     ITEM_REGISTRY[itemName] = item
+end
+
+
+function registerRecipe(recipe)
+    -- recipe = {output, count, inputs = {{item or group, count}...}, station(nil for by hand), tier, category}
+    recipe.count = recipe.count or 1
+    recipe.id = #RECIPE_REGISTRY + 1
+    table.insert(RECIPE_REGISTRY, recipe)
 end
 
 
