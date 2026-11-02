@@ -3,7 +3,7 @@ registerBiome("Deep", {
     kind = "underground",
     fromDepth = DEEP_DEPTH,
     blocks = {stone = "Deepstone"},
-    caves = {startDepth = 0, tunnel = 0.08, cavern = 0.74},
+    caves = {startDepth = 0, tunnel = 0.055, network = 0.05, scale = 0.5, cavern = 0.8},
     ores = {
         {block = "DeepGoldOre", minDepth = 0, threshold = 0.75},
         {block = "ArcaniteOre", minDepth = 0, threshold = 0.8},

@@ -8,7 +8,7 @@ registerBiome("Plains", {
         roughness = 1,          -- How quickly the hills change, higher is choppier
     },
     blocks = {top = "Grass", filler = "Dirt", fillerDepth = DIRT_DEPTH, stone = "Stone"},
-    caves = {startDepth = CAVE_START_DEPTH, tunnel = 0.06, cavern = 0.82},
+    caves = {startDepth = CAVE_START_DEPTH, tunnel = 0.045, network = 0.04, scale = 0.5, cavern = 0.87},
     ores = {
         {block = "CopperOre", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD},
         {block = "IronOre", minDepth = 28, threshold = 0.79},

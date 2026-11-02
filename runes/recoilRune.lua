@@ -10,15 +10,25 @@ RecoilRune.glyph = {
     {"line", -0.5, -0.38, -0.85, 0, -0.5, 0.38},
 }
 
+local LASER_RECOIL = 0.45      -- Held lasers fire many times a second, so each beam pushes this much of a normal recoil
+
+local function strengthen(params, first)
+    -- The first rune turns recoil on, every other rune doubles it
+    if params.recoil == 0 then
+        params.recoil = first
+    else
+        params.recoil = params.recoil * 2
+    end
+end
+
 RecoilRune.effects = {
-    -- Pushes the caster away from the aim, the first rune turns it on and every other rune doubles it
-    -- Every form has recoil, so this works on all of them
+    -- Pushes the caster away from the aim, every form has recoil so this works on all of them
     default = function(params)
-        if params.recoil == 0 then
-            params.recoil = 1
-        else
-            params.recoil = params.recoil * 2
-        end
+        strengthen(params, 1)
+    end,
+    -- Held down it is a jet: about as strong as gravity, so it hovers, and rises once Weaken makes it fire faster
+    Laser = function(params)
+        strengthen(params, LASER_RECOIL)
     end,
 }
 

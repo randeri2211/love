@@ -1,4 +1,5 @@
 DEBUG = false
+DEBUG_ONE_HIT_BLOCKS = true     -- With DEBUG on, any hit breaks a block(bedrock still cant break), for digging around in development
 
 SCREEN_X  = 1920
 SCREEN_Y  = 1080

@@ -66,6 +66,11 @@ function Block:damage(dmg, power)
     -- power is the hit strength checked against the hardness, dmg is what the block loses
     -- (spells only deal part of their damage to terrain, hardness looks at their dig strength)
     power = power or dmg
+    -- Development: blocks break on any hit, the bottom of the world still holds
+    if DEBUG and DEBUG_ONE_HIT_BLOCKS and self.damageThreshold ~= math.huge then
+        self:destroy()
+        return
+    end
     if power > self.damageThreshold then
         self.hpBar.currentHP = self.hpBar.currentHP - dmg
         if self.hpBar.currentHP <= 0 then

@@ -32,13 +32,22 @@ end
 
 function Generator.isCave(tx, ty, depth, seed, caves)
     -- Open space underground: long tunnels where a noise layer crosses its middle, and rounder caverns
-    -- caves comes from the biome: {startDepth, tunnel width, cavern threshold}
+    -- caves comes from the biome: {startDepth, tunnel width, cavern threshold, and optionally scale and network}
+    -- scale stretches the tunnels(below 1 is wider tunnels further apart), network adds a second set of tunnels
+    -- at another angle and size that crosses the first one, joining the tunnels into big connected networks
     if depth < caves.startDepth then
         return false
     end
-    local tunnel = math.abs(love.math.noise(tx * 0.03, ty * 0.05, offset(seed, 31.7)) * 2 - 1)
+    local scale = caves.scale or 1
+    local tunnel = math.abs(love.math.noise(tx * 0.03 * scale, ty * 0.05 * scale, offset(seed, 31.7)) * 2 - 1)
     if tunnel < caves.tunnel then
         return true
+    end
+    if caves.network ~= nil then
+        local crossing = math.abs(love.math.noise(tx * 0.045 * scale, ty * 0.03 * scale, offset(seed, 210.3)) * 2 - 1)
+        if crossing < caves.network then
+            return true
+        end
     end
     return love.math.noise(tx * 0.025, ty * 0.035, offset(seed, 77.1)) > caves.cavern
 end

@@ -154,7 +154,7 @@ end
 
 
 function Spellbooks.default()
-    -- What a new player starts with, bound to keys 1-7
+    -- What a new player starts with, bound to keys 1-9
     local book = Spellbook()
     -- Bullet with a Pierce rune(2 pierces) that explodes on every hit, shows where each pierce hits
     local piercing = Spell:new("Bullet", {
@@ -170,6 +170,10 @@ function Spellbooks.default()
         {"Gravity well", Spell:new("Area", {"Gravity", "Size"})},
         {"Minefield", Spell:new("Trap", {"Split", "Split"})},
         {"Bouncing arcs", Spell:new("Bullet", {"Split", "Gravity", "Rebound"})},
+        -- Rapid laser recoil pushes away from the aim every cast, cheap enough to hold, aim down to fly
+        {"Recoil jet", Spell:new("Laser", {"Recoil", "Weaken", "Weaken"})},
+        -- Weak beam that eats through terrain
+        {"Digging laser", Spell:new("Laser", {"Dig", "Dig", "Damage", "Damage"})},
     }
     for i, default in ipairs(defaults) do
         local entry = Spellbooks.add(book, default[1], default[2])
