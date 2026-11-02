@@ -11,7 +11,7 @@ local SPELLS_W = 240
 local DRAW_W = 260
 local CANVAS_W = 640
 local INFO_W = 300
-local EDITOR_H = 640
+local EDITOR_H = 690
 local GAP = 10
 
 -- Colors(circle colors live in MagicCircle)
@@ -195,7 +195,8 @@ function SpellEditor:drawPad(x, y)
         if self.target ~= nil and self:circlePath(self.spell, self.target.spell, "") == nil then
             self.target = nil
         end
-        Slab.Text(self:targetLabel(), {Color = self.target and TARGET_COLOR or HINT_COLOR})
+        -- Wraps, a slot deep in trigger circles has a long name
+        Slab.Textf(self:targetLabel(), {Color = self.target and TARGET_COLOR or HINT_COLOR, W = DRAW_W - 20})
 
         local ox, oy = Slab.GetCursorPos({Absolute = true})
         self:handlePadMouse(ox + PAD_SIZE / 2, oy + PAD_SIZE / 2)
@@ -304,9 +305,10 @@ function SpellEditor:runeReference()
     if hovered ~= nil then
         Slab.Text(string.format("%s  (%s, %s mana)", hovered.name, hovered.kind, tostring(hovered.manaCost)), {Color = hovered.color})
     elseif self.guide ~= nil then
-        Slab.Text("Tracing " .. self.guide .. ", click it to hide", {Color = HINT_COLOR})
+        Slab.Textf("Tracing " .. self.guide .. ", click it to hide", {Color = HINT_COLOR, W = DRAW_W - 20})
     else
-        Slab.Text("Click a rune to trace it on the pad", {Color = HINT_COLOR})
+        Slab.Text("Click a rune to trace it", {Color = HINT_COLOR})
+        Slab.Text("on the pad", {Color = HINT_COLOR})
     end
 end
 

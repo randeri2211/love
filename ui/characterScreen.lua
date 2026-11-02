@@ -17,7 +17,7 @@ local STATS_W = 300
 local PREVIEW_H = 170
 local PREVIEW_SCALE = 2.2   -- The character preview drawn bigger than in the world
 local MARGIN = 16
-local STATS_H = 690         -- Tall enough for the preview, the armor slots and every stat line
+local STATS_H = 760         -- Tall enough for the preview, the armor slots and every stat line
 
 -- Colors
 local SLOT_COLOR = {0.12, 0.13, 0.18, 1}
@@ -148,11 +148,14 @@ function CharacterScreen:characterWindow(x, y)
             Slab.Text(string.format("Magic damage  %d%%", math.floor(combat.magicDamage * 100 + 0.5)))
             Slab.Text(string.format("Cooldown reduction  %d%%", math.floor(combat.cooldownReduction * 100 + 0.5)))
             Slab.Text(string.format("Max complexity  %d", combat.maxComplexity))
-            Slab.Text(string.format("Defense  %d   blocks %d%% of damage", combat.defense, math.floor(combat.damageReduction * 100 + 0.5)))
+            Slab.Text(string.format("Defense  %d", combat.defense))
+            Slab.Text(string.format("Blocks  %d%% of damage", math.floor(combat.damageReduction * 100 + 0.5)))
         end
-        Slab.Text(string.format("HP regen  %.1f/s   Mana regen  %.1f/s", owner.hpBar.regen, owner.manaBar.manaRegen))
+        Slab.Text(string.format("HP regen  %.1f/s", owner.hpBar.regen))
+        Slab.Text(string.format("Mana regen  %.1f/s", owner.manaBar.manaRegen))
         local jumpTiles = owner.movement.jumpHeight ^ 2 / (2 * GRAVITY * JUMP_GRAVITY_SCALE * owner:gravityScale()) / TILE_SIZE
-        Slab.Text(string.format("Speed  %.1f tiles/s   Jump  %.1f tiles", owner.movement.maxSpeed / TILE_SIZE, jumpTiles))
+        Slab.Text(string.format("Speed  %.1f tiles/s", owner.movement.maxSpeed / TILE_SIZE))
+        Slab.Text(string.format("Jump  %.1f tiles", jumpTiles))
     Slab.EndWindow()
 end
 
@@ -217,7 +220,8 @@ function CharacterScreen:drawEquipment()
             -- Empty slots say what goes in them
             love.graphics.setColor(EMPTY_LABEL_COLOR)
             local label = slot.label
-            local scale = math.min(1, (CELL - 8) / font:getWidth(label))
+            -- Half size when it doesnt fit, the pixel font stays sharp at whole and half sizes
+            local scale = font:getWidth(label) <= CELL - 8 and 1 or 0.5
             love.graphics.print(label, x + CELL / 2 - font:getWidth(label) * scale / 2, CELL / 2 - font:getHeight() * scale / 2, 0, scale, scale)
         end
     end
@@ -227,7 +231,7 @@ end
 
 -- Inventory
 function CharacterScreen:inventoryWindow(x, y, gridW, gridH)
-    Slab.BeginWindow("CharacterInventory", windowOptions("Inventory", x, y, gridW + 20, gridH + 56))
+    Slab.BeginWindow("CharacterInventory", windowOptions("Inventory", x, y, gridW + 20, gridH + 78))
         local ox, oy = Slab.GetCursorPos({Absolute = true})
         self.gridX, self.gridY = ox, oy     -- Where the grid is on screen
         self:handleGridMouse(ox, oy, gridW, gridH)
@@ -241,7 +245,8 @@ function CharacterScreen:inventoryWindow(x, y, gridW, gridH)
         elseif self.held ~= nil then
             Slab.Text("Click outside to throw it", {Color = HINT_COLOR})
         else
-            Slab.Text("Left click: take or place a stack   Right click: half or one", {Color = HINT_COLOR})
+            Slab.Text("Left click: take or place a stack", {Color = HINT_COLOR})
+            Slab.Text("Right click: take half or place one", {Color = HINT_COLOR})
         end
     Slab.EndWindow()
 end

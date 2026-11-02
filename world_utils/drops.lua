@@ -162,7 +162,7 @@ function Drops:draw()
         Items.drawIcon(drop.item, math.floor(x - size / 2), math.floor(y - size / 2 + bob), size)
         if drop.count > 1 then
             love.graphics.setColor(1, 1, 1, 1)
-            love.graphics.print(drop.count, math.floor(x + size / 2 - 2), math.floor(y - 2), 0, 0.7, 0.7)
+            love.graphics.print(drop.count, math.floor(x + size / 2 - 2), math.floor(y - 2), 0, 0.5, 0.5)
         end
     end
 

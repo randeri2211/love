@@ -184,6 +184,9 @@ SKY_TINT = {night = {0.12, 0.14, 0.3}, dawn = {1, 0.72, 0.7}, day = {1, 1, 1}, d
 HILL_TINT = {night = {0.2, 0.22, 0.38}, dawn = {0.85, 0.7, 0.7}, day = {1, 1, 1}, dusk = {0.85, 0.6, 0.5}}
 -- Light over the world(blocks, creatures), spells are drawn after it so they glow at night
 AMBIENT_LIGHT = {night = {0.32, 0.35, 0.55}, dawn = {0.85, 0.78, 0.78}, day = {1, 1, 1}, dusk = {0.92, 0.72, 0.62}}
+-- How bright the stars in the sky are
+STAR_ALPHA = {night = 1, dawn = 0.15, day = 0, dusk = 0.3}
+STAR_COUNT = 160
 
 -- Biomes(see world_utils/biomes and the biomes folder)
 UNDERGROUND_DEPTH = 45  -- Tiles under the surface where the underground layers take over from the surface biome

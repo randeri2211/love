@@ -12,15 +12,17 @@ local Spellbooks = require "magic.spellbooks"
 local Background = require "world_utils.background"
 local WorldClock = require "world_utils.worldClock"
 local Building = require "world_utils.building"
+local Theme = require "ui.theme"
+local MenuBackdrop = require "ui.menuBackdrop"
 local placeTimer = 0        -- Time until the held place button places the next block
 local worldCanvas = nil     -- The world is drawn here first so the time of day light can tint it(see love.draw)
 local new_frame = false
 
 function love.load(args)
-    -- local font = love.graphics.newFont("assets/RamadhanMubarok-Regular.otf")
-    -- love.graphics.setFont(font)
+    love.graphics.setFont(GAME_FONT)    -- The pixel font for every text(see assets/assetLoader)
     game_state = MENU_STATE
     Slab.Initialize(args)
+    Theme.apply()       -- Every Slab window in the game colors
     registerAll()       -- Before the first world, placing the player on the ground asks the biomes
     initVars()
 
@@ -84,6 +86,7 @@ function love.update(dt)
         end
     else
         new_frame = false
+        MenuBackdrop.update(dt)
     end
     
     
@@ -99,7 +102,9 @@ end
 
 function love.draw()
     if game_state == MENU_STATE then
-
+        DrawMenu()
+    elseif game_state == PICK_WORKD_STATE then
+        DrawPickWorld()
     elseif game_state == IN_WORLD_STATE then
         -- Sky and distant hills first, they move slower than the camera
         local camX, camY = game_cam:position()
@@ -168,6 +173,8 @@ function love.wheelmoved(x, y)
         else
             player.hotbarSlot = (player.hotbarSlot - 1 + step) % HOTBAR_SIZE + 1
         end
+    elseif game_state == PICK_WORKD_STATE then
+        ScrollWorlds(y)
     end
 end
 

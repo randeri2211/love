@@ -22,9 +22,14 @@ local FADE_TO = 26          -- Tiles under the surface where it is fully dark
 local WALL_SHADE = 0.35     -- How dark the rock walls behind caves are
 local WALL_START = 2        -- Tiles under the surface where the walls start, the top of a cave dug from the surface shows sky
 
+local STAR_PARALLAX = 0.02  -- Stars are the furthest thing, they barely move
+local STAR_FIELD = 2048     -- Pixels before the star pattern repeats sideways
+local STAR_TOP = 0.65       -- Part of the screen height stars appear in, from the top
+
 local layerMeshes = {}
 local skyMesh = nil
 local wallBatch = nil
+local stars = nil           -- {x, y(0-1 of the field), size, phase, speed}, made once
 
 
 local function mix(a, b, t)
@@ -97,6 +102,35 @@ local function drawMesh(index, vertices)
 end
 
 
+local function drawStars(camX, w, h, alpha)
+    -- Twinkling pixels over the sky gradient, behind the hills, the same pattern every time
+    if stars == nil then
+        stars = {}
+        local random = love.math.newRandomGenerator(7)
+        for i = 1, STAR_COUNT do
+            table.insert(stars, {
+                x = random:random() * STAR_FIELD, y = random:random() ^ 1.5,    -- More stars higher up
+                size = random:random() < 0.15 and 2 or 1,
+                phase = random:random() * math.pi * 2, speed = 0.8 + random:random() * 2,
+            })
+        end
+    end
+    local time = love.timer.getTime()
+    local offset = camX * STAR_PARALLAX
+    for i, star in ipairs(stars) do
+        local twinkle = 0.55 + 0.45 * math.sin(time * star.speed + star.phase)
+        love.graphics.setColor(0.9, 0.92, 1, alpha * twinkle)
+        local size = star.size * 2
+        -- The field repeats sideways so any screen width is covered
+        local x = (star.x - offset) % STAR_FIELD
+        while x < w do
+            love.graphics.rectangle("fill", math.floor(x), math.floor(star.y * h * STAR_TOP), size, size)
+            x = x + STAR_FIELD
+        end
+    end
+end
+
+
 function Background.drawSky(camX, camY)
     -- Screen space, before the camera: sky gradient and the silhouette layers, faded to dark underground
     local w, h = love.graphics.getDimensions()
@@ -123,6 +157,11 @@ function Background.drawSky(camX, camY)
     love.graphics.draw(skyMesh)
 
     if dark < 1 then
+        local starAlpha = WorldClock.blend(STAR_ALPHA) * (1 - dark)
+        if starAlpha > 0.01 then
+            drawStars(camX, w, h, starAlpha)
+        end
+
         -- The horizon sits at the plain ground level, each layer moves up and down slower than the camera too
         local horizon = SURFACE_ROW * TILE_SIZE
         for i, layer in ipairs(LAYERS) do

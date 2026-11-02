@@ -146,7 +146,7 @@ function Hud:drawHotbar()
         end
         -- Key number in the corner
         love.graphics.setColor(1, 1, 1, 0.45)
-        love.graphics.print(i % 10, x + 3, y0 + 1, 0, 0.8, 0.8)
+        love.graphics.print(i % 10, x + 3, y0 + 2, 0, 0.5, 0.5)
     end
     local stack = entity.inventory.slots[entity.hotbarSlot]
     if stack then

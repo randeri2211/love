@@ -194,7 +194,7 @@ end
 function printTime()
     local WorldClock = require "world_utils.worldClock"
     local hours = WorldClock.phase() * 24
-    love.graphics.print(string.format("time: %02d:%02d  light %.2f", math.floor(hours), math.floor((hours % 1) * 60), WorldClock.light()), 0, order * 10)
+    love.graphics.print(string.format("time: %02d:%02d  light %.2f", math.floor(hours), math.floor((hours % 1) * 60), WorldClock.light()), 0, order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
@@ -204,44 +204,44 @@ function printBiome()
     local x, y = player.body:getWorldCenter()
     local tx, ty = math.floor(x / TILE_SIZE), math.floor(y / TILE_SIZE)
     local biome = Biomes.at(tx, ty, map.seed, map.settings, Generator.surfaceRow(tx, map.seed, map.settings))
-    love.graphics.print("biome: " .. biome.name, 0, order * 10)
+    love.graphics.print("biome: " .. biome.name, 0, order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
 function printPosition()
     local x, y = loveToMapSmooth(player.body:getWorldCenter())
-    love.graphics.print("pos:(" .. string.format("%.2f",tostring(x)) .. ","..string.format("%.2f",tostring(y)) .. ")",0,order * 10)
+    love.graphics.print("pos:(" .. string.format("%.2f",tostring(x)) .. ","..string.format("%.2f",tostring(y)) .. ")",0,order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
 function printVelocity()
     local x, y = loveToWorld(player.body:getLinearVelocity())
-    love.graphics.print("vel:(" .. string.format("%.2f",tostring(x)) .. ","..string.format("%.2f",tostring(y)) .. ")",0,order * 10)
+    love.graphics.print("vel:(" .. string.format("%.2f",tostring(x)) .. ","..string.format("%.2f",tostring(y)) .. ")",0,order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
 function printAwake()
-    love.graphics.print("awake:" .. tostring(player.body:isAwake()),0,order * 10)
+    love.graphics.print("awake:" .. tostring(player.body:isAwake()),0,order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
 function printGravity()
     local gravity = loveToWorldSingle(player.body:getGravityScale() * GRAVITY)
-    love.graphics.print("gravity:(" .. gravity .. ")",0,order * 10)
+    love.graphics.print("gravity:(" .. gravity .. ")",0,order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
 function printGrounded()
-    love.graphics.print("grounded:" .. tostring(player.grounded),0,order * 10)
+    love.graphics.print("grounded:" .. tostring(player.grounded),0,order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
 function printUp()
-    love.graphics.print("up:" .. tostring(player.up),0,order * 10)
+    love.graphics.print("up:" .. tostring(player.up),0,order * love.graphics.getFont():getHeight())
     order = order + 1
 end
 
 function printJumping()
-    love.graphics.print("jumping:" .. tostring(player.jumping),0,order * 10)
+    love.graphics.print("jumping:" .. tostring(player.jumping),0,order * love.graphics.getFont():getHeight())
     order = order + 1
 end

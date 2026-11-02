@@ -28,7 +28,22 @@ end
 
 
 -- UI
-UI_IMG = {}
-UI_IMG["button"] = love.graphics.newImage("assets/button.png")
-UI_IMG["singlePlayerButton"] = love.graphics.newImage("assets/singlePlayerButton.png")
-UI_IMG["exitButton"] = love.graphics.newImage("assets/exitButton.png")
+-- The pixel font of the whole game(see ui/pixelFont), one row of glyphs split by magenta columns, 9 pixels tall:
+-- capitals use the top 7 rows, the bottom 2 are for the tails of g, j, p, q and y
+-- UI_FONT_GLYPHS lists the characters in the same order as the image, a new glyph goes in both at the same spot
+UI_FONT_GLYPHS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+UI_FONT_CAP_HEIGHT = 7
+
+local function pixelFont(scale)
+    -- The font with every pixel made scale x scale, text drawn with it at scale 1 stays sharp
+    local source = love.image.newImageData("assets/pixelFont.png")
+    local data = love.image.newImageData(source:getWidth() * scale, source:getHeight() * scale)
+    data:mapPixel(function(x, y)
+        return source:getPixel(math.floor(x / scale), math.floor(y / scale))
+    end)
+    local font = love.graphics.newImageFont(data, UI_FONT_GLYPHS, scale)   -- One font pixel between letters
+    font:setFilter("nearest", "nearest")
+    return font
+end
+UI_FONT = pixelFont(1)      -- Titles and buttons, drawn at whole number scales by ui/pixelFont
+GAME_FONT = pixelFont(2)    -- Every other text, the default font of love and Slab(drawn at 0.5 it is UI_FONT size)

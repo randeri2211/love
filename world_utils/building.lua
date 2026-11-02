@@ -87,7 +87,7 @@ function Building.drawPreview(player, x, y)
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", cx + 1, cy + 1, TILE_SIZE - 2, TILE_SIZE - 2)
     if not target.ok and target.reason ~= nil then
-        love.graphics.print(target.reason, cx + TILE_SIZE + 4, cy + 4, 0, 0.8, 0.8)
+        love.graphics.print(target.reason, cx + TILE_SIZE + 4, cy + 4)
     end
     love.graphics.pop()
 end
