@@ -87,7 +87,7 @@ function Entity:damage(damage)
     if self.dying then
         return
     end
-    self.hpBar.currentHP = self.hpBar.currentHP - damage
+    self.hpBar.currentHP = self.hpBar.currentHP - damage * (1 - self:damageReduction())
     self:selfHit()
     if self.hpBar.currentHP <= 0 then
         self:die()
@@ -101,6 +101,11 @@ function Entity:selfBuff(key)
         value = value * effect[key]
     end
     return value
+end
+
+function Entity:damageReduction()
+    -- Part of incoming damage its armor blocks
+    return self.combatStats and self.combatStats.damageReduction or 0
 end
 
 function Entity:gravityScale()

@@ -1,3 +1,5 @@
+local Equipments = require "items.equipments"
+
 local function clampValue(value, low, high)
     return math.max(low, math.min(high, value))
 end
@@ -12,6 +14,19 @@ local function combatStats(entity)
 
     local combatStats = {}
     combatStats.cooldownReduction = 0
+
+    -- The stats it works with: its own plus what its worn armor adds
+    local stats = {}
+    local bonus = entity.equipment and Equipments.stats(entity.equipment) or {}
+    for stat, value in pairs(entity.stats) do
+        stats[stat] = value + (bonus[stat] or 0)
+    end
+    combatStats.stats = stats
+    combatStats.statBonus = bonus
+
+    -- Armor defense blocks part of every hit(see Entity:damage)
+    combatStats.defense = entity.equipment and Equipments.defense(entity.equipment) or 0
+    combatStats.damageReduction = Equipments.damageReduction(combatStats.defense)
 
     -- Fallback for saves made before base values existed
     entity.hpBar.baseMaxHP = entity.hpBar.baseMaxHP or BASE_HP
@@ -28,39 +43,39 @@ local function combatStats(entity)
 
     -- Strength
     local strengthContactModifier = 1
-    combatStats.contactDamage = entity.stats.strength * strengthContactModifier
+    combatStats.contactDamage = stats.strength * strengthContactModifier
 
     -- Intelligence
     local intelligenceMagicDamageModifier = 0.05
-    combatStats.magicDamage = 1 + intelligenceMagicDamageModifier * entity.stats.intelligence
+    combatStats.magicDamage = 1 + intelligenceMagicDamageModifier * stats.intelligence
 
     local intelligenceComplexityModifier = 2
-    combatStats.maxComplexity = BASE_MAX_COMPLEXITY + intelligenceComplexityModifier * entity.stats.intelligence
+    combatStats.maxComplexity = BASE_MAX_COMPLEXITY + intelligenceComplexityModifier * stats.intelligence
 
     -- Wisdom
     local wisdomMaxManaModifier = 1
-    entity.manaBar.maxMana = entity.manaBar.baseMaxMana + wisdomMaxManaModifier * entity.stats.wisdom
+    entity.manaBar.maxMana = entity.manaBar.baseMaxMana + wisdomMaxManaModifier * stats.wisdom
 
     local wisdomCooldownReductionModifier = 0.01
-    combatStats.cooldownReduction = combatStats.cooldownReduction + wisdomCooldownReductionModifier * entity.stats.wisdom
+    combatStats.cooldownReduction = combatStats.cooldownReduction + wisdomCooldownReductionModifier * stats.wisdom
 
     -- Concentration
     local concentrationManaRegenModifier = 1
-    entity.manaBar.manaRegen = entity.manaBar.baseManaRegen + concentrationManaRegenModifier * entity.stats.concentration
+    entity.manaBar.manaRegen = entity.manaBar.baseManaRegen + concentrationManaRegenModifier * stats.concentration
 
     local concentrationCooldownReductionModifier = 0.01
-    combatStats.cooldownReduction = combatStats.cooldownReduction + concentrationCooldownReductionModifier * entity.stats.concentration
+    combatStats.cooldownReduction = combatStats.cooldownReduction + concentrationCooldownReductionModifier * stats.concentration
 
     -- Swiftness
     local swiftnessMovespeedModifier = TILE_SIZE * 0.1
-    entity.movement.maxSpeed = entity.movement.baseMaxSpeed + swiftnessMovespeedModifier * entity.stats.swiftness
+    entity.movement.maxSpeed = entity.movement.baseMaxSpeed + swiftnessMovespeedModifier * stats.swiftness
 
     local swiftnessJumpHeightModifier = TILE_SIZE * 0.1
-    entity.movement.jumpHeight = entity.movement.baseJumpHeight + swiftnessJumpHeightModifier * entity.stats.swiftness
+    entity.movement.jumpHeight = entity.movement.baseJumpHeight + swiftnessJumpHeightModifier * stats.swiftness
 
     -- Constitution
     local constitutionMaxHPModifier = 1
-    entity.hpBar.maxHP = entity.hpBar.baseMaxHP + constitutionMaxHPModifier * entity.stats.constitution
+    entity.hpBar.maxHP = entity.hpBar.baseMaxHP + constitutionMaxHPModifier * stats.constitution
 
     -- Clamp values(negative stats can only lower values down to these minimums)
     combatStats.cooldownReduction = clampValue(combatStats.cooldownReduction, MIN_COOLDOWN_REDUCTION, MAX_COOLDOWN_REDUCTION)

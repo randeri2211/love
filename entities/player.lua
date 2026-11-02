@@ -3,6 +3,7 @@ local Spellbooks = require "magic.spellbooks"
 local Entity = require "entities.entity"
 local Humanoid = require "animations.humanoid"
 local Inventory = require "components.inventory"
+local Equipment = require "components.equipment"
 
 local Player = Entity:new()
 AS = 25
@@ -49,6 +50,8 @@ function Player:new(x, y, name)
     player.manaBar = ManaBar(100, 100, 10)
     player.spellbook = Spellbooks.default()    -- Loading a world replaces it with the saved one
     player.inventory = Inventory(INVENTORY_SIZE)    -- Saved in its own file like the spellbook
+    player.equipment = Equipment()      -- Worn armor, adds to the stats(see CombatStats)
+    player.hotbarSlot = 1               -- Selected hotbar slot, the first row of the inventory
 
     -- Player Init
     player.body:setGravityScale(1)
@@ -406,7 +409,7 @@ end
 
 function Player:damage(damage)
     -- Takes damage like any entity, but dying respawns instead of destroying the body
-    self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage)
+    self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage * (1 - self:damageReduction()))
     self:selfHit()
     if self.hpBar.currentHP <= 0 then
         self:die()

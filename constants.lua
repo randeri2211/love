@@ -1,6 +1,7 @@
 DEBUG = false
 DEBUG_DAY_LENGTH = 60           -- With DEBUG on a whole day takes this many seconds(the world keeps its own setting)
-DEBUG_ONE_HIT_BLOCKS = true     -- With DEBUG on, any hit breaks a block(bedrock still cant break), for digging around in development
+DEBUG_ONE_HIT_BLOCKS = true
+DEBUG_GIVE_KEY = "g"            -- With DEBUG on, gives every armor piece to test equipment     -- With DEBUG on, any hit breaks a block(bedrock still cant break), for digging around in development
 
 SCREEN_X  = 1920
 SCREEN_Y  = 1080
@@ -92,6 +93,7 @@ MAP_FILENAME = "map"
 ENTITIES_FILENAME = "entities_file"
 SPELLS_FILENAME = "spells"
 INVENTORY_FILENAME = "inventory"
+EQUIPMENT_FILENAME = "equipment"
 SAVE_FOLDER = "saves"
 
 SPAWN_X = 0.5       -- Relative to world so on a scale of 0-1
@@ -142,6 +144,15 @@ BEDROCK_ROWS = 3        -- Unbreakable rows at the bottom of the world
 
 -- Items and inventory(see items/ and world_utils/drops)
 INVENTORY_SIZE = 40             -- Slots, 4 rows of 10
+HOTBAR_SIZE = 10                -- The first row of the inventory is the hotbar, picked with 1-9 and 0
+-- Armor slots in the order they show, name is the key in the equipment component and armor.slot of the items
+ARMOR_SLOTS = {
+    {name = "head", label = "Helmet"},
+    {name = "chest", label = "Chest"},
+    {name = "legs", label = "Leggings"},
+    {name = "feet", label = "Boots"},
+}
+DEFENSE_SCALE = 50              -- Damage blocked is defense / (defense + this): 10 defense blocks about 17%, 50 blocks half
 ITEM_STACK = 99                 -- Most items in one slot, items can set their own maxStack
 ITEM_DROP_SIZE = 14             -- Pixels, the icon of an item lying in the world
 ITEM_POP_SPEED = 3 * TILE_SIZE  -- How hard a drop jumps out of a broken block

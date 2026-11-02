@@ -18,6 +18,15 @@ for i, name in ipairs(TILE_ORDER) do
 end
 
 
+-- Item icons that arent blocks, 16px in a row with a 1px gap, drawn tinted by the item(see items/armor)
+ITEM_SHEET = love.graphics.newImage("assets/items.png")
+ITEM_SHEET:setFilter("nearest", "nearest")
+ITEM_TILES = {}
+for i, name in ipairs({"helmet", "chestplate", "leggings", "boots"}) do
+    ITEM_TILES[name] = love.graphics.newQuad((i - 1) * 17, 0, 16, 16, ITEM_SHEET:getDimensions())
+end
+
+
 -- UI
 UI_IMG = {}
 UI_IMG["button"] = love.graphics.newImage("assets/button.png")

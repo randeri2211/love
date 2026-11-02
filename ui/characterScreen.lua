@@ -2,6 +2,7 @@ local Slab = require "libraries.Slab"
 local Humanoid = require "animations.humanoid"
 local Items = require "items.items"
 local Inventories = require "items.inventories"
+local Equipments = require "items.equipments"
 
 -- Character screen: the character with its stats on the left, the inventory grid on the right
 -- Items move with a stack held in the hand: left click picks up, places, merges or swaps a whole stack,
@@ -16,7 +17,7 @@ local STATS_W = 300
 local PREVIEW_H = 170
 local PREVIEW_SCALE = 2.2   -- The character preview drawn bigger than in the world
 local MARGIN = 16
-local STATS_H = 600         -- Tall enough for the preview and every stat line
+local STATS_H = 690         -- Tall enough for the preview, the armor slots and every stat line
 
 -- Colors
 local SLOT_COLOR = {0.12, 0.13, 0.18, 1}
@@ -25,6 +26,10 @@ local HOVER_EDGE = {0.85, 0.85, 1, 1}
 local STAGE_COLOR = {0.07, 0.08, 0.12, 1}
 local HINT_COLOR = {0.6, 0.62, 0.7, 1}
 local HEADER_COLOR = {0.85, 0.75, 1, 1}
+local HOTBAR_SLOT_COLOR = {0.16, 0.17, 0.25, 1}    -- The first row is the hotbar
+local SELECTED_EDGE = {1, 0.85, 0.4, 1}            -- The selected hotbar slot
+local BONUS_COLOR = {0.6, 1, 0.6, 1}               -- Stats added by armor
+local EMPTY_LABEL_COLOR = {1, 1, 1, 0.25}
 
 
 function CharacterScreen:new(owner)
@@ -40,6 +45,9 @@ function CharacterScreen:new(owner)
     Humanoid.face(screen.preview, "right")
     return screen
 end
+
+
+local drawStack     -- Defined with the grid drawing below
 
 
 local function windowOptions(title, x, y, w, h)
@@ -95,16 +103,41 @@ function CharacterScreen:characterWindow(x, y)
         love.graphics.pop()
         Slab.Image("CharacterPreview", {Image = self.previewCanvas})
 
+        -- Armor slots under the character
+        local ex, ey = Slab.GetCursorPos({Absolute = true})
+        self.equipX, self.equipY = ex, ey     -- Where the armor slots are on screen
+        self:handleEquipmentMouse(ex, ey)
+        self:drawEquipment()
+        Slab.Image("CharacterEquipment", {Image = self.equipCanvas})
+        if self.equipHint ~= nil then
+            Slab.Text(self.equipHint, {Color = HINT_COLOR})
+        elseif self.hoveredArmor ~= nil and owner.equipment[self.hoveredArmor] then
+            local stack = owner.equipment[self.hoveredArmor]
+            local armor = ITEM_REGISTRY[stack.item].armor
+            Slab.Text(string.format("%s  defense %d", Items.displayName(stack.item), armor.defense))
+        else
+            Slab.Text("Armor", {Color = HINT_COLOR})
+        end
+
         Slab.Text(owner.name or "Player", {Color = HEADER_COLOR})
         Slab.Text(string.format("HP  %d / %d", math.floor(owner.hpBar.currentHP + 0.5), math.floor(owner.hpBar.maxHP + 0.5)))
         Slab.Text(string.format("Mana  %d / %d", math.floor(owner.manaBar.currentMana + 0.5), math.floor(owner.manaBar.maxMana + 0.5)))
         Slab.NewLine()
 
-        -- Base stats
+        -- Stats with what the armor adds
         Slab.Text("Stats", {Color = HEADER_COLOR})
         local stats = owner.stats
+        local bonus = owner.combatStats and owner.combatStats.statBonus or {}
         for i, stat in ipairs({"strength", "intelligence", "wisdom", "concentration", "swiftness", "constitution"}) do
-            Slab.Text(string.format("%s  %d", stat:sub(1, 1):upper() .. stat:sub(2), stats[stat]))
+            local name = stat:sub(1, 1):upper() .. stat:sub(2)
+            local extra = bonus[stat] or 0
+            if extra ~= 0 then
+                Slab.Text(string.format("%s  %d", name, stats[stat] + extra))
+                Slab.SameLine()
+                Slab.Text(string.format("(%+d)", extra), {Color = BONUS_COLOR})
+            else
+                Slab.Text(string.format("%s  %d", name, stats[stat]))
+            end
         end
         Slab.NewLine()
 
@@ -115,11 +148,80 @@ function CharacterScreen:characterWindow(x, y)
             Slab.Text(string.format("Magic damage  %d%%", math.floor(combat.magicDamage * 100 + 0.5)))
             Slab.Text(string.format("Cooldown reduction  %d%%", math.floor(combat.cooldownReduction * 100 + 0.5)))
             Slab.Text(string.format("Max complexity  %d", combat.maxComplexity))
+            Slab.Text(string.format("Defense  %d   blocks %d%% of damage", combat.defense, math.floor(combat.damageReduction * 100 + 0.5)))
         end
         Slab.Text(string.format("HP regen  %.1f/s   Mana regen  %.1f/s", owner.hpBar.regen, owner.manaBar.manaRegen))
         local jumpTiles = owner.movement.jumpHeight ^ 2 / (2 * GRAVITY * JUMP_GRAVITY_SCALE * owner:gravityScale()) / TILE_SIZE
         Slab.Text(string.format("Speed  %.1f tiles/s   Jump  %.1f tiles", owner.movement.maxSpeed / TILE_SIZE, jumpTiles))
     Slab.EndWindow()
+end
+
+
+-- Equipment
+function CharacterScreen:handleEquipmentMouse(ox, oy)
+    -- Armor slot under the mouse, a click swaps it with the held stack when the held item is armor for that slot
+    local mx, my = Slab.GetMousePosition()
+    self.hoveredArmor = nil
+    if my < oy or my >= oy + CELL or mx < ox or mx >= ox + #ARMOR_SLOTS * CELL then
+        return
+    end
+    local slot = ARMOR_SLOTS[math.floor((mx - ox) / CELL) + 1]
+    self.hoveredArmor = slot.name
+    if Slab.IsMouseClicked(1) or Slab.IsMouseClicked(2) then
+        self:equipClick(slot)
+    end
+end
+
+
+function CharacterScreen:equipClick(slot)
+    local equipment = self.owner.equipment
+    local worn, held = equipment[slot.name], self.held
+    self.equipHint = nil
+    if held == nil then
+        if worn then
+            self.held, equipment[slot.name] = worn, false
+            self.owner.statsDirty = true
+        end
+    elseif Equipments.fits(slot.name, held) then
+        -- Armor is one piece, a held stack of it can only be one
+        equipment[slot.name], self.held = held, worn or nil
+        self.owner.statsDirty = true
+    else
+        self.equipHint = "Only " .. slot.label:lower() .. " armor goes there"
+    end
+end
+
+
+function CharacterScreen:drawEquipment()
+    local w = #ARMOR_SLOTS * CELL
+    if self.equipCanvas == nil then
+        self.equipCanvas = love.graphics.newCanvas(w, CELL)
+    end
+    love.graphics.push("all")
+    love.graphics.setCanvas(self.equipCanvas)
+    love.graphics.origin()
+    love.graphics.clear(0, 0, 0, 0)
+    local font = love.graphics.getFont()
+    for i, slot in ipairs(ARMOR_SLOTS) do
+        local x = (i - 1) * CELL
+        local hovered = slot.name == self.hoveredArmor
+        love.graphics.setColor(SLOT_COLOR)
+        love.graphics.rectangle("fill", x + 2, 2, CELL - 4, CELL - 4, 4)
+        love.graphics.setColor(hovered and HOVER_EDGE or SLOT_EDGE)
+        love.graphics.setLineWidth(hovered and 2 or 1)
+        love.graphics.rectangle("line", x + 2, 2, CELL - 4, CELL - 4, 4)
+        local worn = self.owner.equipment[slot.name]
+        if worn then
+            drawStack(worn, x, 0)
+        else
+            -- Empty slots say what goes in them
+            love.graphics.setColor(EMPTY_LABEL_COLOR)
+            local label = slot.label
+            local scale = math.min(1, (CELL - 8) / font:getWidth(label))
+            love.graphics.print(label, x + CELL / 2 - font:getWidth(label) * scale / 2, CELL / 2 - font:getHeight() * scale / 2, 0, scale, scale)
+        end
+    end
+    love.graphics.pop()
 end
 
 
@@ -167,6 +269,7 @@ end
 
 function CharacterScreen:leftClick(index)
     -- Pick up, place, merge or swap a whole stack
+    self.equipHint = nil
     local slots = self.owner.inventory.slots
     local slot, held = slots[index], self.held
     if held == nil then
@@ -190,6 +293,7 @@ end
 
 function CharacterScreen:rightClick(index)
     -- Empty hand picks up half the stack, a full hand places one item
+    self.equipHint = nil
     local slots = self.owner.inventory.slots
     local slot, held = slots[index], self.held
     if held == nil then
@@ -214,7 +318,7 @@ function CharacterScreen:rightClick(index)
 end
 
 
-local function drawStack(stack, x, y)
+function drawStack(stack, x, y)
     -- An item icon centered in a slot sized square at x, y with its count in the corner
     local pad = (CELL - ICON) / 2
     love.graphics.setColor(1, 1, 1, 1)
@@ -242,10 +346,12 @@ function CharacterScreen:drawGrid(gridW, gridH)
     for i, slot in ipairs(self.owner.inventory.slots) do
         local x = ((i - 1) % COLUMNS) * CELL
         local y = math.floor((i - 1) / COLUMNS) * CELL
-        love.graphics.setColor(SLOT_COLOR)
+        -- The first row is the hotbar, its selected slot outlined in gold
+        local selected = i == self.owner.hotbarSlot
+        love.graphics.setColor(i <= HOTBAR_SIZE and HOTBAR_SLOT_COLOR or SLOT_COLOR)
         love.graphics.rectangle("fill", x + 2, y + 2, CELL - 4, CELL - 4, 4)
-        love.graphics.setColor(i == self.hovered and HOVER_EDGE or SLOT_EDGE)
-        love.graphics.setLineWidth(i == self.hovered and 2 or 1)
+        love.graphics.setColor(i == self.hovered and HOVER_EDGE or (selected and SELECTED_EDGE or SLOT_EDGE))
+        love.graphics.setLineWidth((i == self.hovered or selected) and 2 or 1)
         love.graphics.rectangle("line", x + 2, y + 2, CELL - 4, CELL - 4, 4)
         if slot then
             drawStack(slot, x, y)

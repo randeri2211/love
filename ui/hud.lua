@@ -1,4 +1,5 @@
 local Spellbooks = require "magic.spellbooks"
+local Items = require "items.items"
 
 local Hud = {}
 
@@ -8,6 +9,7 @@ local BAR_W = 260
 local BAR_H = 16
 local GAP = 6
 local COOLDOWN_H = 4
+local HOTBAR_CELL = 44
 local OVERHEAD_W = TILE_SIZE * 1.4  -- Hp bar over enemies
 local OVERHEAD_H = 5
 local OVERHEAD_GAP = 6              -- Pixels above the head
@@ -114,6 +116,47 @@ function Hud:drawCooldown(x, y, spell, caster)
 end
 
 
+function Hud:drawHotbar()
+    -- The first row of the inventory along the bottom of the screen, the selected slot outlined and its item named above
+    local entity = self.entity
+    if entity.inventory == nil then
+        return
+    end
+    local w, h = love.graphics.getDimensions()
+    local size, gap = HOTBAR_CELL, 4
+    local x0 = math.floor(w / 2 - (HOTBAR_SIZE * (size + gap) - gap) / 2)
+    local y0 = h - size - MARGIN
+    local font = love.graphics.getFont()
+    for i = 1, HOTBAR_SIZE do
+        local x = x0 + (i - 1) * (size + gap)
+        local selected = i == entity.hotbarSlot
+        love.graphics.setColor(BG_COLOR)
+        love.graphics.rectangle("fill", x, y0, size, size, 4)
+        love.graphics.setColor(selected and MARKER_COLOR or EDGE_COLOR)
+        love.graphics.setLineWidth(selected and 2 or 1)
+        love.graphics.rectangle("line", x, y0, size, size, 4)
+        local stack = entity.inventory.slots[i]
+        if stack then
+            love.graphics.setColor(1, 1, 1, 1)
+            Items.drawIcon(stack.item, x + 6, y0 + 6, size - 12)
+            if stack.count > 1 then
+                love.graphics.setColor(TEXT_COLOR)
+                love.graphics.print(stack.count, x + size - font:getWidth(tostring(stack.count)) - 3, y0 + size - font:getHeight() - 1)
+            end
+        end
+        -- Key number in the corner
+        love.graphics.setColor(1, 1, 1, 0.45)
+        love.graphics.print(i % 10, x + 3, y0 + 1, 0, 0.8, 0.8)
+    end
+    local stack = entity.inventory.slots[entity.hotbarSlot]
+    if stack then
+        local name = Items.displayName(stack.item)
+        love.graphics.setColor(TEXT_COLOR)
+        love.graphics.print(name, math.floor(w / 2 - font:getWidth(name) / 2), y0 - font:getHeight() - 4)
+    end
+end
+
+
 function Hud:draw(spellEntry)
     -- Drawn in screen space after the camera, spellEntry is the spellbook entry the entity casts(optional)
     local entity = self.entity
@@ -140,6 +183,8 @@ function Hud:draw(spellEntry)
         y = y + BAR_H + 3
     end
 
+    self:drawHotbar()
+
     if spell ~= nil then
         self:drawCooldown(x, y, spell, entity)
 
@@ -148,7 +193,7 @@ function Hud:draw(spellEntry)
         if entity.spellbook ~= nil then
             local key = Spellbooks.keyFor(entity.spellbook, spellEntry.id)
             if key ~= nil then
-                label = "[" .. key .. "] " .. label
+                label = "[Shift+" .. key .. "] " .. label
             end
         end
         love.graphics.setColor(TEXT_COLOR)

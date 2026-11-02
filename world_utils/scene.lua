@@ -1,11 +1,12 @@
 local binser = require "libraries.binser.binser"
 local Spellbooks = require "magic.spellbooks"
 local Inventories = require "items.inventories"
+local Equipments = require "items.equipments"
 
 -- Saves are written with binser, which keeps numbers, booleans, strings and nested tables exactly
 local SAVEABLE = {string = true, number = true, boolean = true, table = true}
 -- Fields that are rebuilt by code instead of saved(animations, and the spellbook which has its own file)
-local SKIP_KEYS = {anim = true, animations = true, spellbook = true, inventory = true, hud = true, __index = true}
+local SKIP_KEYS = {anim = true, animations = true, spellbook = true, inventory = true, equipment = true, hud = true, __index = true}
 
 
 currentWorld = "world"     -- Name of the open world, save and load use it
@@ -81,6 +82,7 @@ function saveScene(worldName)
     writeData(folder .. "/" .. MAP_FILENAME, saveMap())
     writeData(folder .. "/" .. SPELLS_FILENAME, Spellbooks.toData(player.spellbook))
     writeData(folder .. "/" .. INVENTORY_FILENAME, Inventories.toData(player.inventory))
+    writeData(folder .. "/" .. EQUIPMENT_FILENAME, Equipments.toData(player.equipment))
 end
 
 function loadScene(worldName)
@@ -112,6 +114,11 @@ function loadScene(worldName)
     local inventoryData = readData(folder .. "/" .. INVENTORY_FILENAME)
     if inventoryData ~= nil then
         player.inventory = Inventories.fromData(inventoryData)
+    end
+    local equipmentData = readData(folder .. "/" .. EQUIPMENT_FILENAME)
+    if equipmentData ~= nil then
+        player.equipment = Equipments.fromData(equipmentData)
+        player.statsDirty = true    -- The armor adds to the stats
     end
 end
 

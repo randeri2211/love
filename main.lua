@@ -138,6 +138,14 @@ function love.draw()
     end
 end
 
+function love.wheelmoved(x, y)
+    -- The mouse wheel moves the hotbar selection, unless a window is open(Slab uses the wheel to scroll)
+    if game_state == IN_WORLD_STATE and not paused and uihandler.characterScreen == nil and uihandler.spellEditor == nil and y ~= 0 then
+        local step = y > 0 and -1 or 1
+        player.hotbarSlot = (player.hotbarSlot - 1 + step) % HOTBAR_SIZE + 1
+    end
+end
+
 function love.keypressed(key)
     -- Escape closes the top open menu, or asks to quit when nothing is open
     if key == EXIT_KEY then
@@ -188,8 +196,21 @@ function love.keypressed(key)
             elseif key == SPAWN_ZOMBIE_KEY then
                 local mx, my = mouseToLove()
                 map.enemies:addEnemy(ENTITY_REGISTRY.Zombie:new(mx, my))
-            -- Keys bound in the spell editor pick a spell
-            elseif Spellbooks.selectByKey(player.spellbook, key) then
+            -- Number keys pick a hotbar slot(0 is the tenth), with shift held they pick the spell bound to them
+            elseif key:match("^%d$") then
+                if love.keyboard.isDown("lshift", "rshift") then
+                    Spellbooks.selectByKey(player.spellbook, key)
+                else
+                    player.hotbarSlot = key == "0" and 10 or tonumber(key)
+                end
+            elseif DEBUG and key == DEBUG_GIVE_KEY then
+                -- Every armor piece, to test equipment
+                local Inventories = require "items.inventories"
+                for name, item in pairs(ITEM_REGISTRY) do
+                    if item.armor ~= nil then
+                        Inventories.add(player.inventory, name, 1)
+                    end
+                end
             else
                 uihandler:checkKeyIngame(key)
             end

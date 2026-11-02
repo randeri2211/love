@@ -41,6 +41,15 @@ function Items.drawIcon(name, x, y, size)
         end
         block.x, block.y, block.width, block.height = x, y, size, size
         block:draw()
+    elseif item.icon ~= nil then
+        -- An icon from the item sheet tinted with the item color(one shape serves every material)
+        local quad = ITEM_TILES[item.icon]
+        local _, _, qw, qh = quad:getViewport()
+        local r, g, b, a = love.graphics.getColor()
+        local tint = item.tint or {1, 1, 1, 1}
+        love.graphics.setColor(r * tint[1], g * tint[2], b * tint[3], a * (tint[4] or 1))
+        love.graphics.draw(ITEM_SHEET, quad, x, y, 0, size / qw, size / qh)
+        love.graphics.setColor(r, g, b, a)
     elseif item.tile ~= nil then
         local quad = BLOCK_TILES[item.tile]
         local _, _, qw, qh = quad:getViewport()
