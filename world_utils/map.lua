@@ -14,6 +14,7 @@ function Map:new(height, seed, settings)
     map.seed = seed or love.math.random(1, 1000000)
     map.settings = settings
     map.time = 0        -- Seconds of game time, the time of day comes from it(see world_utils/worldClock)
+    map.lightVersion = 0    -- Goes up with every block change, the light reads the map again(see world_utils/lighting)
     if settings ~= nil then
         map.time = DAY_START * (settings.dayLength or DAY_LENGTH)
     end
@@ -304,6 +305,7 @@ function Map:set(x, y, block)
         chunk[index]:destroyHitbox()
     end
     chunk[index] = block
+    self.lightVersion = self.lightVersion + 1
 
     -- The block and its neighbors may have started or stopped touching air
     self:refreshHitbox(x, y)
@@ -429,7 +431,8 @@ local function encodeChunk(chunk)
     local palette, lookup, cells, extra = {}, {}, {}, {}
     for index = 1, CHUNK_SIZE * CHUNK_SIZE do
         local block = chunk[index]
-        if block == nil then
+        if block == nil or (block.isTemporary ~= nil and block:isTemporary()) then
+            -- Temporary blocks(a timed mana block) arent saved, they are air in the save
             cells[index] = 0
         else
             local id = lookup[block.name]
@@ -440,7 +443,8 @@ local function encodeChunk(chunk)
             end
             cells[index] = id
             if block:hasOwnState() then
-                extra[index] = plainCopy(block)
+                -- Blocks that keep links to other things(a mana block and its spell) say what to save themselves
+                extra[index] = block.saveData ~= nil and block:saveData() or plainCopy(block)
             end
         end
     end

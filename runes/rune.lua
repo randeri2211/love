@@ -19,7 +19,8 @@ function Rune:new(name, kind, complexity, manaCost, color)
     -- Modifiers set effects to a function per form name, "default" works on any form
     -- Forms without an effect(and no default) cant use the modifier, false blocks a form the default would cover
     rune.effects = nil
-    -- Forms list their own params for the editor to show, as {label, param name, format}
+    -- Forms list their own params for the editor to show, as {label, param name, format string or function(value) text}
+    -- (a param a form lists itself isnt shown again in the stats every form has, hiddenStats leaves others out)
     rune.stats = nil
     -- Runes that read marks drawn around them set these(see Split):
     -- readMarks(self, marks) turns the marks from Strokes.readMarks into a plain table that is saved with the slot,

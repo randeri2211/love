@@ -11,12 +11,14 @@ local UIHandler = require "ui.uiHandler"
 local Spellbooks = require "magic.spellbooks"
 local Background = require "world_utils.background"
 local WorldClock = require "world_utils.worldClock"
+local Lighting = require "world_utils.lighting"
 local Building = require "world_utils.building"
 local Spawner = require "world_utils.spawner"
+local PlayerCasting = require "magic.playerCasting"
 local Theme = require "ui.theme"
 local MenuBackdrop = require "ui.menuBackdrop"
 local placeTimer = 0        -- Time until the held place button places the next block
-local worldCanvas = nil     -- The world is drawn here first so the time of day light can tint it(see love.draw)
+local worldCanvas = nil     -- The world is drawn here first so the light can be laid over it(see love.draw)
 local new_frame = false
 
 function love.load(args)
@@ -47,17 +49,21 @@ function love.update(dt)
             -- Movement update
             if player_control then
                 player:update(dt)
+            end
+            -- A dead player waits for the respawn, it cant cast or build
+            if not player_control or player:isDead() then
+                PlayerCasting.update(player, nil, false, dt)    -- A wind-up or a held beam stops
+            end
+            if player_control and not player:isDead() then
 
                 -- The mouse acts on the world only when it isnt over a window
                 local overWindow = not Slab.IsVoidHovered()
                 local holdingStack = uihandler.characterScreen ~= nil and uihandler.characterScreen.held ~= nil
 
-                -- Holding the cast button keeps casting, the spell cooldown sets the fire rate
+                -- Holding the cast button builds a cast circle and casts when it is done, over and over(see magic/playerCasting)
                 -- (with a stack in the hand of the character screen the click throws it instead)
                 local spell = Spellbooks.selectedSpell(player.spellbook)
-                if spell ~= nil and love.mouse.isDown(CAST_BUTTON) and not overWindow and not holdingStack then
-                    spell:shoot(player)
-                end
+                PlayerCasting.update(player, spell, love.mouse.isDown(CAST_BUTTON) and not overWindow and not holdingStack, dt)
 
                 -- Holding the place button places the selected hotbar block under the mouse, a few a second
                 placeTimer = math.max(0, placeTimer - dt)
@@ -112,7 +118,7 @@ function love.draw()
         local camX, camY = game_cam:position()
         Background.drawSky(camX, camY)
 
-        -- The world goes on its own canvas, then onto the screen tinted by the light of the time of day
+        -- The world goes on its own canvas with the tile light over it(sky, torches, spells), then onto the screen
         local w, h = love.graphics.getDimensions()
         if worldCanvas == nil or worldCanvas:getWidth() ~= w or worldCanvas:getHeight() ~= h then
             worldCanvas = love.graphics.newCanvas(w, h)
@@ -124,19 +130,24 @@ function love.draw()
             Background.drawWalls(camX, camY)
             -- Map draws entities aswell
             map:draw()
-            player.anim.actor:Draw()
+            if not player:isDead() then
+                player.anim.actor:Draw()
+            end
+            Lighting.update()
+            Lighting.draw()
         game_cam:detach()
         love.graphics.setCanvas()
-        local light = WorldClock.blend(AMBIENT_LIGHT)
         love.graphics.push("all")
         love.graphics.setBlendMode("alpha", "premultiplied")
-        love.graphics.setColor(light[1], light[2], light[3], 1)
+        love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(worldCanvas)
         love.graphics.pop()
 
         -- Spells over the light, so magic glows at night, then where the selected block would go
         game_cam:attach()
             spells:draw()
+            map.enemies:drawCasting()
+            PlayerCasting.draw(player)
             if not paused and Slab.IsVoidHovered() then
                 local mx, my = mouseToLove()
                 Building.drawPreview(player, mx, my)
@@ -247,7 +258,11 @@ function love.keypressed(key)
                 else
                     player.hotbarSlot = key == "0" and 10 or tonumber(key)
                 end
-            elseif DEBUG and key == DEBUG_GLYPH_WALL_KEY then
+            elseif key == DEBUG_CASTER_KEY then
+                -- A test caster at the mouse(see entities/debugCaster)
+                local mx, my = mouseToLove()
+                map.enemies:addEnemy(ENTITY_REGISTRY.DebugCaster:new(mx, my))
+            elseif key == DEBUG_GLYPH_WALL_KEY then
                 -- A glyph wall at the mouse that teaches a rune this character doesnt know yet(any rune when it knows all)
                 local Knowledge = require "magic.knowledge"
                 local names = {}
@@ -265,11 +280,11 @@ function love.keypressed(key)
                 local wall = map:newBlock("GlyphWall", mx, my)
                 wall.rune = names[love.math.random(#names)]
                 map:set(mx, my, wall)
-            elseif DEBUG and key == DEBUG_FORGET_KEY then
+            elseif key == DEBUG_FORGET_KEY then
                 -- Back to only the starting runes, so glyph walls have something to teach
                 require("magic.knowledge").forget(player.knowledge)
                 uihandler:toast("Forgot every rune but " .. table.concat(STARTING_RUNES, ", "))
-            elseif DEBUG and key == DEBUG_GIVE_KEY then
+            elseif key == DEBUG_GIVE_KEY then
                 -- Every armor piece and every wand part, to test equipment
                 local Inventories = require "items.inventories"
                 for name, item in pairs(ITEM_REGISTRY) do

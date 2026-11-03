@@ -6,6 +6,7 @@ local Hud = require "ui.hud"
 local Grimoire = require "ui.grimoire"
 local ItemBrowser = require "ui.itemBrowser"
 local Theme = require "ui.theme"
+local PixelFont = require "ui.pixelFont"
 local Spellbooks = require "magic.spellbooks"
 
 local UIHandler = {}
@@ -22,6 +23,7 @@ function UIHandler:new()
     uihandler.itemBrowser = nil     -- Debug list of every item, nil when closed
     uihandler.toasts = {}           -- Short messages at the top of the screen, {text, color, time}
     uihandler.showQuitConfirm = false
+    uihandler.leavingWorld = false  -- The confirmation is for going back to the main menu instead of quitting
     uihandler.wasPaused = false     -- Pause state to go back to when the quit confirmation is cancelled
     uihandler.showPauseMenu = false
     uihandler.pauseMessage = nil    -- Feedback line in the pause menu, like "Saved"
@@ -82,7 +84,7 @@ end
 function UIHandler:pauseMenu()
     -- Escape menu in a world: resume, save, load the last save or quit
     local w, h = love.graphics.getDimensions()
-    local ww, wh = 260, 230
+    local ww, wh = 260, 260
     local buttonW = ww - 40
 
     Slab.BeginWindow("PauseMenu", {
@@ -115,6 +117,9 @@ function UIHandler:pauseMenu()
                 loadScene(currentWorld)
                 self:closePauseMenu()
             end
+            if Slab.Button("Main menu", {W = buttonW}) then
+                self:openQuitConfirm(true)
+            end
             if Slab.Button("Quit game", {W = buttonW}) then
                 self:openQuitConfirm()
             end
@@ -128,9 +133,10 @@ function UIHandler:pauseMenu()
 end
 
 
-function UIHandler:openQuitConfirm()
-    -- Pauses the game behind the confirmation
+function UIHandler:openQuitConfirm(leavingWorld)
+    -- Pauses the game behind the confirmation, leavingWorld asks about going back to the main menu instead
     self.showQuitConfirm = true
+    self.leavingWorld = leavingWorld == true
     self.wasPaused = paused
     paused = true
     player_control = false
@@ -139,8 +145,28 @@ end
 
 function UIHandler:closeQuitConfirm()
     self.showQuitConfirm = false
+    self.leavingWorld = false
     paused = self.wasPaused
     player_control = not paused
+end
+
+
+function UIHandler:leaveWorld(save)
+    -- Back to the main menu from a world, saving it first when asked
+    -- Every world menu closes(the character screen puts a held stack back first, so the save keeps it)
+    self.showQuitConfirm, self.leavingWorld, self.showPauseMenu = false, false, false
+    if self.characterScreen ~= nil then
+        self:toggleCharacterScreen()
+    end
+    self.spellEditor, self.grimoire, self.itemBrowser, self.showMap = nil, nil, nil, false
+    self.toasts = {}
+    Slab.SetInputFocus(nil)
+    if save then
+        saveScene(currentWorld)
+    end
+    -- A fresh empty world until the next one is picked, like when the game starts
+    initVars()
+    game_state = MENU_STATE
 end
 
 
@@ -312,7 +338,23 @@ function UIHandler:draw()
         end
         self.hud:draw(Spellbooks.selectedEntry(player.spellbook))
         self:drawToasts()
+        if player:isDead() then
+            self:drawDeath()
+        end
     end
+end
+
+
+function UIHandler:drawDeath()
+    -- The world darkens, "You died" and the seconds left until the respawn in the middle of the screen
+    local w, h = love.graphics.getDimensions()
+    love.graphics.push("all")
+    love.graphics.setColor(0.05, 0.02, 0.08, 0.55)
+    love.graphics.rectangle("fill", 0, 0, w, h)
+    Theme.title("You died", w / 2, h / 2 - 90, 6)
+    love.graphics.setColor(Theme.COLORS.text)
+    PixelFont.print("Back in " .. math.max(1, math.ceil(player.deathTimer)), w / 2, h / 2 + 10, 4, "center")
+    love.graphics.pop()
 end
 
 
@@ -349,9 +391,12 @@ function UIHandler:quitConfirm()
     -- Small centered window asking before closing the game
     local w, h = love.graphics.getDimensions()
     local ww, wh = 300, 110
+    if self.leavingWorld then
+        ww = 360
+    end
 
     Slab.BeginWindow("QuitConfirm", {
-        Title = "Quit",
+        Title = self.leavingWorld and "Main menu" or "Quit",
         AllowMove = false,
         AllowResize = false,
         AutoSizeWindow = false,
@@ -365,11 +410,23 @@ function UIHandler:quitConfirm()
         Slab.BeginLayout("QuitConfirmLayout", {
             AlignX = "center",
         })
-            Slab.Text("Are you sure you want to quit?")
-            Slab.NewLine()
-
-            if Slab.Button("Quit") then
-                love.event.quit()
+            if self.leavingWorld then
+                -- Worlds only keep what was saved, so leaving offers to save first
+                Slab.Text("Save before going to the main menu?")
+                Slab.NewLine()
+                if Slab.Button("Save and leave") then
+                    self:leaveWorld(true)
+                end
+                Slab.SameLine()
+                if Slab.Button("Leave") then
+                    self:leaveWorld(false)
+                end
+            else
+                Slab.Text("Are you sure you want to quit?")
+                Slab.NewLine()
+                if Slab.Button("Quit") then
+                    love.event.quit()
+                end
             end
             Slab.SameLine()
             if Slab.Button("Cancel") then

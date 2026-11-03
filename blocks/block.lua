@@ -65,12 +65,13 @@ function Block:draw()
 end
 
 
-function Block:damage(dmg, power)
+function Block:damage(dmg, power, source)
     -- power is checked against the hardness(a spell passes its dig cap, see Form:digReach), dmg is what the block loses
     -- (spells only deal part of their damage to terrain, Dig runes raise it)
+    -- source is what hit it, a spell or a creature clawing at it, nil when unknown(only mana blocks use it)
     power = power or dmg
     -- Development: blocks break on any hit, the bottom of the world still holds
-    if DEBUG and DEBUG_ONE_HIT_BLOCKS and self.damageThreshold ~= math.huge then
+    if DEBUG_ONE_HIT_BLOCKS and self.damageThreshold ~= math.huge then
         self:breakApart()
         return
     end
@@ -106,6 +107,20 @@ function Block:breakApart()
     self:destroy()
     -- Whatever grew on it comes down too
     Flora.fell(map, self.mx, self.my)
+    -- So do blocks it was holding up(torches)
+    for i, side in ipairs({{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) do
+        local x, y = self.mx + side[1], self.my + side[2]
+        local block = map:get(x, y)
+        if block ~= nil and block.needsSupport and not Block.supported(x, y) then
+            block:breakApart()
+        end
+    end
+end
+
+
+function Block.supported(x, y)
+    -- True when a solid block is next to map cell x, y(what a torch needs to stay up)
+    return map:isSolid(x - 1, y) or map:isSolid(x + 1, y) or map:isSolid(x, y - 1) or map:isSolid(x, y + 1)
 end
 
 

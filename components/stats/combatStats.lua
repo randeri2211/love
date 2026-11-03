@@ -7,12 +7,12 @@ local function clampValue(value, low, high)
 end
 
 local function combatStats(entity)
-    -- Strength - Gives extra contact damage for now(maybe melee weapons if it suits the genre)
+    -- Strength - Makes worn armor sturdier(more defense from it)
     -- Intelligence - Gives bonus magic damage and small max mana bonus
     -- Wisdom - Gives bonus max mana and slight cooldown reduction
     -- Concentration - Gives bonus mana regen and slight cooldown reduction
     -- Swiftness - Gives movement speed and jump height
-    -- Constitution - Gives max hp
+    -- Constitution - Gives max hp and a little hp regen
 
     local combatStats = {}
     combatStats.cooldownReduction = 0
@@ -26,8 +26,9 @@ local function combatStats(entity)
     combatStats.stats = stats
     combatStats.statBonus = bonus
 
-    -- Armor defense blocks part of every hit(see Entity:damage)
-    combatStats.defense = entity.equipment and Equipments.defense(entity.equipment) or 0
+    -- Armor defense blocks part of every hit(see Entity:damage), Strength makes the worn armor give more of it
+    local armorDefense = entity.equipment and Equipments.defense(entity.equipment) or 0
+    combatStats.defense = armorDefense * math.max(0, 1 + STRENGTH_ARMOR * stats.strength)
     combatStats.damageReduction = Equipments.damageReduction(combatStats.defense)
 
     -- Element resistances: its own(entity.resistances) plus its armor, each blocks its element like defense blocks the rest
@@ -61,10 +62,6 @@ local function combatStats(entity)
     local manaPercent = entity.manaBar.currentMana / entity.manaBar.maxMana
 
 
-    -- Strength
-    local strengthContactModifier = 1
-    combatStats.contactDamage = stats.strength * strengthContactModifier
-
     -- Intelligence
     local intelligenceMagicDamageModifier = 0.05
     combatStats.magicDamage = 1 + intelligenceMagicDamageModifier * stats.intelligence
@@ -84,6 +81,9 @@ local function combatStats(entity)
     entity.manaBar.manaRegen = entity.manaBar.baseManaRegen + concentrationManaRegenModifier * stats.concentration
         + combatStats.tool.manaRegen    -- Wands help keep up with fast casting
 
+    -- Cast speed, how fast cast circles build(see magic/playerCasting), gear can add to it later
+    combatStats.castSpeed = math.max(MIN_CAST_SPEED, 1 + CONCENTRATION_CAST_SPEED * stats.concentration + (bonus.castSpeed or 0))
+
     local concentrationCooldownReductionModifier = 0.01
     combatStats.cooldownReduction = combatStats.cooldownReduction + concentrationCooldownReductionModifier * stats.concentration
 
@@ -97,6 +97,7 @@ local function combatStats(entity)
     -- Constitution
     local constitutionMaxHPModifier = 1
     entity.hpBar.maxHP = entity.hpBar.baseMaxHP + constitutionMaxHPModifier * stats.constitution
+    entity.hpBar.regen = entity.hpBar.baseRegen + CONSTITUTION_HP_REGEN * stats.constitution
 
     -- Clamp values(negative stats can only lower values down to these minimums)
     combatStats.cooldownReduction = clampValue(combatStats.cooldownReduction, MIN_COOLDOWN_REDUCTION, MAX_COOLDOWN_REDUCTION)
@@ -107,6 +108,12 @@ local function combatStats(entity)
     entity.manaBar.maxMana = math.max(entity.manaBar.maxMana, 1)
     entity.movement.maxSpeed = math.max(entity.movement.maxSpeed, entity.movement.baseMaxSpeed / 10)
     entity.movement.jumpHeight = math.max(entity.movement.jumpHeight, entity.movement.baseJumpHeight / 10)
+
+    -- What every spell gets multiplied by, the stats and the wand or staff together
+    -- Spells(Spell:getDamage, getCooldown, getManaCost) and the character screen both read these
+    combatStats.spellDamage = combatStats.magicDamage * combatStats.tool.damage
+    combatStats.spellCooldown = (1 - combatStats.cooldownReduction) * combatStats.tool.cooldown
+    combatStats.spellManaCost = combatStats.tool.manaCost
 
     -- Buffs from Self spells on it go on top of the stats(a Self effect marks the stats dirty when it starts and ends)
     entity.movement.maxSpeed = entity.movement.maxSpeed * entity:selfBuff("haste") * Statuses.speedFactor(entity)    -- Frost slows

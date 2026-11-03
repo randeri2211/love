@@ -22,7 +22,7 @@ local STATS_W = 300
 local PREVIEW_H = 170
 local PREVIEW_SCALE = 2.2   -- The character preview drawn bigger than in the world
 local MARGIN = 16
-local STATS_H = 940         -- Tall enough for the preview, the equipment slots and every stat line
+local STATS_H = 962         -- Tall enough for the preview, the equipment slots and every stat line
 local INVENTORY_EXTRA_H = 78    -- Inventory window height over the grid: title and the hint lines
 
 -- The row of equipment slots under the character: the armor, then the hands
@@ -197,10 +197,16 @@ function CharacterScreen:characterWindow(x, y)
         Slab.Text("Combat", {Color = HEADER_COLOR})
         local combat = owner.combatStats
         if combat ~= nil then
-            Slab.Text(string.format("Magic damage  %d%%", math.floor(combat.magicDamage * 100 + 0.5)))
-            Slab.Text(string.format("Cooldown reduction  %d%%", math.floor(combat.cooldownReduction * 100 + 0.5)))
+            -- Spell values as one change each, the same multipliers spells use(see Spell.multipliers)
+            local function change(multiplier)
+                return string.format("%+d%%", math.floor((multiplier - 1) * 100 + 0.5))
+            end
+            Slab.Text("Spell damage  " .. change(combat.spellDamage))
+            Slab.Text("Spell cooldown  " .. change(combat.spellCooldown))
+            Slab.Text("Mana cost  " .. change(combat.spellManaCost))
             Slab.Text(string.format("Max complexity  %d", combat.maxComplexity))
-            Slab.Text(string.format("Defense  %d", combat.defense))
+            Slab.Text("Cast speed  " .. change(combat.castSpeed))
+            Slab.Text(string.format("Defense  %d", math.floor(combat.defense + 0.5)))
             Slab.Text(string.format("Blocks  %d%% of damage", math.floor(combat.damageReduction * 100 + 0.5)))
             Slab.Text(string.format("Crit  %d%% for %d%%", math.floor(combat.critChance * 100 + 0.5), math.floor(combat.critMultiplier * 100 + 0.5)))
             -- Resistances as the part of each element they block
@@ -209,12 +215,7 @@ function CharacterScreen:characterWindow(x, y)
             end
             Slab.Text("Resist  " .. resist("Fire") .. "  " .. resist("Frost"))
             Slab.Text("        " .. resist("Poison") .. "  " .. resist("Lightning"))
-            -- What the wand or staff does to spells
-            local tool = combat.tool
             Slab.Text(string.format("Dig cap  %d", combat.digCap))
-            Slab.Text(string.format("Spell damage  %d%%", math.floor(tool.damage * 100 + 0.5)))
-            Slab.Text(string.format("Spell cooldown  %d%%", math.floor(tool.cooldown * 100 + 0.5)))
-            Slab.Text(string.format("Mana cost  %d%%", math.floor(tool.manaCost * 100 + 0.5)))
         end
         Slab.Text(string.format("HP regen  %.1f/s", owner.hpBar.regen))
         Slab.Text(string.format("Mana regen  %.1f/s", owner.manaBar.manaRegen))

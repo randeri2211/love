@@ -4,6 +4,7 @@ local Movement = require "components.movement"
 local Humanoid = require "animations.humanoid"
 local Elements = require "magic.elements"
 local ElementFx = require "magic.elementFx"
+local EnemyCasting = require "magic.enemyCasting"
 
 -- A slow humanoid that shambles toward the player with its arms out, the same body as the player
 local Zombie = Enemy:new()
@@ -58,6 +59,7 @@ function Zombie:new(x, y)
     zombie.radius = zombie.width / 2
     zombie.movement = Movement(ZOMBIE_SPEED, BASE_JUMP_HEIGHT)
     zombie.hpBar.regen = 0
+    zombie.hpBar.baseRegen = 0
     zombie.contactDamage = ZOMBIE_CONTACT_DAMAGE    -- Hurts the player by touching them(see Player:checkContactDamage)
     zombie.direction = "right"
     zombie.walkTime = 0     -- Drives the arm sway
@@ -158,9 +160,10 @@ end
 
 
 function Zombie:onMeleeHit(target)
-    -- Its touch just hurt the target, the arms swipe at them
+    -- Its touch just hurt the target(the player, or a mana block it clawed at), the arms swipe at them
     local x = self.body:getWorldCenter()
-    local side = target.body:getWorldCenter() >= x and 1 or -1
+    local targetX = target.body ~= nil and target.body:getWorldCenter() or target.x + target.width / 2
+    local side = targetX >= x and 1 or -1
     self:face(side > 0 and "right" or "left")
     self.swipe = {time = 0, side = side}
 end
@@ -222,6 +225,8 @@ function Zombie:update(dt)
     end
 
     Entity.update(self, dt)
+    EnemyCasting.update(self, dt)      -- Zombies that know spells cast them(see magic/enemyCasting)
+    self:hitManaBlocks(dt)             -- Clawing at mana blocks in its way
     groundRay(self)
     self.body:setGravityScale(self:gravityScale())     -- Self spells on it can make it lighter
 
@@ -233,7 +238,10 @@ function Zombie:update(dt)
     -- Shambles toward the player once it is close enough to notice them
     local chasing = math.abs(dx) <= ZOMBIE_SIGHT and math.abs(py - y) <= ZOMBIE_SIGHT and math.abs(dx) > self.width / 2
     vx = self.movement.pushX or 0
-    if chasing then
+    -- It stands still while it builds a cast circle, turned toward the player
+    if self.casting ~= nil then
+        self:face(side > 0 and "right" or "left")
+    elseif chasing then
         self:face(side > 0 and "right" or "left")
         vx = vx + side * self.movement.maxSpeed
         -- A block in front at its feet with room above it gets stepped up with a hop

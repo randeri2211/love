@@ -782,26 +782,40 @@ function SpellEditor:info(x, y)
         end
         Slab.NewLine()
 
-        -- Stats every form has
+        -- Stats every form has, unless the form hides them(a Block deals no damage) or shows them itself(a Self duration)
+        local formRune = RUNE_REGISTRY[inspected.core]
+        local hidden = {}
+        for key in pairs(formRune.hiddenStats or {}) do
+            hidden[key] = true
+        end
+        for i, stat in ipairs(formRune.stats or {}) do
+            hidden[stat[2]] = true
+        end
         -- What a cast by the player deals, with its stats and wand or staff(see Spell:getDamage)
         local damage = inspected:getDamage(player)
-        Slab.Text(string.format("Damage: %.1f", damage))
-        Slab.Text(string.format("Terrain damage: %.1f (%.0f%%)", damage * params.terrainDamage, params.terrainDamage * 100))
-        Slab.Text("Count: " .. params.count)
+        if not hidden.damage then
+            Slab.Text(string.format("Damage: %.1f", damage))
+            Slab.Text(string.format("Terrain damage: %.1f (%.0f%%)", damage * params.terrainDamage, params.terrainDamage * 100))
+        end
+        if not hidden.count then
+            Slab.Text("Count: " .. params.count)
+        end
         if params.repeats > 1 then
             Slab.Text("Repeats: " .. params.repeats)
         end
-        Slab.Text(string.format("Lifetime: %.1fs", params.lifetime))
+        if not hidden.lifetime then
+            Slab.Text(string.format("Lifetime: %.1fs", params.lifetime))
+        end
         if params.recoil > 0 then
             Slab.Text(string.format("Recoil: %.0f", params.recoil * RECOIL_SPEED * params.cooldownScale))
         end
 
-        -- Stats the form rune lists for itself(label, param name, format)
-        local formRune = RUNE_REGISTRY[inspected.core]
+        -- Stats the form rune lists for itself(label, param name, format string or a function giving the text)
         for i, stat in ipairs(formRune.stats or {}) do
             local value = params[stat[2]]
             if value ~= nil then
-                Slab.Text(stat[1] .. ": " .. string.format(stat[3], value))
+                local text = type(stat[3]) == "function" and stat[3](value) or string.format(stat[3], value)
+                Slab.Text(stat[1] .. ": " .. text)
             end
         end
 
@@ -810,7 +824,10 @@ function SpellEditor:info(x, y)
             Slab.Text(string.format("Burn: %.1f/s for %.1fs", params.burnDps, params.burnTime))
         end
         if params.frostSlow > 0 then
-            Slab.Text(string.format("Frost: %d%% slower for %.1fs", math.floor(math.min(params.frostSlow, FROST_MAX_SLOW) * 100 + 0.5), params.frostTime))
+            local slow = math.min(params.frostSlow, FROST_MAX_SLOW)
+            local frozen = slow >= 1 and "Frost: frozen" or string.format("Frost: %d%% slower", math.floor(slow * 100 + 0.5))
+            Slab.Text(string.format("%s for %.1fs", frozen, params.frostTime))
+            Slab.Text(string.format("  hits on it +%d%% damage", math.floor(params.frostShatter * 100 + 0.5)))
         end
         if params.poisonDps > 0 then
             Slab.Text(string.format("Poison: %.1f/s for %.1fs", params.poisonDps, params.poisonTime))

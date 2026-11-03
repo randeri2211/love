@@ -20,7 +20,12 @@ end
 
 function Spell.isBlocked(formName, runeName)
     -- True when the rune has no effect for this form(see Rune:worksWith)
+    -- A form with an allows list only takes the modifiers on it(a Block), triggers always work
     local rune = RUNE_REGISTRY[runeName]
+    local form = RUNE_REGISTRY[formName]
+    if rune ~= nil and form ~= nil and form.allows ~= nil and rune.kind == "modifier" and not form.allows[runeName] then
+        return true
+    end
     return rune ~= nil and not rune:worksWith(formName)
 end
 
@@ -245,6 +250,7 @@ function Spell.fromData(data, depth)
         if type(slot) == "table" then
             runeName, childData, drawingData = slot[1], slot[2], slot.drawing
         end
+        runeName = RUNE_RENAMES[runeName] or runeName     -- Saves from before a rune was renamed
         local rune = type(runeName) == "string" and RUNE_REGISTRY[runeName] or nil
         local drawing = drawingFromData(drawingData, rune)
 
@@ -282,14 +288,22 @@ function Spell:getMaxComplexity(caster)
 end
 
 
-function Spell:getCooldown(caster)
-    -- More complex spells take longer to cast again, cooldown reduction shortens it
-    local cooldownReduction = 0
-    if caster.combatStats ~= nil then
-        cooldownReduction = caster.combatStats.cooldownReduction
+function Spell.multipliers(caster)
+    -- What the caster stats and wand or staff do to every spell(see CombatStats), casters without combat stats cast plainly
+    -- Returns damage, cooldown, mana cost
+    local combat = caster.combatStats
+    if combat == nil then
+        return 1, 1, 1
     end
+    return combat.spellDamage, combat.spellCooldown, combat.spellManaCost
+end
+
+
+function Spell:getCooldown(caster)
+    -- More complex spells take longer to cast again, cooldown reduction and the tool change it
     local params = self:getParams()
-    return params.complexity * COOLDOWN_PER_COMPLEXITY * params.cooldownScale * (1 - cooldownReduction) * Spell.toolEffect(caster).cooldown
+    local damage, cooldown = Spell.multipliers(caster)
+    return params.complexity * COOLDOWN_PER_COMPLEXITY * params.cooldownScale * cooldown
 end
 
 
@@ -302,14 +316,15 @@ end
 function Spell:getDamage(caster)
     -- Damage a cast deals for this caster: the compiled damage, its magic damage stat and its wand or staff
     -- The spell editor shows this too, so what it says is what lands
-    local magicDamage = caster.combatStats and caster.combatStats.magicDamage or 1
-    return self:getParams().damage * magicDamage * Spell.toolEffect(caster).damage
+    local damage = Spell.multipliers(caster)
+    return self:getParams().damage * damage
 end
 
 
 function Spell:getManaCost(caster)
     -- Mana a cast takes from this caster, the tool can make it cheaper(rounded like the compiled cost)
-    return math.floor(self:getParams().manaCost * Spell.toolEffect(caster).manaCost * 10 + 0.5) / 10
+    local damage, cooldown, manaCost = Spell.multipliers(caster)
+    return math.floor(self:getParams().manaCost * manaCost * 10 + 0.5) / 10
 end
 
 
@@ -363,10 +378,7 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
         if not self:canCast(caster) then
             return
         end
-        self.cooldownEnd = spells.time + self:getCooldown(caster)
-        self.cooldownClock = spells
     end
-    caster.manaBar.currentMana = caster.manaBar.currentMana - self:getManaCost(caster)
 
     -- Default origin and direction
     local defaultOrigin = x == nil or y == nil
@@ -392,7 +404,21 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
         x, y = caster:castOrigin(dirX, dirY)
     end
 
-    spells:addCircle(self, x, y, dirX, dirY)
+    -- Forms that need room to appear(a Block) can refuse the cast here, before the mana and the cooldown are paid
+    local placement = nil
+    if params.form.place ~= nil then
+        placement = params.form.place(caster, params, x, y, dirX, dirY, triggered)
+        if placement == nil then
+            return
+        end
+    end
+    if not triggered then
+        self.cooldownEnd = spells.time + self:getCooldown(caster)
+        self.cooldownClock = spells
+    end
+    caster.manaBar.currentMana = caster.manaBar.currentMana - self:getManaCost(caster)
+
+    spells:addCircle(self, x, y, dirX, dirY, caster.castBuilt)
 
     -- The caster raises their hands toward the cast(only for casts they make, not triggered children)
     if not triggered and caster.castAt ~= nil then
@@ -415,14 +441,17 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
     -- target is what a trigger happened to, Self spells go on it(see Spells:trigger)
     -- The caster stats and the wand or staff make it stronger or weaker(see getDamage), the tool adds its knockback
     local tool = Spell.toolEffect(caster)
+    -- channel makes a laser held: it stays while the caster holds the cast(see magic/playerCasting and Laser:updateHeld)
     local castParams = setmetatable({damage = self:getDamage(caster), knockback = params.knockback + tool.knockback,
-        triggered = triggered == true, target = target}, {__index = params})
+        triggered = triggered == true, target = target, channel = not triggered and caster.channelCast == true,
+        placement = placement, spell = self}, {__index = params})
 
     self:spawnVolley(caster, castParams, x, y, dirX, dirY)
 
     -- Repeat, more volleys in a row the same way, already paid for in the mana cost
     -- Casts the caster made follow their hands, triggered ones stay where they were triggered
-    for shot = 2, params.repeats do
+    -- A held laser is one long cast, it doesnt repeat
+    for shot = 2, castParams.channel and 1 or params.repeats do
         spells:schedule((shot - 1) * REPEAT_DELAY, function()
             local shotX, shotY = x, y
             if defaultOrigin and caster.castOrigin ~= nil then
@@ -457,6 +486,26 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
             -- Elements it carries to its hits and shows while it flies(see magic/elements)
             instance.elements = Elements.of(castParams)
             instance.elementParams = instance.elements and Elements.pick(castParams)
+            instance.glow = castParams.glow     -- Light runes, how bright a light it is(see Form:light)
+            -- Sent off by a mana block(its onHit or onExpire), it passes through that block(see Form:isCaster)
+            instance.fromBlock = castParams.form.sourceBlock(castParams)
+            if castParams.channel and instance.hold ~= nil then
+                -- A held laser: it follows the aim at its angle in the fan, hits each thing once per cooldown,
+                -- costs the spell mana once per cooldown and pushes like a cast every time(Recoil)
+                local spell, params = self, castParams
+                instance:hold(angle, self:getCooldown(caster), self:getManaCost(caster), function(aimX, aimY)
+                    if params.recoil > 0 and caster.push ~= nil then
+                        local strength = params.recoil * RECOIL_SPEED * params.cooldownScale
+                        local pushX, pushY = Spell.facingDirection(params, aimX < 0 and -1 or 1)
+                        if pushX == nil then
+                            pushX, pushY = -aimX, -aimY
+                        end
+                        caster:push(pushX * strength, pushY * strength)
+                    end
+                end)
+                caster.channel = caster.channel or {}
+                table.insert(caster.channel, instance)
+            end
             local t = {}
             t.spell = self
             t.instance = instance

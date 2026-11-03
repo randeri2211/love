@@ -5,8 +5,8 @@ local WorldClock = {}
 
 
 function WorldClock.dayLength()
-    -- Seconds in a day, the world setting(saved with it), or a short day for testing with DEBUG on
-    if DEBUG and DEBUG_DAY_LENGTH ~= nil then
+    -- Seconds in a day, the world setting(saved with it), or a short day for testing(DEBUG_DAY_LENGTH)
+    if DEBUG_DAY_LENGTH ~= nil then
         return DEBUG_DAY_LENGTH
     end
     return map.settings and map.settings.dayLength or DAY_LENGTH

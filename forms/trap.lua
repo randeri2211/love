@@ -48,12 +48,13 @@ end
 
 
 function Trap:enemiesInRange()
-    -- Enemies overlapping the trigger zone
+    -- Creatures overlapping the trigger zone: every enemy and the player, not the one who laid it
     local x, y = self.body:getWorldCenter()
     local r = self.triggerRadius
     local found = {}
     p_world:queryBoundingBox(x - r, y - r, x + r, y + r, function(fixture)
-        if fixture:getCategory() == ENEMY_CATEGORY then
+        local category = fixture:getCategory()
+        if (category == ENEMY_CATEGORY or category == PLAYER_CATEGORY) and not self:isCaster(getEntityFromFixture(fixture)) then
             local x1, y1, x2, y2 = fixture:getBoundingBox()
             local cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
             if distance(cx, cy, x, y) <= r + math.min(x2 - x1, y2 - y1) / 2 then
@@ -136,6 +137,15 @@ end
 
 function Trap:onContact(fixture, entity, contact)
     -- Landing on blocks or bumping enemies isnt a hit, the trigger zone handles enemies
+end
+
+
+function Trap:preSolve(fixture, contact)
+    -- Only blocks hold it up, creatures walk through it into the trigger zone
+    local category = fixture:getCategory()
+    if category == ENEMY_CATEGORY or category == PLAYER_CATEGORY then
+        contact:setEnabled(false)
+    end
 end
 
 

@@ -91,13 +91,20 @@ end
 
 
 function Hud:drawOverhead(x, top)
-    -- Small hp bar centered above an entity in world space(inside the camera), only once it is hurt
-    local hpBar = self.entity.hpBar
-    if hpBar == nil or hpBar.currentHP >= hpBar.maxHP then
-        return
-    end
+    -- Small bars centered above an entity in world space(inside the camera): hp once it is hurt,
+    -- and under it mana for enemies that cast(see magic/enemyCasting)
+    local entity = self.entity
+    local hpBar = entity.hpBar
+    local y = top - OVERHEAD_GAP - OVERHEAD_H
     love.graphics.push("all")
-    self:drawBar("hp", x - OVERHEAD_W / 2, top - OVERHEAD_GAP - OVERHEAD_H, nil, hpBar.currentHP, hpBar.maxHP, HP_COLOR, nil, OVERHEAD_W, OVERHEAD_H)
+    if entity.spells ~= nil and entity.manaBar ~= nil then
+        local manaBar = entity.manaBar
+        self:drawBar("mana", x - OVERHEAD_W / 2, y, nil, manaBar.currentMana, manaBar.maxMana, MANA_COLOR, nil, OVERHEAD_W, OVERHEAD_H)
+        y = y - OVERHEAD_H - 2
+    end
+    if hpBar ~= nil and hpBar.currentHP < hpBar.maxHP then
+        self:drawBar("hp", x - OVERHEAD_W / 2, y, nil, hpBar.currentHP, hpBar.maxHP, HP_COLOR, nil, OVERHEAD_W, OVERHEAD_H)
+    end
     love.graphics.pop()
 end
 

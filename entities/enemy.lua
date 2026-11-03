@@ -23,6 +23,7 @@ function Enemy:new(x, y)
     enemy.radius = 50
     enemy.height = enemy.radius * 2
     enemy.hpBar.regen = 1   -- Enemies do not regen health by default?
+    enemy.hpBar.baseRegen = enemy.hpBar.regen     -- What stat changes start from(see CombatStats)
     enemy.name = "Enemy"
     enemy.lastPos = {x, y}
 
@@ -115,6 +116,30 @@ function Enemy:keepLoaded()
         self.body:setActive(active)
     end
     return active
+end
+
+function Enemy:hitManaBlocks(dt)
+    -- Its touch hurts mana blocks it pushes against like it hurts the player, once per CONTACT_IMMUNITY_TIME,
+    -- setting off their onHit(see ManaBlock:damage), the damage scaled down like a spell hitting terrain
+    self.blockHitTime = math.max(0, (self.blockHitTime or 0) - dt)
+    if (self.contactDamage or 0) <= 0 or self.blockHitTime > 0 then
+        return
+    end
+    for i, contact in ipairs(self.body:getContacts()) do
+        if contact:isTouching() then
+            local a, b = contact:getFixtures()
+            local other = a:getBody() == self.body and b or a
+            local block = other:getUserData()
+            if block ~= nil and block.name == "ManaBlock" then
+                block:damage(self.contactDamage * MANA_BLOCK_CONTACT_SCALE, self.contactDamage, self)
+                self.blockHitTime = CONTACT_IMMUNITY_TIME
+                if self.onMeleeHit ~= nil then
+                    self:onMeleeHit(block)
+                end
+                return
+            end
+        end
+    end
 end
 
 function Enemy:update(dt)

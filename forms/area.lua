@@ -54,9 +54,10 @@ function Area:query(radius)
     -- Returns {entity, fixture(enemies only), x, y}
     local found = {}
 
-    -- Enemies always have bodies, so physics finds them
+    -- Creatures always have bodies, so physics finds them: every enemy and the player, not the caster
     p_world:queryBoundingBox(self.x - radius, self.y - radius, self.x + radius, self.y + radius, function(fixture)
-        if fixture:getCategory() == ENEMY_CATEGORY then
+        local category = fixture:getCategory()
+        if (category == ENEMY_CATEGORY or category == PLAYER_CATEGORY) and not self:isCaster(getEntityFromFixture(fixture)) then
             local x1, y1, x2, y2 = fixture:getBoundingBox()
             if overlapsBox(self.x, self.y, radius, x1, y1, x2, y2) then
                 table.insert(found, {fixture = fixture, x = (x1 + x2) / 2, y = (y1 + y2) / 2})
@@ -69,7 +70,7 @@ function Area:query(radius)
     for tx = math.floor((self.x - radius) / TILE_SIZE), math.floor((self.x + radius) / TILE_SIZE) do
         for ty = math.floor((self.y - radius) / TILE_SIZE), math.floor((self.y + radius) / TILE_SIZE) do
             local block = map:blockAt(tx * TILE_SIZE, ty * TILE_SIZE)
-            if block ~= nil and block.solid and not self.hits[block]
+            if block ~= nil and block.solid and not self.hits[block] and not self:isCaster(block)
                 and overlapsBox(self.x, self.y, radius, block.x, block.y, block.x + block.width, block.y + block.height) then
                 table.insert(found, {entity = block, x = block.x + block.width / 2, y = block.y + block.height / 2})
             end
@@ -116,6 +117,17 @@ function Area:update(dt)
     if self.time >= self.lifetime then
         self:expire()
     end
+end
+
+
+function Area:light(add)
+    -- A burst lights more while it grows, then fades with it
+    if self:currentRadius() <= 0 then
+        return
+    end
+    local fadeTime = math.max(0.001, self.lifetime - self.expandTime)
+    local fade = 1 - math.max(0, (self.time - self.expandTime) / fadeTime)
+    add(self.x, self.y, self.color or {1, 1, 1}, self:lightStrength(AREA_LIGHT) * fade)
 end
 
 

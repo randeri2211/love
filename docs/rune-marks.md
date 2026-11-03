@@ -29,7 +29,7 @@ Check a new idea in this order:
 3. **A new behavior on only one rune** can be a mark, as long as it tunes rather than adds power. Slots (6 per circle) are the budget, a mark that adds free power makes them pointless.
 
 Also:
-- **Drop a mark that repeats what a rune already controls.** Laser reach is Speed and Slow, beam width is Size and Focus, a beam that sweeps is Gravity's direction or the player's own aim.
+- **Drop a mark that repeats what a rune already controls.** Laser reach is Speed and Decelerate, beam width is Size and Focus, a beam that sweeps is Gravity's direction or the player's own aim.
 - **Dots that only mean "more of this rune's effect" duplicate stacking the rune**, which already costs a slot. Prefer dots that count something new (repeats, bounces).
 - **Marks on a form are about how it launches** (aim, where it appears). Everything about what it does after that belongs to modifiers.
 - **Marks that are really about another rune** can be `affects` instead (rune-on-rune effects along the mana flow).
@@ -71,6 +71,18 @@ New behaviors that showed up as marks on several forms.
 | **Pierce** | Bullet, Laser | Plain: passes 1 enemy or block. Pierce marks add the sum of how well each is drawn (rounded, up to 8). Pierce runes add up | Bullet pierce | **Done** |
 | **Chain** | Bullet, Laser | Zigzag: one jump to the nearest other enemy per peak | Laser chain idea | Idea |
 
+## Elements
+
+Frost has a built-in **shatter**: hits on something it slowed deal `FROST_SHATTER` (+25%) more damage, Damage runes before it raise slow and shatter.
+
+| Rune | Mark | Meaning | Status |
+|---|---|---|---|
+| **Frost** | Dots | Deeper freeze: each adds 0.2 slow and keeps 0.75 of the time. Three dots freeze solid (100% slow, about 1.3s) | **Done** |
+| | Crack (a zigzag) | Short freeze, strong shatter: each multiplies the shatter by 1.8 and keeps 0.6 of the time | **Done** |
+| **Fire** | Flame tongues out | Burns faster for less time, the same total damage sooner | Idea |
+| **Poison** | Dots | One more stack allowed each(up to 6), each stack a little weaker | Idea |
+| **Lightning** | Dots | One more jump target each(up to 5), each jump a little weaker | Idea |
+
 ## Modifiers
 
 | Rune | Mark | Meaning | Status |
@@ -92,7 +104,7 @@ New behaviors that showed up as marks on several forms.
 | **Dig** | Line | Tunnel: digs a line along the path instead of only at impact | Idea |
 | | Dots | Dig radius | Idea |
 | | Arrow in | Only digs, does no damage to enemies (cheaper) | Idea |
-| **Slow** | Arrow in | Comes to a stop and hovers until it expires | Idea |
+| **Decelerate** (was Slow) | Arrow in | Comes to a stop and hovers until it expires | Idea |
 | **Weaken** | Line | Weakens its children instead (cheap triggers) | Idea |
 
 ## Triggers
@@ -111,9 +123,9 @@ New behaviors that showed up as marks on several forms.
 | Idea | Why |
 |---|---|
 | Laser sweep | Gravity's direction arrow and the player's own aim already shape the beam |
-| Laser reach | Speed and Slow change reach |
+| Laser reach | Speed and Decelerate change reach |
 | Laser charge (wider, stronger beam) | Size, Focus and Damage |
 | Laser prism | OnHit + Split does it |
 | Area implode | Gravity on Area already pulls in |
-| Dots for more of the same (Damage, Focus, Gravity, Recoil, Slow, Weaken strength) | Stacking the rune does it and costs a slot |
+| Dots for more of the same (Damage, Focus, Gravity, Recoil, Decelerate, Weaken strength) | Stacking the rune does it and costs a slot |
 | Damage crit line | A new behavior, would be its own rune if wanted |

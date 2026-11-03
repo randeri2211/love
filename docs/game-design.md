@@ -60,7 +60,7 @@ The shapes can reuse the spell editor's rune drawing code.
   only templated runes can be traced, templated runes never count as drawn worse than `TEMPLATE_QUALITY`.
 - **Done:** the grimoire(`ui/grimoire`, key B): every rune as a known glyph or a blank, a page with the shape, state, cost, forms, marks,
   where it was found and its lore(`magic/runeBook`).
-- **Placeholder:** `GlyphWall` blocks teach their rune when read(interact key). With DEBUG on, J places one at the mouse and F forgets
+- **Placeholder:** `GlyphWall` blocks teach their rune when read(interact key). The development key J places one at the mouse and F forgets
   every rune but the starting ones. Real shrines come with boss arenas in world generation.
 - For testing `ALL_RUNES_TEMPLATED` is on: every rune starts templated, `STARTING_RUNES` is what a character starts with once it is off.
 
@@ -162,6 +162,18 @@ This is the same for every block with a screen and slots (arcane table, future s
 
 ---
 
+## Casting
+
+- **Every cast winds up:** the circle builds part by part(`MagicCircle.timeline`): the ring spirals in, then every rune in flow order,
+  a trigger rune hands over to its child circle, which builds fully before the parent goes on. The spell goes off when it is done.
+  Letting go, switching spells or being frozen solid cancels it, the mana is only paid when it goes off.
+- Player times are quick(ring 0.15s, rune 0.07s), enemies slower(0.4s, 0.3s) so their casts can be read and dodged.
+- **Cast speed** divides those times: Concentration adds 3% a point, gear(`castSpeed`) can add more later.
+- **Laser is held:** it winds up once, then the beam stays while the button is held and follows the aim every frame.
+  Its cooldown is how often it hits each thing(and digs each block), the spell mana is paid once per cooldown, Recoil pushes once per cooldown.
+- **Enemies cast too**(magic/enemyCasting): a mana bar and regen, a spell list(one spell for now), the same wind-up in front of them,
+  only a full freeze breaks their cast, their spells hit the player and other enemies. The first real casting enemy is still to be picked.
+
 ## Gear
 
 ### Ores (Done in part)
@@ -194,7 +206,7 @@ Some set items and trinkets are boss drops. Which ones and why is decided once b
 | 1 | **Raw materials:** trees (wood), plants or silk (fibre), enemy drops (hides), gems | Every crafting station needs inputs, and they give biomes a reason to visit. **Done:** oak, pine, cactus and tall grass (see `world_utils/flora`), enemy loot tables (empty for now). Still to come: hides, gems |
 | 2 | **Crafting core:** recipe registry, a "near a station" check, a crafting screen | Stations do nothing without it. **Done:** recipes folder (`registerRecipe`), stations within interaction distance, a crafting list in the Tab screen by tier and category, Woodworking Station and Forge, bars and rods |
 | 3 | **Damage types, crit and status effects** | Forge resistances and tanning crit have nothing to work on yet (elements are decided, see below) |
-| 4 | **Light:** torches and light from spells | Night and underground are dark, and deep ores are planned |
+| 4 | **Light:** torches and light from spells | Night and underground are dark, and deep ores are planned. **Done:** tile light (see Light below). |
 | 5 | **Storage and home:** chests, spawn point or bed, the respawn timer | Basic sandbox loop (death itself is decided, see below) |
 | 6 | **Spawner and enemy roster:** biome and depth buckets, night spawns, enemies that cast runes | Materials and bosses depend on enemy variety. **Done:** spawner(off screen, biome lists, cap, calmer days, temporary spawns), Scorched, Frostbitten and Rotting zombies. Still to come: day animals for hides, enemies that cast runes |
 | 7 | **Consumables:** potions from an alchemy station | Mana economy, and a second use for plants |
@@ -207,7 +219,7 @@ Tying elements to forms would remove a choice, a fire laser and a frost laser sh
 | Rune | Effect | Look |
 |---|---|---|
 | Fire | Burn damage over time | Red-orange glow, fire particles |
-| Frost (ice) | Slows the target (the Slow rune slows the spell itself) | Pale blue glow, frost particles |
+| Frost (ice) | Slows the target and shatters: hits on it deal +25% (the Decelerate rune slows the spell itself) | Pale blue glow, frost particles |
 | Poison | Poison damage over time | Green glow, poison particles |
 | Lightning | Chains to a nearby enemy | Yellow-white glow, sparks |
 | (none) | Plain damage stays the default arcane type | As today |
@@ -227,6 +239,41 @@ Tying elements to forms would remove a choice, a fire laser and a frost laser sh
 - **Other runes power up elements through the mana flow,** with the rune-to-rune `affects` that Focus already uses on Split:
   a rune affects the elements placed **after** it, so Damage before Fire makes a stronger burn.
 
+### Light (Done in part)
+Tile light, colored (`world_utils/lighting`): every tile around the screen gets a light level and the world is multiplied by it.
+
+- **Sky:** open air above the cave walls is as bright as the time of day (`AMBIENT_LIGHT`), the ground right under it too.
+- **Spreading:** light keeps 86% of itself per tile of air and 50% per solid block, so a wall's first block is lit and the ground's inside is dark.
+- **Sources:** torches (walk-through, 4 from 1 wood by hand, fall off when their block breaks, interact picks one up),
+  the Forge, Arcanite ore (a faint blue glow that shows where it is), a dim glow around the player, and spells.
+- **Spells give only a faint glow** in their color (Area a bit more while it lasts, Laser along the beam), so a bullet doesnt light a cave.
+
+### Light magic (Done)
+Room for magic in the light system, the user's idea:
+- **Done: the Light rune** (a sun glyph, 1 complexity and 1 mana, works on every form). It makes a spell a real light source
+  in its color, every Light rune after the first reaches further (`LIGHT_RUNE_GLOW`).
+  - **Trap + Light** is a magic torch while the trap lasts (15s).
+  - **Self + Light** makes its target glow, the caster or, through OnHit, the enemy it hit. Size makes it last longer.
+- **Done: the Block form** (two nested squares, 3 complexity and 4 mana) makes a solid **mana block** in the spell color
+  (`forms/blockForm`, `blocks/manaBlock`). With Light it is a magic light source you place with a spell.
+  - **Cast directly** it appears in the tile just in front of the hands, where a bullet would start (the hands tile when that
+    one is solid). Whoever is in that tile is pushed out: onto it first, else a step to either side, a step up to either side,
+    or under it. With no tile or no room for them the cast fails before mana or cooldown is paid.
+  - **Triggered** (OnHit → Block) it fills the empty tile in front of the hit surface, where an OnHit bullet would start.
+  - **Lasts 60s.** Every Decelerate adds 60s, past 180s (three of them) it is **permanent**: a plain block saved with the map.
+    Every Decelerate also adds 4 mana until the block is permanent, so a longer block costs more and a permanent one the most
+    (4 / 8 / 12 / 16 mana). Decelerate past permanent adds nothing.
+    A timed block is not saved, it is gone after loading. The editor shows a permanent one as "Permanent".
+  - **1 hp and no hardness**, any spell clears it. Every Dig rune multiplies its hp by 4. It never drops anything.
+  - **Enemies claw at it:** an enemy pushing against one hits it with its touch once per contact cooldown, at a tenth of the
+    touch damage (a zombie takes 1 hp a swipe, like a plain spell), setting off its onHit.
+  - **Triggers on it:** onHit every time it is damaged, onExpire when it is gone (broken or timed out), permanent blocks too.
+    OnHit children are aimed at the attacker: the caster of the spell that hit it, or the enemy clawing at it
+    (back the way the spell came when its caster is gone). OnExpire children go the way the block was cast.
+    They are cast by whoever made the block and paid from their mana like any trigger. A permanent block saves its spell,
+    one the player made always casts from the player (after loading or a respawn too).
+  - Only Decelerate, Dig and Light work on it (`BlockRune.allows`), the editor shows the rest as blocked.
+
 ### Death (Decided)
 For now **no punishment**: the player respawns after a respawn timer.
 
@@ -245,10 +292,11 @@ Today the character is saved inside its world (`saves/<world>/`), so Hardcore de
 
 ## Build order (proposed)
 
-1. Trees, plants and enemy drops (materials)
-2. Crafting core (recipes, stations, screen)
+1. Trees, plants and enemy drops (materials) **Done**
+2. Crafting core (recipes, stations, screen) **Done**
 3. Wands and staves with the dig cap (parts, hand slots, dual wield, woodworking station, arcane table) **Done**
-4. Damage types, crit and resistances
-5. Spawner and enemy variety
-6. Rune knowledge, glyph walls and the grimoire
-7. Bosses, trinkets and set bonuses
+4. Damage types, crit and resistances **Done**
+5. Spawner and enemy variety **Done** (enemies that cast are in, the first real caster is still to be picked)
+6. Rune knowledge, glyph walls and the grimoire **Done** (placeholder walls)
+7. Light: tile light, torches, glowing blocks **Done**, the Light rune and the Block form **Done**
+8. Bosses, trinkets and set bonuses

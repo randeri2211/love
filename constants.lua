@@ -1,9 +1,11 @@
-DEBUG = false
-DEBUG_DAY_LENGTH = 60           -- With DEBUG on a whole day takes this many seconds(the world keeps its own setting)
-DEBUG_ONE_HIT_BLOCKS = true
-DEBUG_GLYPH_WALL_KEY = "j"      -- With DEBUG on, places a glyph wall at the mouse that teaches a rune you dont know yet
-DEBUG_FORGET_KEY = "f"          -- With DEBUG on, forgets every rune but the starting ones(to test glyph walls)
-DEBUG_GIVE_KEY = "g"            -- With DEBUG on, gives every armor piece to test equipment     -- With DEBUG on, any hit breaks a block(bedrock still cant break), for digging around in development
+DEBUG = false                   -- Visual debugging: physics shapes, the debug text and the fps in the console
+-- Development tools, they work without DEBUG and go away once the game has its own ways to do these
+DEBUG_DAY_LENGTH = nil          -- A whole day takes this many seconds instead of the world setting(nil for the world setting)
+DEBUG_ONE_HIT_BLOCKS = false    -- Any hit breaks a block(bedrock still cant break), for digging around
+DEBUG_GLYPH_WALL_KEY = "j"      -- Places a glyph wall at the mouse that teaches a rune you dont know yet
+DEBUG_CASTER_KEY = "x"          -- Places a test caster at the mouse(a placeholder until the first casting enemy)
+DEBUG_FORGET_KEY = "f"          -- Forgets every rune but the starting ones(to test glyph walls)
+DEBUG_GIVE_KEY = "g"            -- Gives every armor piece and wand part to test equipment
 
 SCREEN_X  = 1920
 SCREEN_Y  = 1080
@@ -55,9 +57,11 @@ BASE_SPELL_PARAMS = {
     knockback = 1,              -- How hard a hit shoves what it hits, the way the spell was going
     recoilDirX = 0,             -- Way an arrow on Recoil pushes, drawn as if facing right(see Spell.facingDirection)
     recoilDirY = 0,             -- 0, 0 is no arrow: recoil pushes away from the aim and dashes go toward it
+    glow = 0,                   -- Light runes on it, each makes it a brighter light source(see Form:light)
     -- Element runes switch these on(see magic/elements), 0 is off
     burnDps = 0, burnTime = 0,          -- Fire: damage per second while burning, and for how long
     frostSlow = 0, frostTime = 0,       -- Frost: part of the speed taken away, and for how long
+    frostShatter = 0,                   -- Frost: extra part of the damage hits deal to something it slowed
     poisonDps = 0, poisonTime = 0,      -- Poison: damage per second per stack, and for how long
     chainDamage = 0, chainRange = 0,    -- Lightning: part of the hit that jumps to nearby enemies, and how far(pixels)
 }
@@ -65,7 +69,16 @@ BASE_SPELL_PARAMS = {
 -- Elements(see magic/elements and magic/statuses)
 STATUS_TICK = 0.5               -- Seconds between burn and poison damage
 POISON_MAX_STACKS = 3           -- Poison hits add up to this many stacks
-FROST_MAX_SLOW = 0.8            -- Frost never slows more than this part of the speed
+FROST_MAX_SLOW = 1              -- All of the speed is a full freeze(Frost dots get there)
+FREEZE_IMMUNITY = 4             -- Seconds after a full freeze ends before that creature can be frozen solid again
+FREEZE_IMMUNE_SLOW = 0.7        -- Most Frost slows it during those seconds, so nothing is frozen to death without moving
+FROST_SHATTER = 0.25            -- Hits on something Frost slowed deal this much more damage(Damage runes and crack marks raise it)
+-- Frost marks: every dot adds FREEZE_STEP slow and keeps FREEZE_TIME of the time(three dots freeze solid),
+-- every crack multiplies the shatter by SHATTER_STEP and keeps SHATTER_TIME of the time
+FREEZE_STEP = 0.2
+FREEZE_TIME = 0.75
+SHATTER_STEP = 1.8
+SHATTER_TIME = 0.6
 CHAIN_TARGETS = 2               -- Enemies a Lightning hit jumps to
 ELEMENT_PARTICLES = 1500        -- Most element particles at once
 
@@ -88,6 +101,21 @@ AREA_PULL_SPEED = 120           -- Pixels per second a gravity Area pulls enemie
 CAST_CIRCLE_SCALE = 0.2         -- Size compared to the editor circle
 CAST_CIRCLE_TIME = 1.0          -- Seconds until it fades out
 CAST_DRAW_IN_TIME = 0.4         -- Seconds for the circle to draw itself
+-- Enemy casts(see magic/enemyCasting): the circle builds part by part(MagicCircle.timeline) before the spell goes off
+CAST_RING_TIME = 0.4            -- Seconds a circle takes to spiral in
+CAST_RUNE_TIME = 0.3            -- Seconds every rune takes to appear after it
+-- Player casts build quicker than enemy ones, cast speed(the Concentration stat, gear later) makes both quicker
+PLAYER_CAST_RING_TIME = 0.15
+PLAYER_CAST_RUNE_TIME = 0.07
+CONCENTRATION_CAST_SPEED = 0.03 -- Cast speed every point of Concentration adds
+STRENGTH_ARMOR = 0.05           -- Part of the worn armor defense every point of Strength adds(10 Strength, +50% defense)
+CONSTITUTION_HP_REGEN = 0.05    -- HP a second every point of Constitution adds
+MIN_CAST_SPEED = 0.2
+LASER_RELEASE_FADE = 0.12       -- Seconds a held laser takes to fade after the cast button is let go
+ENEMY_CAST_RANGE = 18           -- Tiles an enemy casts at the player from, it needs a clear line to them
+ENEMY_CAST_REST = 1.5           -- Seconds after a cast before an enemy starts the next one
+ENEMY_CAST_SCALE = 0.3          -- Size of an enemy cast circle compared to the editor circle
+ENEMY_CAST_OFFSET = 2.4         -- Tiles in front of the enemy the circle builds, toward the player
 CAST_CIRCLE_OFFSET = TILE_SIZE  -- Distance in front of the cast point, toward the aim
 
 -- Mana added to the parent spell cost for each trigger it has, by trigger event
@@ -195,6 +223,7 @@ TOOL_KINDS = {
     Wand = {damage = 0.85, cooldown = 0.8, manaRegen = 3},
     Staff = {damage = 1.3, cooldown = 1.25, manaRegen = 0},
 }
+RESPAWN_TIME = 3                -- Seconds dead before the player is back at its spawn, nothing else is lost for now
 BASE_CRIT_CHANCE = 0.05        -- Part of hits that crit(spell hits, lightning jumps and every burn and poison tick roll)
 CRIT_MULTIPLIER = 2             -- A crit deals this many times the damage
 DEFENSE_SCALE = 50            -- Damage blocked is defense / (defense + this): 10 defense blocks about 17%, 50 blocks half
@@ -223,8 +252,34 @@ TIME_KEYS = {
 -- Background colors a biome gives for the day are tinted by these at other moments, unless it gives its own per moment
 SKY_TINT = {night = {0.12, 0.14, 0.3}, dawn = {1, 0.72, 0.7}, day = {1, 1, 1}, dusk = {1, 0.6, 0.45}}
 HILL_TINT = {night = {0.2, 0.22, 0.38}, dawn = {0.85, 0.7, 0.7}, day = {1, 1, 1}, dusk = {0.85, 0.6, 0.5}}
--- Light over the world(blocks, creatures), spells are drawn after it so they glow at night
+-- Light of the sky over the world(blocks, creatures), spells are drawn after it so they glow at night
 AMBIENT_LIGHT = {night = {0.32, 0.35, 0.55}, dawn = {0.85, 0.78, 0.78}, day = {1, 1, 1}, dusk = {0.92, 0.72, 0.62}}
+
+-- Tile light(see world_utils/lighting): light spreads from tile to tile, keeping this much of itself each tile
+LIGHT_AIR_DECAY = 0.86          -- Through air and walk-through blocks(a full light fades out in about 15 tiles)
+LIGHT_SOLID_DECAY = 0.5         -- Through solid blocks, the first block of a wall is lit and the inside stays dark
+LIGHT_PASSES = 2                -- Spreading sweeps each frame, more lets light turn more corners
+LIGHT_MARGIN = 16               -- Tiles past the screen edge the light is worked out for, so lights off screen reach in
+LIGHT_SNAP = 8                  -- The light grid moves in steps of this many tiles(the map is read again when it moves)
+WALL_START = 2                  -- Tiles under the surface where the cave walls start, the open air above them sees the sky
+-- Light sources, colors at full strength
+PLAYER_LIGHT = {0.3, 0.28, 0.26}    -- A dim glow around the player, darkness is never fully blind
+TORCH_LIGHT = {1, 0.72, 0.42}
+FORGE_LIGHT = {0.8, 0.42, 0.18}
+ARCANITE_LIGHT = {0.22, 0.5, 0.65}  -- Glowing ore, it shows where the deep ore is
+SPELL_LIGHT = 0.3               -- Strength of the glow of a spell in its color, faint so a bullet doesnt light a cave
+AREA_LIGHT = 0.45               -- A burst lights more around it while it lasts
+LASER_LIGHT = 0.25              -- Every tile along a beam
+LIGHT_RUNE_GLOW = 0.8           -- Strength every Light rune adds to a spell light(above 1 it reaches further)
+
+-- Mana blocks(the Block form, see forms/blockForm)
+MANA_BLOCK_TIME = 60            -- Seconds a mana block lasts
+DECELERATE_BLOCK_TIME = 60      -- Seconds every Decelerate rune adds
+DECELERATE_BLOCK_MANA = 4       -- Mana every Decelerate rune adds to the block, until it is permanent(more add nothing)
+MANA_BLOCK_PERMANENT = 180      -- Lasting longer than this it stays for good, a plain block that drops nothing
+MANA_BLOCK_DIG_HP = 4           -- Every Dig rune multiplies its hp(1 hp breaks to any spell)
+BLOCK_CAST_REACH = 0.5          -- Tiles in front of the hands a directly cast block goes, like where a bullet starts
+MANA_BLOCK_CONTACT_SCALE = 0.1  -- Part of an enemy touch damage a mana block takes(a zombie takes 1 hp a swipe, like a spell)
 -- How bright the stars in the sky are
 STAR_ALPHA = {night = 1, dawn = 0.15, day = 0, dusk = 0.3}
 STAR_COUNT = 160
@@ -243,6 +298,9 @@ BIOME_SIZES = {
     {"Large", 600},
 }
 DEFAULT_BIOME_SIZE = 2      -- Index in BIOME_SIZES
+
+-- Runes that were renamed, saves with the old name load the new rune(spells, knowledge)
+RUNE_RENAMES = {Slow = "Decelerate"}
 
 -- Rune knowledge(see magic/knowledge): unknown runes cant be drawn, discovered ones are drawn from memory,
 -- templated ones have a trace guide and a quality floor

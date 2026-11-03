@@ -20,7 +20,6 @@ local CAVE_COLOR = {0.05, 0.05, 0.07}
 local FADE_FROM = 6         -- Tiles under the surface where the sky starts fading to cave dark
 local FADE_TO = 26          -- Tiles under the surface where it is fully dark
 local WALL_SHADE = 0.35     -- How dark the rock walls behind caves are
-local WALL_START = 2        -- Tiles under the surface where the walls start, the top of a cave dug from the surface shows sky
 
 local STAR_PARALLAX = 0.02  -- Stars are the furthest thing, they barely move
 local STAR_FIELD = 2048     -- Pixels before the star pattern repeats sideways

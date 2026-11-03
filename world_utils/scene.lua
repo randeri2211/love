@@ -6,7 +6,9 @@ local Equipments = require "items.equipments"
 -- Saves are written with binser, which keeps numbers, booleans, strings and nested tables exactly
 local SAVEABLE = {string = true, number = true, boolean = true, table = true}
 -- Fields that are rebuilt by code instead of saved(animations, and the spellbook which has its own file)
-local SKIP_KEYS = {anim = true, animations = true, spellbook = true, inventory = true, equipment = true, hud = true, __index = true}
+-- Enemy spells and a cast being built are made again when an enemy loads(see entities/debugCaster)
+local SKIP_KEYS = {anim = true, animations = true, spellbook = true, inventory = true, equipment = true, hud = true, __index = true,
+    spells = true, casting = true, channel = true}
 
 
 currentWorld = "world"     -- Name of the open world, save and load use it

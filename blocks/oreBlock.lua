@@ -11,7 +11,7 @@ local ORES = {
     {name = "IronOre", color = {0.82, 0.74, 0.68, 1}, host = "stone", threshold = 20, hp = 14},
     {name = "GoldOre", color = {1, 0.82, 0.25, 1}, host = "stone", threshold = 25, hp = 15},
     {name = "DeepGoldOre", color = {1, 0.82, 0.25, 1}, host = "deepstone", threshold = 30, hp = 18},
-    {name = "ArcaniteOre", color = {0.4, 0.85, 1, 1}, host = "deepstone", threshold = 35, hp = 20},
+    {name = "ArcaniteOre", color = {0.4, 0.85, 1, 1}, host = "deepstone", threshold = 35, hp = 20, light = ARCANITE_LIGHT},
 }
 local PATTERNS = 4      -- ore1 to ore4 in the tilesheet
 local HOST_VARIANTS = 3 -- stone1 to stone3, deepstone1 to deepstone3
@@ -51,6 +51,7 @@ end
 for i, ore in ipairs(ORES) do
     local class = OreBlock:new()
     class.ore = ore
+    class.light = ore.light     -- Glowing ores light the tiles around them(see world_utils/lighting)
     registerBlock(ore.name, class)
 end
 

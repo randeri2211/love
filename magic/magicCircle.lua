@@ -55,18 +55,18 @@ function MagicCircle.layout(spell, cx, cy, scale, depth, drawer)
     end
 
     if drawer.ring then drawer.ring(cx, cy, ring, scale, depth, spell) end
-    if drawer.signature then drawer.signature(slots, cx, cy, scale, depth) end
-    if drawer.flow then drawer.flow(slots, cx, cy, ring, scale, depth) end
+    if drawer.signature then drawer.signature(slots, cx, cy, scale, depth, spell) end
+    if drawer.flow then drawer.flow(slots, cx, cy, ring, scale, depth, spell) end
 
     for i, slot in ipairs(slots) do
         local dx, dy = slot.dx, slot.dy
         if drawer.spoke then
-            drawer.spoke(cx + dx * coreR, cy + dy * coreR, slot.x - dx * slotR, slot.y - dy * slotR, slot, scale, depth)
+            drawer.spoke(cx + dx * coreR, cy + dy * coreR, slot.x - dx * slotR, slot.y - dy * slotR, slot, scale, depth, spell)
         end
         if drawer.slot then drawer.slot(slot.x, slot.y, slotR, slot.rune, spell, i, depth, scale, slot.blocked) end
 
         -- Child circle outside its trigger slot
-        if slot.child ~= nil and (drawer.showChild == nil or drawer.showChild(slot, depth)) then
+        if slot.child ~= nil and (drawer.showChild == nil or drawer.showChild(slot, depth, spell)) then
             local childScale = scale * MagicCircle.CHILD_SCALE
             local childOuter = (MagicCircle.RING_RADIUS + MagicCircle.SLOT_RADIUS) * childScale
             local dist = ring + slotR + childOuter + 8 * scale
@@ -209,20 +209,37 @@ local function width(scale)
     return math.max(0.8, 2 * scale)
 end
 
-local function depthProgress(depth)
-    -- Each nested circle draws in a little after its parent
+local function span(range)
+    -- How far through its time slot of the timeline something is, 0 to 1
+    return clamp((style.clock - range[1]) / (range[2] - range[1]), 0, 1)
+end
+
+local function depthProgress(depth, spell)
+    -- Each nested circle draws in a little after its parent, with a timeline when its ring has its turn
     if not style.drawIn then
         return 1
+    end
+    if style.timeline ~= nil then
+        local entry = style.timeline.entries[spell]
+        return entry and span(entry.ring) or 0
     end
     return clamp((style.progress - (depth - 1) * 0.28) / 0.55, 0, 1)
 end
 
-local function slotAppear(index, depth)
-    -- Slots pop in one after another during the draw-in
+local function slotAppear(index, depth, spell)
+    -- Slots pop in one after another during the draw-in, with a timeline each rune in its own turn(empty slots with the ring)
     if not style.drawIn then
         return 1
     end
-    return clamp(depthProgress(depth) * (SPELL_SLOTS + 1) - (index - 1) - 0.5, 0, 1)
+    if style.timeline ~= nil then
+        local entry = style.timeline.entries[spell]
+        if entry == nil then
+            return 0
+        end
+        local range = entry.slots[index]
+        return range and span(range) or depthProgress(depth, spell)
+    end
+    return clamp(depthProgress(depth, spell) * (SPELL_SLOTS + 1) - (index - 1) - 0.5, 0, 1)
 end
 
 local function glowPass(draw, color, lineWidth, alpha)
@@ -289,21 +306,33 @@ local function drawBands(cx, cy, ring, scale, depth, p)
 end
 
 local worldDrawer = {
-    ring = function(x, y, radius, scale, depth)
-        local p = depthProgress(depth)
+    ring = function(x, y, radius, scale, depth, spell)
+        local p = depthProgress(depth, spell)
         if p <= 0 then
             return
         end
         -- Main ring traces itself during the draw-in
         strokeArc(x, y, radius, TOP, TOP + TAU * p, MagicCircle.RING_COLOR, width(scale) * 0.8, 0.9)
+        -- A spiral arm curls out from the middle to the tip of the growing ring(enemy wind-ups)
+        if style.spiral and p < 1 then
+            local head = TOP + TAU * p
+            local points = {}
+            for k = 0, 24 do
+                local s = k / 24
+                local a = head - TAU * 1.25 * (1 - s)
+                table.insert(points, x + math.cos(a) * radius * s)
+                table.insert(points, y + math.sin(a) * radius * s)
+            end
+            glowPass(function() love.graphics.line(points) end, MagicCircle.RING_COLOR, width(scale) * 0.7, 0.7 * (1 - p * 0.5))
+        end
         if style.bands then
             drawBands(x, y, radius, scale, depth, p)
         end
     end,
 
-    signature = function(slots, x, y, scale, depth)
+    signature = function(slots, x, y, scale, depth, spell)
         -- Faint star through every slot, bright polygon through the filled ones
-        local p = depthProgress(depth)
+        local p = depthProgress(depth, spell)
         if not style.signature or p <= 0.4 then
             return
         end
@@ -330,15 +359,15 @@ local worldDrawer = {
         end
     end,
 
-    spoke = function(x1, y1, x2, y2, slot, scale, depth)
-        local appear = slotAppear(slot.index, depth)
+    spoke = function(x1, y1, x2, y2, slot, scale, depth, spell)
+        local appear = slotAppear(slot.index, depth, spell)
         if appear <= 0 then
             return
         end
         strokeLine(x1, y1, x2, y2, MagicCircle.RING_COLOR, width(scale) * 0.6, 0.55 * appear)
     end,
 
-    flow = function(slots, x, y, radius, scale, depth)
+    flow = function(slots, x, y, radius, scale, depth, spell)
         -- Mana sparks travel clockwise along the ring from the first active rune to the last,
         -- showing the order the runes are applied in
         if not style.particles then
@@ -356,7 +385,7 @@ local worldDrawer = {
 
         local first, last = active[1], active[#active]
         local span = last.angle - first.angle
-        local p = slotAppear(last.index, depth)
+        local p = slotAppear(last.index, depth, spell)
         if p < 1 then
             return      -- Wait for the draw-in to place the last rune
         end
@@ -378,7 +407,7 @@ local worldDrawer = {
     end,
 
     slot = function(x, y, radius, rune, spell, index, depth, scale, blocked)
-        local appear = slotAppear(index, depth)
+        local appear = slotAppear(index, depth, spell)
         if appear <= 0 then
             return
         end
@@ -419,9 +448,9 @@ local worldDrawer = {
         end
     end,
 
-    showChild = function(slot, depth)
+    showChild = function(slot, depth, spell)
         -- Children start once their trigger slot has popped in
-        return slotAppear(slot.index, depth) >= 1
+        return slotAppear(slot.index, depth, spell) >= 1
     end,
 
     link = function(x1, y1, x2, y2, slot, scale, depth)
@@ -432,7 +461,7 @@ local worldDrawer = {
         local coreAppear = 1
         local r = radius
         if style.drawIn then
-            coreAppear = clamp(depthProgress(depth) * 3, 0, 1)
+            coreAppear = clamp(depthProgress(depth, spell) * 3, 0, 1)
             r = radius * easeBack(coreAppear)
         end
         local lineWidth = width(scale)
@@ -455,10 +484,43 @@ local worldDrawer = {
 }
 
 
+-- Timeline
+function MagicCircle.timeline(spell, ringTime, runeTime)
+    -- A circle built part by part(cast wind-ups): its ring and core first, then its runes one by one in flow order,
+    -- a trigger rune hands over to its child circle, which builds completely before the parent goes on with its next rune
+    -- ringTime and runeTime are seconds per ring and per rune(enemy times by default)
+    -- Returns {entries = {[circle] = {ring = {start, finish}, slots = {[index] = {start, finish}}}}, total = seconds}
+    ringTime, runeTime = ringTime or CAST_RING_TIME, runeTime or CAST_RUNE_TIME
+    local entries, clock = {}, 0
+    local function walk(circle)
+        local entry = {ring = {clock, clock + ringTime}, slots = {}}
+        entries[circle] = entry
+        clock = clock + ringTime
+        for i = 1, SPELL_SLOTS do
+            local runeName, child = circle:readSlot(circle.slots[i])
+            if runeName then
+                entry.slots[i] = {clock, clock + runeTime}
+                clock = clock + runeTime
+                if child ~= nil then
+                    walk(child)
+                end
+            end
+        end
+    end
+    walk(spell)
+    return {entries = entries, total = clock}
+end
+
+
 function MagicCircle.draw(spell, cx, cy, scale, options)
     -- Draws the circle with love.graphics, every layer is on unless turned off in options
     -- options.alpha(0-1), options.time(seconds, drives rotation and sparks), options.progress(0-1 draw-in)
+    -- options.timeline(MagicCircle.timeline) with options.clock(seconds into it) builds the circle part by part instead,
+    -- options.spiral adds the spiral arm that leads every ring in
     options = options or {}
+    style.timeline = options.timeline
+    style.clock = options.clock or 0
+    style.spiral = options.spiral == true
     style.alpha = options.alpha or 1
     style.time = options.time or love.timer.getTime()
     style.progress = options.progress or 1

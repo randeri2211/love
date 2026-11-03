@@ -34,9 +34,20 @@ function Statuses.apply(entity, values, source)
     if values.frostSlow > 0 then
         -- Frost resistance takes off part of the slow
         local frost = statuses.frost or {slow = 0}
-        local slow = values.frostSlow * (1 - entity:damageReduction("Frost"))
-        frost.slow = math.min(FROST_MAX_SLOW, math.max(frost.slow, slow))
-        frost.time = math.max(frost.time or 0, values.frostTime)
+        local resisted = 1 - entity:damageReduction("Frost")
+        local slow = values.frostSlow * resisted
+        -- Right after a full freeze it cant be frozen solid again for a while(see FREEZE_IMMUNITY)
+        local most = FROST_MAX_SLOW
+        if (entity.freezeImmuneTime or 0) > 0 then
+            most = math.min(most, FREEZE_IMMUNE_SLOW)
+        end
+        local wasFrozen = frost.slow >= 1
+        frost.slow = math.min(most, math.max(frost.slow, slow))
+        frost.shatter = math.max(frost.shatter or 0, (values.frostShatter or 0) * resisted)
+        -- A full freeze isnt made longer by hitting it again, so it always ends
+        if not wasFrozen then
+            frost.time = math.max(frost.time or 0, values.frostTime)
+        end
         statuses.frost = frost
         entity.statsDirty = true    -- Its speed comes from the combat stats
     end
@@ -56,6 +67,9 @@ end
 
 
 function Statuses.update(entity, dt)
+    if (entity.freezeImmuneTime or 0) > 0 then
+        entity.freezeImmuneTime = entity.freezeImmuneTime - dt
+    end
     local statuses = entity.statuses
     if statuses == nil or entity.dying or entity.body:isDestroyed() then
         return
@@ -85,6 +99,9 @@ function Statuses.update(entity, dt)
         ElementFx.trail({"Frost"}, x, y, spread, PARTICLE_RATE, dt)
         frost.time = frost.time - dt
         if frost.time <= 0 then
+            if frost.slow >= 1 then
+                entity.freezeImmuneTime = FREEZE_IMMUNITY
+            end
             statuses.frost = nil
             entity.statsDirty = true
         end
@@ -96,6 +113,20 @@ function Statuses.speedFactor(entity)
     -- How much of its speed a creature keeps(frost slows it)
     local frost = entity.statuses and entity.statuses.frost
     return frost and (1 - frost.slow) or 1
+end
+
+
+function Statuses.shatterFactor(entity)
+    -- How much harder hits land on a creature Frost slowed(1 when it isnt frozen)
+    local frost = entity.statuses and entity.statuses.frost
+    return frost and 1 + (frost.shatter or 0) or 1
+end
+
+
+function Statuses.isFrozen(entity)
+    -- Frozen solid(a full Frost freeze), the one thing that breaks an enemy cast later
+    local frost = entity.statuses and entity.statuses.frost
+    return frost ~= nil and frost.slow >= 1
 end
 
 

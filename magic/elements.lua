@@ -10,7 +10,13 @@ local Elements = {}
 -- In the order they show, every element sets a strength param from power and a time param from duration
 Elements.LIST = {
     {name = "Fire", power = {"burnDps", 4}, duration = {"burnTime", 3}},
-    {name = "Frost", power = {"frostSlow", 0.4}, duration = {"frostTime", 3}},
+    {name = "Frost", power = {"frostSlow", 0.4}, duration = {"frostTime", 3}, extra = {"frostShatter", FROST_SHATTER},
+        -- Dots freeze deeper for less time, cracks freeze shorter and shatter harder(see the Frost rune marks)
+        tune = function(params, settings)
+            params.frostSlow = params.frostSlow + FREEZE_STEP * settings.freeze
+            params.frostTime = params.frostTime * FREEZE_TIME ^ settings.freeze * SHATTER_TIME ^ settings.shatter
+            params.frostShatter = params.frostShatter * SHATTER_STEP ^ settings.shatter
+        end},
     {name = "Poison", power = {"poisonDps", 2}, duration = {"poisonTime", 8}},
     {name = "Lightning", power = {"chainDamage", 0.5}, duration = {"chainRange", 6 * TILE_SIZE}},
 }
@@ -25,6 +31,13 @@ function Elements.apply(name, params, settings)
     local element = Elements.BY_NAME[name]
     params[element.power[1]] = element.power[2] * settings.power
     params[element.duration[1]] = element.duration[2] * settings.duration
+    -- A third value some elements have(Frost shatter), stronger with power too
+    if element.extra ~= nil then
+        params[element.extra[1]] = element.extra[2] * settings.power
+    end
+    if element.tune ~= nil then
+        element.tune(params, settings)
+    end
 end
 
 
@@ -49,6 +62,9 @@ function Elements.valuesFor(powers)
         local power = powers[element.name]
         values[element.power[1]] = power and element.power[2] * power or 0
         values[element.duration[1]] = power and element.duration[2] or 0
+        if element.extra ~= nil then
+            values[element.extra[1]] = power and element.extra[2] * power or 0
+        end
     end
     return values
 end
@@ -60,6 +76,9 @@ function Elements.pick(params)
     for i, element in ipairs(Elements.LIST) do
         picked[element.power[1]] = params[element.power[1]]
         picked[element.duration[1]] = params[element.duration[1]]
+        if element.extra ~= nil then
+            picked[element.extra[1]] = params[element.extra[1]]
+        end
     end
     return picked
 end
@@ -68,9 +87,15 @@ end
 local function chain(form, hit, x, y)
     -- Lightning: part of the hit jumps to the nearest enemies around the one that was hit
     local values = form.elementParams
+    -- Every creature can be jumped to(the player too, from an enemy spell), never the caster or the one hit
     local found = {}
+    local creatures = {player}
     for i, enemy in pairs(map.enemies.enemies) do
-        if enemy ~= hit and not enemy.dying and enemy.body ~= nil and not enemy.body:isDestroyed() then
+        table.insert(creatures, enemy)
+    end
+    for i, enemy in ipairs(creatures) do
+        if enemy ~= hit and not form:isCaster(enemy) and not enemy.dying and not (enemy.isDead and enemy:isDead())
+            and enemy.body ~= nil and not enemy.body:isDestroyed() then
             local ex, ey = enemy.body:getWorldCenter()
             local d = distance(x, y, ex, ey)
             if d <= values.chainRange then
@@ -82,7 +107,7 @@ local function chain(form, hit, x, y)
     for i = 1, math.min(CHAIN_TARGETS, #found) do
         local target = found[i]
         ElementFx.bolt(x, y, target.x, target.y)
-        local amount = Crit.roll(form, form.damage * values.chainDamage, target.x, target.y)
+        local amount = Crit.roll(form, form.damage * values.chainDamage * Statuses.shatterFactor(target.enemy), target.x, target.y)
         target.enemy:damage(amount, nil, "Lightning")
     end
 end

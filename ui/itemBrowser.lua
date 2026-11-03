@@ -5,7 +5,7 @@ local Tools = require "items.tools"
 local ItemTooltip = require "ui.itemTooltip"
 
 -- Every item in the game as an icon grid with a text filter and tooltips(ITEM_LIST_KEY)
--- With DEBUG on a click gives one, Shift+click a full stack, wands and staves come as a sample build(a tool needs its parts)
+-- A click gives one, Shift+click a full stack, wands and staves come as a sample build(a tool needs its parts)
 local ItemBrowser = {}
 
 -- Layout
@@ -103,11 +103,7 @@ function ItemBrowser:update()
         self:handleMouse(list, ox, oy)
         self:draw(list, gridW, viewH)
         Slab.Image("ItemBrowserGrid", {Image = self.canvas})
-        if DEBUG then
-            Slab.Text("Click: one   Shift+click: a stack   Wheel: scroll", {Color = HINT_COLOR})
-        else
-            Slab.Text("Hover for details   Wheel: scroll", {Color = HINT_COLOR})
-        end
+        Slab.Text("Click: one   Shift+click: a stack   Wheel: scroll", {Color = HINT_COLOR})
     Slab.EndWindow()
 end
 
@@ -124,8 +120,7 @@ function ItemBrowser:handleMouse(list, ox, oy)
         return
     end
     self.hovered = stackFor(name)
-    -- Only a debug game hands items out, otherwise the list is for looking
-    if DEBUG and Slab.IsMouseClicked(1) and self.hovered ~= nil then
+    if Slab.IsMouseClicked(1) and self.hovered ~= nil then
         local stack = Items.copy(self.hovered)
         if love.keyboard.isDown("lshift", "rshift") and stack.data == nil then
             stack.count = Items.maxStack(name)

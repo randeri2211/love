@@ -21,11 +21,13 @@ function Knowledge.fromData(data)
         return knowledge
     end
     for name, state in pairs(type(data.runes) == "table" and data.runes or {}) do
+        name = RUNE_RENAMES[name] or name
         if RUNE_REGISTRY[name] ~= nil and (state == Knowledge.DISCOVERED or state == Knowledge.TEMPLATED) then
             knowledge.runes[name] = state
         end
     end
     for name, where in pairs(type(data.found) == "table" and data.found or {}) do
+        name = RUNE_RENAMES[name] or name
         if RUNE_REGISTRY[name] ~= nil and type(where) == "string" then
             knowledge.found[name] = where
         end

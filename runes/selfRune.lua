@@ -15,6 +15,9 @@ SelfRune.glyph = {
     {"arc", 0, 0, 0.92, -2.5, -0.64},
 }
 
+-- It deals no damage(Damage runes heal instead, shown as Heal), the editor leaves that line out
+SelfRune.hiddenStats = {damage = true}
+
 -- Shown in the spell editor
 SelfRune.stats = {
     {"Duration", "lifetime", "%.1fs"},

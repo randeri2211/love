@@ -9,7 +9,7 @@ StationBlock.station = true
 -- Stations by block name: their tile and how sturdy they are
 local STATIONS = {
     {name = "WoodworkingStation", tile = "woodworking", hp = 6},
-    {name = "Forge", tile = "forge", hp = 10},
+    {name = "Forge", tile = "forge", hp = 10, light = FORGE_LIGHT},
 }
 
 
@@ -34,6 +34,7 @@ end
 for i, info in ipairs(STATIONS) do
     local class = StationBlock:new()
     class.info = info
+    class.light = info.light    -- A lit forge glows(see world_utils/lighting)
     registerBlock(info.name, class)
 end
 

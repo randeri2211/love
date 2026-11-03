@@ -51,7 +51,8 @@ for i, info in ipairs(RUNES) do
     rune.glyph = info.glyph
 
     function rune:settings(marks)
-        return {power = 1, duration = 1}
+        -- Marks only Frost reads so far(freeze dots and shatter cracks, see below)
+        return {power = 1, duration = 1, freeze = marks and marks.freeze or 0, shatter = marks and marks.shatter or 0}
     end
 
     rune.effects = {
@@ -61,4 +62,59 @@ for i, info in ipairs(RUNES) do
         Self = false,
     }
     registerRune(info.name, rune)
+end
+
+
+-- Frost marks: dots freeze deeper for less time(three dots freeze solid), zigzag cracks freeze shorter and shatter harder
+-- (see the Frost entry in magic/elements for the numbers)
+local Frost = RUNE_REGISTRY.Frost
+local MIN_MARK_QUALITY = 0.25       -- Marks drawn worse than this dont count
+local MAX_FREEZE = 3
+local MAX_SHATTER = 3
+local MARK_COMPLEXITY = 1           -- Per mark
+
+function Frost:readMarks(marks)
+    local freeze, shatter = 0, 0
+    for i, mark in ipairs(marks) do
+        if mark.quality >= MIN_MARK_QUALITY then
+            if mark.kind == "dot" then
+                freeze = freeze + 1
+            elseif mark.kind == "crack" then
+                shatter = shatter + 1
+            end
+        end
+    end
+    if freeze == 0 and shatter == 0 then
+        return nil
+    end
+    return {freeze = math.min(MAX_FREEZE, freeze), shatter = math.min(MAX_SHATTER, shatter)}
+end
+
+
+function Frost:checkMarks(saved)
+    local function clean(value, most)
+        return type(value) == "number" and math.max(0, math.min(most, math.floor(value))) or 0
+    end
+    local marks = {freeze = clean(saved.freeze, MAX_FREEZE), shatter = clean(saved.shatter, MAX_SHATTER)}
+    if marks.freeze == 0 and marks.shatter == 0 then
+        return nil
+    end
+    return marks
+end
+
+
+function Frost:markCost(marks)
+    return (marks.freeze + marks.shatter) * MARK_COMPLEXITY, 0
+end
+
+
+function Frost:describeMarks(marks)
+    local parts = {}
+    if marks.freeze > 0 then
+        table.insert(parts, marks.freeze >= MAX_FREEZE and "freezes solid" or ("freeze +" .. marks.freeze))
+    end
+    if marks.shatter > 0 then
+        table.insert(parts, "shatter +" .. marks.shatter)
+    end
+    return table.concat(parts, ", ")
 end

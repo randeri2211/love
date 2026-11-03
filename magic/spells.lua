@@ -64,15 +64,16 @@ function Spells:schedule(delay, run)
 end
 
 
-function Spells:addCircle(spell, x, y, dirX, dirY)
+function Spells:addCircle(spell, x, y, dirX, dirY, built)
     -- Shows the spell magic circle in front of where it was cast
     -- Casting the same spell again while its circle is still showing keeps that one circle alive
+    -- built is true when a wind-up already built the circle, then it starts fully drawn
     for i, circle in ipairs(self.circles) do
         if circle.spell == spell then
             circle.x = x + dirX * CAST_CIRCLE_OFFSET
             circle.y = y + dirY * CAST_CIRCLE_OFFSET
             circle.dirX, circle.dirY = dirX, dirY
-            circle.time = math.min(circle.time, CAST_DRAW_IN_TIME)    -- Stays fully drawn without restarting the draw-in
+            circle.time = built and CAST_DRAW_IN_TIME or math.min(circle.time, CAST_DRAW_IN_TIME)    -- Stays fully drawn without restarting the draw-in
             return
         end
     end

@@ -20,6 +20,8 @@ Strokes.MARK_SHAPES = {
     line = {{"line", -0.8, 0, 0.8, 0}},
     -- A line crossed by two short bars at its thirds, a bolt passing through
     pierce = {{"line", 0, -0.8, 0, 0.8}, {"line", -0.35, -0.27, 0.35, -0.27}, {"line", -0.35, 0.27, 0.35, 0.27}},
+    -- A zigzag crack, ice breaking(Frost shatter)
+    crack = {{"line", -0.8, 0.25, -0.3, -0.25, 0.2, 0.25, 0.7, -0.25}},
 }
 
 

@@ -18,7 +18,7 @@ RuneBook.LORE = {
     Repeat = "Said once, said again, said louder.",
     Repel = "The polite way of saying not that close.",
     Size = "Grow the core and the rest follows.",
-    Slow = "The snail does not hurry, and still arrives.",
+    Decelerate = "The snail does not hurry, and still arrives.",
     Speed = "Two chevrons, both impatient.",
     Split = "One becomes many, and none become weaker.",
     Weaken = "A smaller spell asks less of its caster.",
@@ -28,6 +28,8 @@ RuneBook.LORE = {
     Frost = "Six arms, and every one of them cold.",
     Poison = "A slow drink of something unkind.",
     Lightning = "It never strikes the same place once.",
+    Light = "Every spell shines a little. This one means it.",
+    Block = "Mana, told to hold still and be a wall for a while.",
 }
 
 -- Marks drawn around the rune, outside the dotted line on the pad
@@ -39,6 +41,7 @@ RuneBook.MARKS = {
     Recoil = {"One arrow: the way it pushes, drawn facing right"},
     Repeat = {"Dots: one more cast each, up to six"},
     Pierce = {"A line through two bars: one more pierce each", "Better drawn marks pierce more"},
+    Frost = {"Dots: a deeper, shorter slow each, three freeze solid", "A zigzag crack: a shorter slow, hits on it shatter harder"},
 }
 
 -- What a rune does to other runes after it in the flow

@@ -32,6 +32,7 @@ function Laser:new(caster, params, x, y, dirX, dirY)
     laser.x, laser.y = x, y
     laser.direction = {dirX, dirY}
     laser.points = nil      -- Beam path, traced on the first update once the spell is registered
+    laser.held = false      -- A held laser stays while its caster holds the cast(see hold)
 
     return laser
 end
@@ -40,10 +41,11 @@ end
 function Laser:castSegment(x1, y1, x2, y2, passed)
     -- Closest thing on the segment: blocks from the map(buried blocks have no hitbox), everything else from physics
     -- Ignores the caster, other spells, things that ignore spells and whatever the beam already pierced(passed)
+    -- The player and every enemy can be hit, an enemy beam hits the player and other enemies
     local closest = nil
     p_world:rayCast(x1, y1, x2, y2, function(fixture, x, y, xn, yn, fraction)
         local category = fixture:getCategory()
-        if category == PLAYER_CATEGORY or category == SPELLS_CATEGORY or category == BLOCKS_CATEGORY or fixture:isSensor() then
+        if category == SPELLS_CATEGORY or category == BLOCKS_CATEGORY or fixture:isSensor() then
             return -1   -- Ignore this fixture and keep going
         end
         for i, masked in ipairs({fixture:getMask()}) do
@@ -52,7 +54,7 @@ function Laser:castSegment(x1, y1, x2, y2, passed)
             end
         end
         local entity = getEntityFromFixture(fixture)
-        if entity ~= nil and passed[entity] then
+        if entity ~= nil and (passed[entity] or self:isCaster(entity)) then
             return -1
         end
         closest = {x = x, y = y, nx = xn, ny = yn, fixture = fixture, entity = entity, fraction = fraction}
@@ -90,7 +92,7 @@ function Laser:fire()
             pierce = pierce - 1
             passed[hit.entity] = true
             damaged[hit.entity] = true
-            self:hit(hit.entity, hit.x, hit.y, dx, dy)
+            self:tryHit(hit.entity, hit.entity, hit.x, hit.y, dx, dy)
             travelled = travelled + distance(x, y, hit.x, hit.y)
             x, y = hit.x, hit.y
         elseif hit ~= nil then
@@ -104,7 +106,7 @@ function Laser:fire()
             local key = hit.entity or hit.fixture
             if not damaged[key] then
                 damaged[key] = true
-                self:hit(hit.entity, hit.x, hit.y, rx, ry, dx, dy)
+                self:tryHit(key, hit.entity, hit.x, hit.y, rx, ry, dx, dy)
             end
 
             if bounces <= 0 then
@@ -136,7 +138,86 @@ function Laser:fire()
 end
 
 
+function Laser:tryHit(key, entity, x, y, dirX, dirY, pushX, pushY)
+    -- A beam cast once hits everything it touches, a held one hits each thing at most once per interval
+    if self.held then
+        local last = self.lastHit[key]
+        if last ~= nil and spells.time - last < self.interval then
+            return
+        end
+        self.lastHit[key] = spells.time
+    end
+    self:hit(entity, x, y, dirX, dirY, pushX, pushY)
+end
+
+
+function Laser:hold(angle, interval, manaCost, push)
+    -- Makes it a held laser(see Spell:spawnVolley): angle is its place in a Split fan around the aim,
+    -- interval the seconds between hits on one thing and between mana payments, push the Recoil of one cast
+    self.held = true
+    self.holdAngle = angle
+    self.interval = math.max(interval, 1 / 60)
+    self.manaCost = manaCost
+    self.push = push
+    self.lastHit = {}           -- When each thing was last hit
+    self.payTime = self.interval    -- The first interval was paid by the cast
+end
+
+
+function Laser:release()
+    -- The caster let go, the beam fades out and ends like a laser cast once(onExpire children go off where it ends)
+    if self.held then
+        self.held = false
+        self.lifetime = LASER_RELEASE_FADE
+        self.duration = LASER_RELEASE_FADE
+    end
+end
+
+
+function Laser:updateHeld(dt)
+    -- Follows the caster aim every frame, pays and pushes once per interval, runs out with the mana
+    local caster = self.player
+    local cx, cy = caster.body:getWorldCenter()
+    local mx, my = mouseToLove()
+    local ax, ay = mx - cx, my - cy
+    local size = math.sqrt(ax * ax + ay * ay)
+    if size < 0.001 then
+        ax, ay, size = 1, 0, 1
+    end
+    ax, ay = ax / size, ay / size
+    local c, s = math.cos(self.holdAngle), math.sin(self.holdAngle)
+    local dx, dy = ax * c - ay * s, ax * s + ay * c
+    if caster.castOrigin ~= nil then
+        self.x, self.y = caster:castOrigin(dx, dy)
+    else
+        self.x, self.y = cx, cy
+    end
+    self.direction = {dx, dy}
+    if caster.castAt ~= nil then
+        caster:castAt(ax, ay)       -- Hands stay up toward the aim
+    end
+
+    self.payTime = self.payTime - dt
+    if self.payTime <= 0 then
+        if caster.manaBar.currentMana < self.manaCost then
+            self:release()
+            return
+        end
+        caster.manaBar.currentMana = caster.manaBar.currentMana - self.manaCost
+        self.payTime = self.payTime + self.interval
+        if self.push ~= nil then
+            self.push(ax, ay)
+        end
+    end
+    self:fire()
+end
+
+
 function Laser:update(dt)
+    if self.held then
+        self:updateHeld(dt)
+        return
+    end
     if self.points == nil then
         self:fire()
     end
@@ -154,6 +235,24 @@ end
 
 function Laser:getDirection()
     return self.endDirection[1], self.endDirection[2]
+end
+
+
+function Laser:light(add)
+    -- Every tile along the beam, fading with it
+    local points = self.points
+    if points == nil or #points < 4 then
+        return
+    end
+    local strength = self:lightStrength(LASER_LIGHT) * math.max(0, self.lifetime / self.duration)
+    local color = self.color or {1, 1, 1}
+    for i = 1, #points - 3, 2 do
+        local x1, y1, x2, y2 = points[i], points[i + 1], points[i + 2], points[i + 3]
+        local steps = math.max(1, math.ceil(distance(x1, y1, x2, y2) / TILE_SIZE))
+        for s = 0, steps do
+            add(x1 + (x2 - x1) * s / steps, y1 + (y2 - y1) * s / steps, color, strength)
+        end
+    end
 end
 
 

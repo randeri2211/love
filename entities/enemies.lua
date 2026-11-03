@@ -1,4 +1,5 @@
 local Hud = require "ui.hud"
+local EnemyCasting = require "magic.enemyCasting"
 
 local Enemies = {}
 
@@ -36,6 +37,16 @@ function Enemies:draw()
         end
     end
 end
+
+function Enemies:drawCasting()
+    -- Cast circles of enemies building a spell, drawn after the time of day light like the spells(see main)
+    for i, enemy in pairs(self.enemies) do
+        if enemy.casting ~= nil then
+            EnemyCasting.draw(enemy)
+        end
+    end
+end
+
 
 function Enemies:moveEnemies(x, y)
     for i, enemy in pairs(self.enemies) do

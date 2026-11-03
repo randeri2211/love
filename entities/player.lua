@@ -91,18 +91,21 @@ function Player:setBody()
     self.fixtures[1] = love.physics.newFixture(self.body, self.shapes[1], 1)
     self.fixtures[1]:setCategory(PLAYER_CATEGORY)
     self.fixtures[1]:setGroupIndex(-PLAYER_CATEGORY)
-    self.fixtures[1]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
+    self.fixtures[1]:setMask(PLAYER_CATEGORY)
     self.fixtures[2] = love.physics.newFixture(self.body, self.shapes[2], 1)
     self.fixtures[2]:setCategory(PLAYER_CATEGORY)
     self.fixtures[2]:setGroupIndex(-PLAYER_CATEGORY)
-    self.fixtures[2]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
+    self.fixtures[2]:setMask(PLAYER_CATEGORY)
     self.fixtures[3] = love.physics.newFixture(self.body, self.shapes[3], 1)
     self.fixtures[3]:setCategory(PLAYER_CATEGORY)
     self.fixtures[3]:setGroupIndex(-PLAYER_CATEGORY)
-    self.fixtures[3]:setMask(SPELLS_CATEGORY, PLAYER_CATEGORY)
+    self.fixtures[3]:setMask(PLAYER_CATEGORY)
 
+    -- Spells touch the player too(enemy spells hit it, its own pass through, see Bullet:onContact),
+    -- the fixtures know the player so a spell can tell who it touched
     for i, fixture in pairs(self.fixtures) do
         fixture:setRestitution(0)
+        fixture:setUserData(self)
     end
 
     self.fixture_check = {}
@@ -212,6 +215,16 @@ end
 
 
 function Player:update(dt)
+    -- Dead it waits where it fell for the respawn countdown
+    if self.deathTimer ~= nil then
+        self.deathTimer = self.deathTimer - dt
+        self.body:setLinearVelocity(0, 0)
+        self.body:setGravityScale(0)
+        if self.deathTimer <= 0 then
+            self:respawn()
+        end
+        return
+    end
     Entity.update(self, dt)
     self:move()
     groundRay(self)
@@ -250,7 +263,7 @@ end
 function Player:meleeHit(attacker, damage, knockback)
     -- Enemy bodies hitting the player, a touch or a swing, then no melee hit lands for a moment
     -- The immunity is for melee only, spells and other damage still land, returns true when the hit landed
-    if (self.contactImmunity or 0) > 0 then
+    if (self.contactImmunity or 0) > 0 or self.deathTimer ~= nil then
         return false
     end
     -- A creature with an elemental touch(contactElement) hits with that element and leaves its statuses
@@ -424,6 +437,9 @@ end
 
 function Player:damage(damage, power, kind)
     -- Takes damage like any entity, but dying respawns instead of destroying the body
+    if self.deathTimer ~= nil then
+        return
+    end
     self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage * (1 - self:damageReduction(kind)))
     self:selfHit()
     if self.hpBar.currentHP <= 0 then
@@ -432,9 +448,25 @@ function Player:damage(damage, power, kind)
 end
 
 function Player:die()
+    -- The respawn countdown starts(see update and the countdown in UIHandler:draw), what burned or poisoned it stops
+    self.hpBar.currentHP = 0
+    self.deathTimer = RESPAWN_TIME
+    self.statuses = nil
+    self.statsDirty = true      -- A frost slow goes with the statuses
+end
+
+
+function Player:isDead()
+    return self.deathTimer ~= nil
+end
+
+
+function Player:respawn()
     -- Back to the spawn with full hp and mana, nothing else is lost for now
+    self.deathTimer = nil
     self.body:setPosition(self.spawnX, self.spawnY)
     self.body:setLinearVelocity(0, 0)
+    self.body:setGravityScale(self:gravityScale())
     self.hpBar.currentHP = self.hpBar.maxHP
     self.manaBar.currentMana = self.manaBar.maxMana
 end

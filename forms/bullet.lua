@@ -28,6 +28,7 @@ function Bullet:new(caster, params, x, y, dirX, dirY)
     bullet.pierced = {}                         -- Fixtures it is passing through, their contacts stay off
     bullet.piercedBlocks = {}                   -- Blocks already pierced, so a block is only hit once
     bullet.inTerrain = nil                      -- Last checked position once it pierced a block(see pierceTerrain)
+    bullet.fromBlock = Form.sourceBlock(params) -- Starts inside the mana block that sent it off, it flies out of it
 
     bullet:shoot(x, y, dirX, dirY)
     return bullet
@@ -70,7 +71,8 @@ function Bullet:shoot(x, y, dirX, dirY)
     -- Spawned inside the ground(a child spell deep in terrain, casting into a wall), blocks in there have no hitboxes
     -- so the bullet follows the map from the start, a plain bullet stops at the block it is in
     local bx, by = self.body:getWorldCenter()
-    if map:solidAt(bx, by) ~= nil then
+    local inside = map:solidAt(bx, by)
+    if inside ~= nil and not self:isCaster(inside) then
         self.inTerrain = {bx, by}
     end
 end
@@ -104,7 +106,7 @@ function Bullet:pierceTerrain()
     for i = 0, steps do
         local px, py = fromX + (x - fromX) * i / steps, fromY + (y - fromY) * i / steps
         local block = map:solidAt(px, py)
-        if block ~= nil and not self.piercedBlocks[block] then
+        if block ~= nil and not self.piercedBlocks[block] and not self:isCaster(block) then
             self.piercedBlocks[block] = true
             self:hit(block, px, py, dx, dy)
             if self.pierce > 0 then
@@ -132,6 +134,11 @@ end
 
 
 function Bullet:onContact(fixture, entity, contact)
+    -- It flies through whoever cast it
+    if self:isCaster(entity) then
+        contact:setEnabled(false)
+        return
+    end
     if self.pierced[fixture] then
         return
     end
@@ -162,10 +169,14 @@ function Bullet:onContact(fixture, entity, contact)
     -- Child spells bounce off the hit surface(reflect the direction across the normal, works for either normal sign)
     local nx, ny = contact:getNormal()
     local dot = dx * nx + dy * ny
-    -- Children start at the contact point, the bullet center is up to a radius away from it
+    -- Children start off the hit surface: the contact point moved out a bullet radius(the normal turned to face
+    -- the way the bullet came from), starting on the surface they would hit it again right away or start inside it
     local x, y = contact:getPositions()
     if x == nil then
         x, y = self.body:getWorldCenter()
+    else
+        local out = dot > 0 and -1 or 1
+        x, y = x + out * nx * self.radius, y + out * ny * self.radius
     end
     self:hit(entity, x, y, dx - 2 * dot * nx, dy - 2 * dot * ny, dx, dy)
 
@@ -179,8 +190,8 @@ end
 
 
 function Bullet:preSolve(fixture, contact)
-    -- Physics turns contacts back on every step, so the ones it is piercing are turned off again
-    if self.pierced[fixture] then
+    -- Physics turns contacts back on every step, so the ones it is piercing(and its caster) are turned off again
+    if self.pierced[fixture] or self:isCaster(getEntityFromFixture(fixture)) then
         contact:setEnabled(false)
     end
 end
