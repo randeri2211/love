@@ -1,7 +1,7 @@
 -- Parts wands and staves are built from at the arcane table(see items/tools and docs/game-design)
 -- part.kind is the slot it goes in, bonus is what it does to every spell cast with the tool:
 -- damage, cooldown and manaCost multiply, knockback and complexity add(an off hand wand gives OFF_HAND_SHARE of them)
--- Cores set the dig cap too, the most dig strength a spell cast with the tool has
+-- Cores set the dig cap too: a spell cast with the tool can damage blocks softer than it(see Form:digReach)
 
 -- Rods from the woodworking station, plain wood does nothing special, the wood names the tool("Oak Wand")
 local WOODS = {

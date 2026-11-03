@@ -1,9 +1,8 @@
-DEBUG = true
+DEBUG = false
 DEBUG_DAY_LENGTH = 60           -- With DEBUG on a whole day takes this many seconds(the world keeps its own setting)
 DEBUG_ONE_HIT_BLOCKS = true
 DEBUG_GLYPH_WALL_KEY = "j"      -- With DEBUG on, places a glyph wall at the mouse that teaches a rune you dont know yet
 DEBUG_FORGET_KEY = "f"          -- With DEBUG on, forgets every rune but the starting ones(to test glyph walls)
-DEBUG_ITEMS_KEY = "i"           -- With DEBUG on, opens the list of every item with a filter, click one to get it
 DEBUG_GIVE_KEY = "g"            -- With DEBUG on, gives every armor piece to test equipment     -- With DEBUG on, any hit breaks a block(bedrock still cant break), for digging around in development
 
 SCREEN_X  = 1920
@@ -188,7 +187,7 @@ HAND_SLOTS = {
     {name = "mainHand", label = "Main"},
     {name = "offHand", label = "Off"},
 }
-BARE_HANDS_DIG_CAP = 10         -- Most dig strength a spell has without a wand or staff(dirt, sand and snow, not stone)
+BARE_HANDS_DIG_CAP = 10         -- Hardest block a spell can damage without a wand or staff, below 10(dirt, sand, snow, sandstone, not stone)
 OFF_HAND_SHARE = 1              -- How much of what it does on its own an off hand wand adds to the main one
 -- What the tool kind does to every spell before its parts: wands are faster and weaker, staves slower and stronger
 -- Wands also give mana regen(per second, each wand) to keep up with casting fast

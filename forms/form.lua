@@ -68,24 +68,23 @@ function Form:damageFor(entity)
     return self.damage
 end
 
-function Form:digStrength()
-    -- Strength checked against block hardness: terrain damage compared to a normal spell
-    -- A plain spell digs with its full damage, every Dig rune doubles it, the caster wand or staff caps it(digCap)
-    local strength = self.damage * self.terrainDamage / BASE_SPELL_PARAMS.terrainDamage
-    return math.min(strength, self.digCap or math.huge)
+function Form:digReach()
+    -- The hardest block it can damage: the dig cap of the wand or staff it was cast with(see items/tools)
+    -- Only the tool decides what can be mined, the spell damage and Dig runes decide how fast(the HP a hit takes)
+    return self.digCap or math.huge
 end
 
 function Form:hit(entity, x, y, dirX, dirY, pushX, pushY)
     -- Damages what was hit and casts the onHit child spells from there(dirX, dirY is the way they go)
-    -- Blocks check hardness against the dig strength, so weak fast hits still dig slowly
+    -- Blocks check their hardness against the dig cap of the caster tool, the hit only sets how much they lose
     -- pushX, pushY is the way the hit shoves, the way the spell was going(defaults to dirX, dirY)
     if entity ~= nil then
-        -- Creatures can take a critical hit, blocks only check the dig strength
+        -- Creatures can take a critical hit, blocks only check the dig cap
         local amount = self:damageFor(entity)
         if entity.type ~= "Block" then
             amount = Crit.roll(self, amount, x, y)
         end
-        entity:damage(amount, self:digStrength())
+        entity:damage(amount, self:digReach())
         -- Elements burn, freeze and poison what was hit, Lightning jumps on from it
         if self.elementParams ~= nil then
             local hx, hy = x, y

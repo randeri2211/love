@@ -66,8 +66,8 @@ end
 
 
 function Block:damage(dmg, power)
-    -- power is the hit strength checked against the hardness, dmg is what the block loses
-    -- (spells only deal part of their damage to terrain, hardness looks at their dig strength)
+    -- power is checked against the hardness(a spell passes its dig cap, see Form:digReach), dmg is what the block loses
+    -- (spells only deal part of their damage to terrain, Dig runes raise it)
     power = power or dmg
     -- Development: blocks break on any hit, the bottom of the world still holds
     if DEBUG and DEBUG_ONE_HIT_BLOCKS and self.damageThreshold ~= math.huge then

@@ -6,6 +6,7 @@ local Inventory = require "components.inventory"
 local Equipment = require "components.equipment"
 local Statuses = require "magic.statuses"
 local Knowledge = require "magic.knowledge"
+local Slab = require "libraries.Slab"
 
 local Player = Entity:new()
 AS = 25
@@ -124,11 +125,17 @@ function Player:updateAnimation()
 end
 
 
+local function held(key)
+    -- A movement key that is down, unless it is being typed into a text box(the item list filter, a spell name)
+    return love.keyboard.isDown(key) and not Slab.IsAnyInputFocused()
+end
+
+
 function Player:move()
     -- Increase linear velocity according to speed(doesn't depend on time since its using world)
     local moved = false
     local x,y = self.body:getLinearVelocity()
-    if love.keyboard.isDown(RIGHT_KEY) then
+    if held(RIGHT_KEY) then
         self.body:setLinearVelocity(self.movement.maxSpeed, y)
         moved = true
         if self.direction ~= 'right' then
@@ -143,7 +150,7 @@ function Player:move()
         end
     end
     local x,y = self.body:getLinearVelocity()
-    if love.keyboard.isDown(LEFT_KEY) then
+    if held(LEFT_KEY) then
         self.body:setLinearVelocity(-self.movement.maxSpeed, y)
         moved = true
         if self.direction ~= 'left' then
@@ -160,7 +167,7 @@ function Player:move()
 
 
     local x,y = self.body:getLinearVelocity()
-    if love.keyboard.isDown(JUMP_KEY) then
+    if held(JUMP_KEY) then
         self.moving = true
         if self.grounded then
             self.jumping = true

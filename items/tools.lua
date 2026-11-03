@@ -181,7 +181,7 @@ end
 function Tools.effectLines(effect)
     -- What a whole tool does to every spell(Tools.effect), as totals("Spell cooldown 72%")
     local lines = {
-        {text = string.format("Dig strength cap  %d", effect.digCap), good = better(effect.digCap, BARE_HANDS_DIG_CAP, true)},
+        {text = string.format("Dig cap  %d", effect.digCap), good = better(effect.digCap, BARE_HANDS_DIG_CAP, true)},
         {text = string.format("Spell damage  %d%%", math.floor(effect.damage * 100 + 0.5)), good = better(effect.damage, 1, true)},
         {text = string.format("Spell cooldown  %d%%", math.floor(effect.cooldown * 100 + 0.5)), good = better(effect.cooldown, 1, false)},
         {text = string.format("Mana cost  %d%%", math.floor(effect.manaCost * 100 + 0.5)), good = better(effect.manaCost, 1, false)},
@@ -209,7 +209,7 @@ function Tools.describe(stack)
         local part = item.part
         local lines = {{text = PART_KINDS[part.kind]}}
         if part.digCap ~= nil then
-            table.insert(lines, {text = string.format("Dig strength cap  %d", part.digCap), good = true})
+            table.insert(lines, {text = string.format("Dig cap  %d", part.digCap), good = true})
         end
         for i, line in ipairs(Tools.bonusLines(part.bonus or {})) do
             table.insert(lines, line)

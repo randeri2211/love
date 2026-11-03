@@ -221,6 +221,8 @@ function love.keypressed(key)
             uihandler:toggleCharacterScreen()
         elseif key == GRIMOIRE_KEY then
             uihandler:toggleGrimoire()
+        elseif key == ITEM_LIST_KEY then
+            uihandler:toggleItemBrowser()
         -- Save and load the open world, saving while paused is fine
         elseif key == SAVE_KEY then
             saveScene(currentWorld)
@@ -245,8 +247,6 @@ function love.keypressed(key)
                 else
                     player.hotbarSlot = key == "0" and 10 or tonumber(key)
                 end
-            elseif DEBUG and key == DEBUG_ITEMS_KEY then
-                uihandler:toggleItemBrowser()
             elseif DEBUG and key == DEBUG_GLYPH_WALL_KEY then
                 -- A glyph wall at the mouse that teaches a rune this character doesnt know yet(any rune when it knows all)
                 local Knowledge = require "magic.knowledge"

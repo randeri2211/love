@@ -73,15 +73,15 @@ The shapes can reuse the spell editor's rune drawing code.
 
 ## Mining progression (Decided)
 
-**Done:** a block only takes damage when the hit's dig strength is **greater than** its `damageThreshold` (`Block:damage`, `Form:digStrength`).
-Dig strength is `damage × terrainDamage / 0.1`, so each Dig rune doubles it and each Damage rune multiplies it by 1.5.
-
-**Problem:** stacking runes alone clears every threshold. Two Dig runes (40) break everything but bedrock on day one.
-
-**Decided: the casting tool caps dig strength.** Every hit's dig strength is limited to the cap of the wand or staff it was cast with.
+**Done: only the casting tool decides what can be mined.** A block takes damage when its hardness(`damageThreshold`) is
+**below the dig cap** of the wand or staff the spell was cast with(`Block:damage`, `Form:digReach`), bare hands have 10.
+The spell itself, its damage and Dig runes, only decides how fast: the HP a hit takes from the block(`damage × terrainDamage`).
 Trigger spells inherit the cap from the spell that cast them, so an OnHit chain can't get around it.
 
-Proposed tiers (each cap is one point above the block it opens):
+(Before this, hardness was checked against a dig strength made from the spell damage, so stacking Dig runes opened every ore
+on day one, and the wand damage multiplier made wands worse miners than staves. Both are gone.)
+
+Tiers (each cap is one point above the block it opens):
 
 | Casting tool core | Dig cap | Newly mineable |
 |---|---|---|

@@ -451,7 +451,7 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
         if instance ~= nil then
             instance.spell = self   -- So triggers can find their child spells
             instance.knockback = castParams.knockback   -- How hard its hits shove(see Form:hit)
-            instance.digCap = caster.combatStats and caster.combatStats.digCap    -- Most dig strength it has(see Form:digStrength)
+            instance.digCap = caster.combatStats and caster.combatStats.digCap    -- Hardest block it can damage(see Form:digReach)
             -- The caster crit chance, every hit rolls(see magic/crit)
             instance.critChance, instance.critMultiplier = Crit.from(caster)
             -- Elements it carries to its hits and shows while it flies(see magic/elements)

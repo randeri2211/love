@@ -211,7 +211,7 @@ function CharacterScreen:characterWindow(x, y)
             Slab.Text("        " .. resist("Poison") .. "  " .. resist("Lightning"))
             -- What the wand or staff does to spells
             local tool = combat.tool
-            Slab.Text(string.format("Dig strength cap  %d", combat.digCap))
+            Slab.Text(string.format("Dig cap  %d", combat.digCap))
             Slab.Text(string.format("Spell damage  %d%%", math.floor(tool.damage * 100 + 0.5)))
             Slab.Text(string.format("Spell cooldown  %d%%", math.floor(tool.cooldown * 100 + 0.5)))
             Slab.Text(string.format("Mana cost  %d%%", math.floor(tool.manaCost * 100 + 0.5)))
