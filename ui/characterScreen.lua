@@ -22,7 +22,7 @@ local STATS_W = 300
 local PREVIEW_H = 170
 local PREVIEW_SCALE = 2.2   -- The character preview drawn bigger than in the world
 local MARGIN = 16
-local STATS_H = 850         -- Tall enough for the preview, the equipment slots and every stat line
+local STATS_H = 940         -- Tall enough for the preview, the equipment slots and every stat line
 local INVENTORY_EXTRA_H = 78    -- Inventory window height over the grid: title and the hint lines
 
 -- The row of equipment slots under the character: the armor, then the hands
@@ -88,7 +88,8 @@ function CharacterScreen:update()
     local gridW, gridH = COLUMNS * CELL, rows * CELL
     local totalW = STATS_W + gridW + 40 + MARGIN
     local x = math.floor(w / 2 - totalW / 2)
-    local y = math.floor(h / 2 - STATS_H / 2)
+    -- A little above the middle, so the bottom stays clear of the hotbar
+    local y = math.max(MARGIN, math.floor(h / 2 - STATS_H / 2) - 40)
 
     -- The open block closes when it is gone or out of reach
     if self.block ~= nil and not self:blockInReach() then
@@ -201,6 +202,13 @@ function CharacterScreen:characterWindow(x, y)
             Slab.Text(string.format("Max complexity  %d", combat.maxComplexity))
             Slab.Text(string.format("Defense  %d", combat.defense))
             Slab.Text(string.format("Blocks  %d%% of damage", math.floor(combat.damageReduction * 100 + 0.5)))
+            Slab.Text(string.format("Crit  %d%% for %d%%", math.floor(combat.critChance * 100 + 0.5), math.floor(combat.critMultiplier * 100 + 0.5)))
+            -- Resistances as the part of each element they block
+            local function resist(element)
+                return string.format("%s %d%%", element, math.floor(combat.resistReduction[element] * 100 + 0.5))
+            end
+            Slab.Text("Resist  " .. resist("Fire") .. "  " .. resist("Frost"))
+            Slab.Text("        " .. resist("Poison") .. "  " .. resist("Lightning"))
             -- What the wand or staff does to spells
             local tool = combat.tool
             Slab.Text(string.format("Dig strength cap  %d", combat.digCap))

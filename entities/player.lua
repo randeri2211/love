@@ -4,6 +4,7 @@ local Entity = require "entities.entity"
 local Humanoid = require "animations.humanoid"
 local Inventory = require "components.inventory"
 local Equipment = require "components.equipment"
+local Statuses = require "magic.statuses"
 
 local Player = Entity:new()
 AS = 25
@@ -243,7 +244,11 @@ function Player:meleeHit(attacker, damage, knockback)
     if (self.contactImmunity or 0) > 0 then
         return false
     end
-    self:damage(damage)
+    -- A creature with an elemental touch(contactElement) hits with that element and leaves its statuses
+    self:damage(damage, nil, attacker.contactElement)
+    if attacker.contactElements ~= nil then
+        Statuses.apply(self, attacker.contactElements)
+    end
     self.contactImmunity = CONTACT_IMMUNITY_TIME
     -- Knocked away from the attacker and a little up
     local x = self.body:getWorldCenter()
@@ -407,9 +412,9 @@ function Player:updateCastPose(dt)
 end
 
 
-function Player:damage(damage)
+function Player:damage(damage, power, kind)
     -- Takes damage like any entity, but dying respawns instead of destroying the body
-    self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage * (1 - self:damageReduction()))
+    self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage * (1 - self:damageReduction(kind)))
     self:selfHit()
     if self.hpBar.currentHP <= 0 then
         self:die()

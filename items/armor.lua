@@ -1,5 +1,6 @@
 -- Armor items: one icon shape per slot(assets/items.png) tinted by the material
--- armor.slot is the equipment slot it goes in, defense lowers damage taken, stats add to the wearer stats
+-- armor.slot is the equipment slot it goes in, defense lowers damage taken, stats add to the wearer stats,
+-- resist adds element resistances({Fire = 5}, see Equipments.resistances)
 local MATERIALS = {
     -- name, tint, defense per slot, stats per slot
     {
@@ -34,7 +35,7 @@ for i, material in ipairs(MATERIALS) do
             maxStack = 1,
             icon = piece.icon,      -- In ITEM_TILES(assets/items.png)
             tint = material.tint,
-            armor = {slot = slot, defense = values.defense, stats = values.stats},
+            armor = {slot = slot, defense = values.defense, stats = values.stats, resist = values.resist},
         })
     end
 end

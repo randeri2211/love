@@ -84,12 +84,14 @@ function Entity:regen(dt)
     end
 end
 
-function Entity:damage(damage)
+function Entity:damage(damage, power, kind)
+    -- kind is the element of the damage(nil for plain damage), armor blocks plain damage and resistances their element
+    -- power is only for blocks(their hardness)
     -- Dying entities dont take more hits
     if self.dying then
         return
     end
-    self.hpBar.currentHP = self.hpBar.currentHP - damage * (1 - self:damageReduction())
+    self.hpBar.currentHP = self.hpBar.currentHP - damage * (1 - self:damageReduction(kind))
     self:selfHit()
     if self.hpBar.currentHP <= 0 then
         if self.dropLoot ~= nil then
@@ -108,9 +110,16 @@ function Entity:selfBuff(key)
     return value
 end
 
-function Entity:damageReduction()
-    -- Part of incoming damage its armor blocks
-    return self.combatStats and self.combatStats.damageReduction or 0
+function Entity:damageReduction(kind)
+    -- Part of incoming damage its armor blocks, or its resistance to the element of the damage
+    local combat = self.combatStats
+    if combat == nil then
+        return 0
+    end
+    if kind ~= nil then
+        return combat.resistReduction[kind] or 0
+    end
+    return combat.damageReduction or 0
 end
 
 function Entity:gravityScale()

@@ -23,6 +23,9 @@ function ItemTooltip.lines(stack)
         for stat, amount in pairs(item.armor.stats or {}) do
             table.insert(lines, {text = string.format("%+d %s", amount, stat), good = amount > 0})
         end
+        for element, amount in pairs(item.armor.resist or {}) do
+            table.insert(lines, {text = string.format("%+d %s resistance", amount, element), good = amount > 0})
+        end
     end
     return lines or {}
 end

@@ -1,5 +1,6 @@
 local ElementFx = require "magic.elementFx"
 local Statuses = require "magic.statuses"
+local Crit = require "magic.crit"
 
 -- Elements(see docs/game-design): Fire burns, Frost slows, Poison stacks damage over time, Lightning jumps to enemies nearby
 -- Each element rune switches its params on(BASE_SPELL_PARAMS has them at 0), scaled by its settings:
@@ -40,6 +41,19 @@ function Elements.of(params)
 end
 
 
+function Elements.valuesFor(powers)
+    -- Element values for something that isnt a spell(a creature with a burning touch): {Fire = 1, Poison = 0.5}
+    -- gives each listed element its base strength times the number, with its base duration
+    local values = {}
+    for i, element in ipairs(Elements.LIST) do
+        local power = powers[element.name]
+        values[element.power[1]] = power and element.power[2] * power or 0
+        values[element.duration[1]] = power and element.duration[2] or 0
+    end
+    return values
+end
+
+
 function Elements.pick(params)
     -- The element params a spell instance carries to its hits
     local picked = {}
@@ -68,7 +82,8 @@ local function chain(form, hit, x, y)
     for i = 1, math.min(CHAIN_TARGETS, #found) do
         local target = found[i]
         ElementFx.bolt(x, y, target.x, target.y)
-        target.enemy:damage(form.damage * values.chainDamage)
+        local amount = Crit.roll(form, form.damage * values.chainDamage, target.x, target.y)
+        target.enemy:damage(amount, nil, "Lightning")
     end
 end
 
@@ -87,7 +102,7 @@ function Elements.onHit(form, entity, x, y)
     if entity == nil or entity.type == "Block" or entity.hpBar == nil then
         return
     end
-    Statuses.apply(entity, values)
+    Statuses.apply(entity, values, form)
     if values.chainDamage > 0 then
         local ex, ey = entity.body:getWorldCenter()
         chain(form, entity, ex, ey)

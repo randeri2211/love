@@ -1,5 +1,6 @@
 local Rune = require "runes.rune"
 local Elements = require "magic.elements"
+local Crit = require "magic.crit"
 
 local Spell = {}
 
@@ -448,6 +449,8 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
             instance.spell = self   -- So triggers can find their child spells
             instance.knockback = castParams.knockback   -- How hard its hits shove(see Form:hit)
             instance.digCap = caster.combatStats and caster.combatStats.digCap    -- Most dig strength it has(see Form:digStrength)
+            -- The caster crit chance, every hit rolls(see magic/crit)
+            instance.critChance, instance.critMultiplier = Crit.from(caster)
             -- Elements it carries to its hits and shows while it flies(see magic/elements)
             instance.elements = Elements.of(castParams)
             instance.elementParams = instance.elements and Elements.pick(castParams)

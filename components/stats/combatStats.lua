@@ -30,6 +30,20 @@ local function combatStats(entity)
     combatStats.defense = entity.equipment and Equipments.defense(entity.equipment) or 0
     combatStats.damageReduction = Equipments.damageReduction(combatStats.defense)
 
+    -- Element resistances: its own(entity.resistances) plus its armor, each blocks its element like defense blocks the rest
+    combatStats.resistances = {}
+    combatStats.resistReduction = {}
+    local worn = entity.equipment and Equipments.resistances(entity.equipment) or {}
+    for i, element in ipairs({"Fire", "Frost", "Poison", "Lightning"}) do
+        local value = (entity.resistances and entity.resistances[element] or 0) + (worn[element] or 0)
+        combatStats.resistances[element] = value
+        combatStats.resistReduction[element] = Equipments.damageReduction(value)
+    end
+
+    -- Critical hits, gear can add to them later(the tanning table sets)
+    combatStats.critChance = BASE_CRIT_CHANCE + (bonus.critChance or 0)
+    combatStats.critMultiplier = CRIT_MULTIPLIER + (bonus.critDamage or 0)
+
     -- The wand or staff in the hands: the dig cap and what it does to every spell(see items/tools, Spell:shoot)
     combatStats.tool = Tools.effect(entity.equipment)
     combatStats.digCap = combatStats.tool.digCap

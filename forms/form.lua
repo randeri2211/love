@@ -1,4 +1,5 @@
 local Elements = require "magic.elements"
+local Crit = require "magic.crit"
 
 local Form = {}
 
@@ -79,7 +80,12 @@ function Form:hit(entity, x, y, dirX, dirY, pushX, pushY)
     -- Blocks check hardness against the dig strength, so weak fast hits still dig slowly
     -- pushX, pushY is the way the hit shoves, the way the spell was going(defaults to dirX, dirY)
     if entity ~= nil then
-        entity:damage(self:damageFor(entity), self:digStrength())
+        -- Creatures can take a critical hit, blocks only check the dig strength
+        local amount = self:damageFor(entity)
+        if entity.type ~= "Block" then
+            amount = Crit.roll(self, amount, x, y)
+        end
+        entity:damage(amount, self:digStrength())
         -- Elements burn, freeze and poison what was hit, Lightning jumps on from it
         if self.elementParams ~= nil then
             local hx, hy = x, y

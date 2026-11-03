@@ -4,6 +4,11 @@ local Enemy = Entity:new()
 registerEntity("Enemy",Enemy)
 -- What it drops when it dies: {item, min, max, chance(0-1, 1 when left out)} per entry, rolled one by one
 Enemy.loot = {}
+-- Elemental enemies: resistances = {Fire = 20} blocks that element like armor(below 0 is a weakness),
+-- contactElement makes its touch deal that element, contactElements(Elements.valuesFor) leaves statuses on the player
+Enemy.resistances = nil
+Enemy.contactElement = nil
+Enemy.contactElements = nil
 
 function Enemy:new(x, y)
     -- Enemy Attributes

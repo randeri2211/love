@@ -200,7 +200,11 @@ Tying elements to forms would remove a choice, a fire laser and a frost laser sh
 | (none) | Plain damage stays the default arcane type | As today |
 
 - **Every element changes how the spell looks on every form:** a fire laser has red particles along the beam, a fire bullet glows red and trails fire particles, and so on for each element.
-- Forge armor resists specific elements, biome enemies resist or are weak to them(not built yet).
+- **Done:** resistances per element, blocking `r / (r + 50)` of that element like defense blocks plain damage(below 0 is a weakness).
+  Armor blocks plain damage, resistances block element damage(burn and poison ticks, lightning jumps, elemental touches).
+  Armor pieces can carry `resist`, enemies `resistances`, an elemental touch(`contactElement`, `contactElements`) hurts and leaves statuses.
+- **Done:** crit, 5% base chance for 200% damage, spell hits, lightning jumps and every burn and poison tick roll.
+- Still to come: forge armor with resistances, biome enemies that resist or are weak to elements, tanning table crit sets.
 - **Done:** Fire burns 4/s for 3s(refreshes), Frost slows 40% for 3s, Poison 2/s for 8s stacking to x3, Lightning jumps 50% of the hit
   to 2 enemies within 6 tiles. Damage before an element makes it stronger, Size makes it last longer(or jump further), Weaken weakens it.
   The numbers are in `magic/elements`, the status rules in `magic/statuses`, the look in `magic/elementFx`.

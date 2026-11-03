@@ -12,6 +12,8 @@ local STYLES = {
     Poison = {colors = {{0.7, 1, 0.4}, {0.3, 0.7, 0.15}}, vx = {-6, 6}, vy = {-30, -12}, life = {0.8, 1.2}, size = 3, sway = true},
     -- Sparks shoot out fast in every direction and are gone at once
     Lightning = {colors = {{1, 1, 0.85}, {1, 0.9, 0.35}}, speed = {80, 150}, life = {0.12, 0.25}, size = 2, streak = true},
+    -- Not an element: the white and gold burst of a critical hit(see magic/crit)
+    Crit = {colors = {{1, 1, 1}, {1, 0.85, 0.35}}, speed = {60, 120}, life = {0.15, 0.3}, size = 3, streak = true},
 }
 ElementFx.COLORS = {}      -- The main color of each element, its glow
 for name, style in pairs(STYLES) do

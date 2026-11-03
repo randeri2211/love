@@ -68,7 +68,26 @@ end
 
 function Equipments.damageReduction(defense)
     -- Part of the damage defense blocks: more defense always helps, but it never blocks everything
+    -- Resistances use the same curve, below 0 it is a weakness and the damage grows the same way
+    if defense < 0 then
+        return -(-defense / (-defense + DEFENSE_SCALE))
+    end
     return defense / (defense + DEFENSE_SCALE)
+end
+
+
+function Equipments.resistances(equipment)
+    -- Element resistances every worn piece adds up to, by element name(armor.resist)
+    local total = {}
+    for i, slot in ipairs(ARMOR_SLOTS) do
+        local stack = equipment[slot.name]
+        if stack then
+            for element, amount in pairs(ITEM_REGISTRY[stack.item].armor.resist or {}) do
+                total[element] = (total[element] or 0) + amount
+            end
+        end
+    end
+    return total
 end
 
 

@@ -180,7 +180,9 @@ TOOL_KINDS = {
     Wand = {damage = 0.85, cooldown = 0.8},
     Staff = {damage = 1.3, cooldown = 1.25},
 }
-DEFENSE_SCALE = 50             -- Damage blocked is defense / (defense + this): 10 defense blocks about 17%, 50 blocks half
+BASE_CRIT_CHANCE = 0.05        -- Part of hits that crit(spell hits, lightning jumps and every burn and poison tick roll)
+CRIT_MULTIPLIER = 2             -- A crit deals this many times the damage
+DEFENSE_SCALE = 50            -- Damage blocked is defense / (defense + this): 10 defense blocks about 17%, 50 blocks half
 ITEM_STACK = 99                 -- Most items in one slot, items can set their own maxStack
 ITEM_DROP_SIZE = 14             -- Pixels, the icon of an item lying in the world
 ITEM_POP_SPEED = 3 * TILE_SIZE  -- How hard a drop jumps out of a broken block

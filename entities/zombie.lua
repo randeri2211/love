@@ -244,13 +244,13 @@ end
 
 
 -- Hit and Death
-function Zombie:damage(damage)
+function Zombie:damage(damage, power, kind)
     if self.dying ~= nil then
         return
     end
     self.flashTime = HIT_FLASH_TIME
     self.lastHitTime = spells.time      -- Keeps it awake for a while(see Enemy:isAwake)
-    Entity.damage(self, damage)
+    Entity.damage(self, damage, power, kind)
 end
 
 
