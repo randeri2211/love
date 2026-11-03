@@ -1,5 +1,6 @@
 local Slab = require "libraries.Slab"
 local MagicCircle = require "magic.magicCircle"
+local Strokes = require "magic.strokes"
 local Knowledge = require "magic.knowledge"
 local RuneBook = require "magic.runeBook"
 local PixelFont = require "ui.pixelFont"
@@ -14,6 +15,7 @@ local CELL = 56
 local ICON_RADIUS = 21
 local PAGE_W = 420
 local GLYPH_SIZE = 200
+local MARK_ICON = 30        -- The mark shape drawn before each mark line
 local GAP = 12
 local WINDOW_H = 640
 
@@ -168,6 +170,28 @@ function Grimoire:drawList(runes, rows)
 end
 
 
+function Grimoire:markIcon(kind, color)
+    -- A small picture of a mark shape(see Strokes.MARK_SHAPES) in the rune color, one canvas per shape and color kept
+    -- (Slab draws its images after the frame is built, so every icon on the page needs its own canvas)
+    self.markIcons = self.markIcons or {}
+    local key = kind .. table.concat(color, ",")
+    local canvas = self.markIcons[key]
+    if canvas == nil then
+        canvas = love.graphics.newCanvas(MARK_ICON, MARK_ICON)
+        love.graphics.push("all")
+        love.graphics.setCanvas(canvas)
+        love.graphics.origin()
+        love.graphics.clear(STAGE_COLOR)
+        love.graphics.setColor(color)
+        love.graphics.setLineStyle("smooth")
+        MagicCircle.drawGlyph(Strokes.MARK_SHAPES[kind] or {}, MARK_ICON / 2, MARK_ICON / 2, MARK_ICON * 0.38, 2)
+        love.graphics.pop()
+        self.markIcons[key] = canvas
+    end
+    return canvas
+end
+
+
 function Grimoire:page(rune, knowledge)
     -- The rune drawn big, then everything the grimoire knows about it
     if self.glyphCanvas == nil then
@@ -208,11 +232,20 @@ function Grimoire:page(rune, knowledge)
 
     Slab.NewLine()
     Slab.Text("Marks", {Color = HEADER_COLOR})
-    local marks = RuneBook.MARKS[rune.name]
+    -- Every rune says what its marks do itself(rune.markHelp, next to the code that reads them), with the shape to draw
+    local marks = rune.markHelp
     if marks ~= nil then
         for i, line in ipairs(marks) do
-            Slab.Textf(line, {W = PAGE_W - 20})
+            if type(line) == "table" then
+                Slab.Image("GrimoireMark" .. i, {Image = self:markIcon(line[1], rune.color)})
+                Slab.SameLine({CenterY = true})
+                Slab.Textf(line[2], {W = PAGE_W - 30 - MARK_ICON})
+            else
+                Slab.Textf(line, {W = PAGE_W - 20, Color = HINT_COLOR})
+            end
         end
+    elseif rune.readMarks ~= nil then
+        Slab.Text("Reads marks drawn around it", {Color = HINT_COLOR})
     else
         Slab.Text("None", {Color = HINT_COLOR})
     end

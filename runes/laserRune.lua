@@ -40,6 +40,6 @@ function LaserRune:defaults()
 end
 
 -- Marks: an arrow aims the beam, it bends and bounces from there as usual
-LaserRune:useAimMarks()
+LaserRune:useAimMarks("One arrow: the beam starts turned from your aim")
 
 return LaserRune

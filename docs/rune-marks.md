@@ -39,15 +39,23 @@ Also:
 - Each mark kind keeps a consistent feel across runes: **dots count steps**, **arrows give a direction**, outward means more / grow and inward means less / shrink.
 - Go beyond arrows, dots and lines: a mark's visual should hint at its meaning (the pierce mark is a bolt passing through bars).
 - New shapes must stay apart from the existing ones in the recognizer: test them with noisy generated marks before adding them.
+- The shared shapes (arrow, dot, line, pierce, crack) are tried for every rune. A shape only one rune uses goes in that rune's
+  `markKinds` and is only tried for it, so it can't change how other runes read (a sloppy dot on Repeat is never a Fire flame).
 
 ## Mark shapes
 
 | Kind | Visual | Used by |
 |---|---|---|
 | `arrow` | Shaft with a head, direction read from the arrow itself | Split, Bullet, Laser, Gravity, Recoil |
-| `dot` | Small circle | Repeat |
+| `dot` | Small circle | Repeat, Frost, Poison |
 | `line` | Straight stroke | (free) |
 | `pierce` | A line crossed by two short bars at its thirds | Pierce |
+| `crack` | A zigzag | Frost |
+| `flame` | A teardrop | Fire |
+| `wave` | A wavy line | Fire |
+| `spiral` | A small spiral | Fire |
+| `spark` | An asterisk, three crossing strokes | Fire |
+| `fork` | A Y, one stem splitting in two | Lightning |
 
 ## Forms
 
@@ -69,7 +77,6 @@ New behaviors that showed up as marks on several forms.
 |---|---|---|---|---|
 | **Repeat** | All | Plain: casts twice. Each dot adds a cast (up to 6). Casts come `REPEAT_DELAY` apart, every one does full damage, each costs more mana than the one before (+0.5, +0.75, +1 of the spell...). Repeat runes multiply | Bullet burst, Laser pulses, Area pulses, Trap charges | **Done** |
 | **Pierce** | Bullet, Laser | Plain: passes 1 enemy or block. Pierce marks add the sum of how well each is drawn (rounded, up to 8). Pierce runes add up | Bullet pierce | **Done** |
-| **Chain** | Bullet, Laser | Zigzag: one jump to the nearest other enemy per peak | Laser chain idea | Idea |
 
 ## Elements
 
@@ -79,9 +86,12 @@ Frost has a built-in **shatter**: hits on something it slowed deal `FROST_SHATTE
 |---|---|---|---|
 | **Frost** | Dots | Deeper freeze: each adds 0.2 slow and keeps 0.75 of the time. Three dots freeze solid (100% slow, about 1.3s) | **Done** |
 | | Crack (a zigzag) | Short freeze, strong shatter: each multiplies the shatter by 1.8 and keeps 0.6 of the time | **Done** |
-| **Fire** | Flame tongues out | Burns faster for less time, the same total damage sooner | Idea |
-| **Poison** | Dots | One more stack allowed each(up to 6), each stack a little weaker | Idea |
-| **Lightning** | Dots | One more jump target each(up to 5), each jump a little weaker | Idea |
+| **Fire** | Flame (a teardrop) | Flare: each burns 1.5x faster for 1.5x less time, the same total damage sooner | **Done** |
+| | Wave (a wavy line) | Smoulder: each burns 1.5x slower for 1.5x longer, the same total. Flames and waves count against each other | **Done** |
+| | Spiral (small) | Kindling: each starts the burn 30% weaker and lets it grow to 30% stronger over 3s of burning (the same total over one burn, more for keeping it lit) | **Done** |
+| | Spark (an asterisk) | Wildfire: a burning creature that dies passes its full burn to the nearest creature within 5 tiles, once per spark (never back to the player who cast it). Adds power, so each costs +2 complexity and +1 mana more | **Done** |
+| **Poison** | Dots | One more stack allowed each (up to 6), every stack x0.9: a higher cap (6 to 8.7 dps) but a slower ramp | **Done** |
+| **Lightning** | Fork (a Y) | One more jump target each (up to 5), every jump x0.85. Reads as lightning branching | **Done** |
 
 ## Modifiers
 
@@ -122,6 +132,7 @@ Frost has a built-in **shatter**: hits on something it slowed deal `FROST_SHATTE
 
 | Idea | Why |
 |---|---|
+| Chain rune (a zigzag, one jump per peak) | Lightning already jumps to nearby enemies, its fork mark sets how many |
 | Laser sweep | Gravity's direction arrow and the player's own aim already shape the beam |
 | Laser reach | Speed and Decelerate change reach |
 | Laser charge (wider, stronger beam) | Size, Focus and Damage |

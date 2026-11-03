@@ -1,5 +1,5 @@
--- What the grimoire says about each rune(see ui/grimoire): a line of lore and the marks it reads
--- Marks follow docs/rune-marks.md, only the ones in the game are listed
+-- What the grimoire says about each rune(see ui/grimoire): a line of lore and what it does to runes after it
+-- What its marks do each rune says itself(rune.markHelp, next to the code that reads them)
 local RuneBook = {}
 
 RuneBook.LORE = {
@@ -30,18 +30,6 @@ RuneBook.LORE = {
     Lightning = "It never strikes the same place once.",
     Light = "Every spell shines a little. This one means it.",
     Block = "Mana, told to hold still and be a wall for a while.",
-}
-
--- Marks drawn around the rune, outside the dotted line on the pad
-RuneBook.MARKS = {
-    Bullet = {"One arrow: the shot turns up or down from your aim"},
-    Laser = {"One arrow: the beam starts turned from your aim"},
-    Split = {"Arrows pointing out: one projectile each", "The fan covers the angle the arrows span"},
-    Gravity = {"One arrow: the way gravity pulls the spell"},
-    Recoil = {"One arrow: the way it pushes, drawn facing right"},
-    Repeat = {"Dots: one more cast each, up to six"},
-    Pierce = {"A line through two bars: one more pierce each", "Better drawn marks pierce more"},
-    Frost = {"Dots: a deeper, shorter slow each, three freeze solid", "A zigzag crack: a shorter slow, hits on it shatter harder"},
 }
 
 -- What a rune does to other runes after it in the flow

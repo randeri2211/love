@@ -22,6 +22,16 @@ Strokes.MARK_SHAPES = {
     pierce = {{"line", 0, -0.8, 0, 0.8}, {"line", -0.35, -0.27, 0.35, -0.27}, {"line", -0.35, 0.27, 0.35, 0.27}},
     -- A zigzag crack, ice breaking(Frost shatter)
     crack = {{"line", -0.8, 0.25, -0.3, -0.25, 0.2, 0.25, 0.7, -0.25}},
+    -- Shapes past here belong to one rune: they are only tried for a rune that lists them in markKinds,
+    -- so a new shape never changes how the marks of other runes read(a sloppy dot isnt mistaken for a flame)
+    -- A Y, one stem splitting in two, lightning branching(Lightning jumps)
+    fork = {{"line", 0, 0.8, 0, 0}, {"line", -0.55, -0.7, 0, 0, 0.55, -0.7}},
+    -- Fire: a teardrop flame(flare), a wavy line of heat(smoulder), a spiral ember(kindling), a spark(wildfire)
+    flame = {{"polygon", 0, -0.85, 0.38, 0.1, 0.25, 0.6, -0.25, 0.6, -0.38, 0.1}},
+    wave = {{"arc", -0.6, 0, 0.2, 3.14, 6.28}, {"arc", -0.2, 0, 0.2, 0, 3.14}, {"arc", 0.2, 0, 0.2, 3.14, 6.28}, {"arc", 0.6, 0, 0.2, 0, 3.14}},
+    spiral = {{"arc", 0, 0, 0.75, 0, 3.14}, {"arc", -0.1, 0, 0.65, 3.14, 6.28}, {"arc", 0, 0, 0.45, 0, 3.14},
+        {"arc", -0.1, 0, 0.35, 3.14, 6.28}, {"arc", 0, 0, 0.15, 0, 3.14}},
+    spark = {{"line", -0.8, 0, 0.8, 0}, {"line", -0.4, -0.69, 0.4, 0.69}, {"line", -0.4, 0.69, 0.4, -0.69}},
 }
 
 
@@ -443,12 +453,24 @@ function Strokes.arrowDirection(piece)
 end
 
 
-function Strokes.readMarks(markStrokes, cx, cy)
+-- Shapes every rune's marks are compared against, a rune adds its own ones(rune.markKinds)
+Strokes.SHARED_MARKS = {arrow = true, dot = true, line = true, pierce = true, crack = true}
+
+
+function Strokes.readMarks(markStrokes, cx, cy, extraKinds)
     -- Every mark piece with what it looks like and where it sits, this list is what runes read their marks from:
     -- {kind, quality, angle(around the center), outward and direction(arrows only), strokes}
+    -- extraKinds lists the shapes only the drawn rune uses(see Rune markKinds), the shared ones are always tried
+    local kinds = {}
+    for kind in pairs(Strokes.SHARED_MARKS) do
+        kinds[kind] = true
+    end
+    for i, kind in ipairs(extraKinds or {}) do
+        kinds[kind] = true
+    end
     local marks = {}
     for i, piece in ipairs(Strokes.pieces(markStrokes)) do
-        local kind, quality = Strokes.readMark(piece)
+        local kind, quality = Strokes.readMark(piece, kinds)
         local mark = {kind = kind, quality = quality, angle = Strokes.angleAround(piece, cx, cy), strokes = piece}
         if kind == "arrow" then
             mark.outward = Strokes.pointsOutward(piece, cx, cy)

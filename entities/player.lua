@@ -443,6 +443,7 @@ function Player:damage(damage, power, kind)
     self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage * (1 - self:damageReduction(kind)))
     self:selfHit()
     if self.hpBar.currentHP <= 0 then
+        Statuses.died(self)     -- A wildfire burn passes on
         self:die()
     end
 end

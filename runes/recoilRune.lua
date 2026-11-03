@@ -17,6 +17,9 @@ local LASER_RECOIL = 0.45      -- Held lasers fire many times a second, so each 
 local MIN_MARK_QUALITY = 0.25
 local ARROW_COMPLEXITY = 1
 
+-- What its marks do, the grimoire shows these
+RecoilRune.markHelp = {{"arrow", "One arrow: the way it pushes, drawn facing right"}}
+
 function RecoilRune:readMarks(marks)
     local arrows = {}
     for i, mark in ipairs(marks) do

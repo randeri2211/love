@@ -36,6 +36,6 @@ function BulletRune:defaults()
 end
 
 -- Marks: an arrow aims the shot(bursts and piercing are the Repeat and Pierce runes)
-BulletRune:useAimMarks()
+BulletRune:useAimMarks("One arrow: the shot turns up or down from your aim")
 
 return BulletRune

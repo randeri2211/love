@@ -9,7 +9,15 @@ local Elements = {}
 
 -- In the order they show, every element sets a strength param from power and a time param from duration
 Elements.LIST = {
-    {name = "Fire", power = {"burnDps", 4}, duration = {"burnTime", 3}},
+    {name = "Fire", power = {"burnDps", 4}, duration = {"burnTime", 3}, carry = {{"burnKindle", 0}, {"burnSpread", 0}},
+        -- Flames flare(faster, shorter), waves smoulder(slower, longer), spirals kindle, sparks spread(see the Fire rune marks)
+        tune = function(params, settings)
+            local flare = FLARE_STEP ^ settings.flare
+            params.burnDps = params.burnDps * flare
+            params.burnTime = params.burnTime / flare
+            params.burnKindle = settings.kindle
+            params.burnSpread = settings.spread
+        end},
     {name = "Frost", power = {"frostSlow", 0.4}, duration = {"frostTime", 3}, extra = {"frostShatter", FROST_SHATTER},
         -- Dots freeze deeper for less time, cracks freeze shorter and shatter harder(see the Frost rune marks)
         tune = function(params, settings)
@@ -17,9 +25,20 @@ Elements.LIST = {
             params.frostTime = params.frostTime * FREEZE_TIME ^ settings.freeze * SHATTER_TIME ^ settings.shatter
             params.frostShatter = params.frostShatter * SHATTER_STEP ^ settings.shatter
         end},
-    {name = "Poison", power = {"poisonDps", 2}, duration = {"poisonTime", 8}},
-    {name = "Lightning", power = {"chainDamage", 0.5}, duration = {"chainRange", 6 * TILE_SIZE}},
+    {name = "Poison", power = {"poisonDps", 2}, duration = {"poisonTime", 8}, carry = {{"poisonMax", POISON_MAX_STACKS}},
+        -- Dots allow more stacks, every stack a little weaker(see the Poison rune marks)
+        tune = function(params, settings)
+            params.poisonMax = POISON_MAX_STACKS + settings.stacks
+            params.poisonDps = params.poisonDps * POISON_DOT_SCALE ^ settings.stacks
+        end},
+    {name = "Lightning", power = {"chainDamage", 0.5}, duration = {"chainRange", 6 * TILE_SIZE}, carry = {{"chainTargets", CHAIN_TARGETS}},
+        -- Forks jump to more enemies, every jump a little weaker(see the Lightning rune marks)
+        tune = function(params, settings)
+            params.chainTargets = CHAIN_TARGETS + settings.forks
+            params.chainDamage = params.chainDamage * LIGHTNING_FORK_SCALE ^ settings.forks
+        end},
 }
+-- carry lists more values an element hit takes along({param, value for a creature touch}), tune changes them by marks
 Elements.BY_NAME = {}
 for i, element in ipairs(Elements.LIST) do
     Elements.BY_NAME[element.name] = element
@@ -65,6 +84,9 @@ function Elements.valuesFor(powers)
         if element.extra ~= nil then
             values[element.extra[1]] = power and element.extra[2] * power or 0
         end
+        for j, carried in ipairs(element.carry or {}) do
+            values[carried[1]] = power and carried[2] or 0
+        end
     end
     return values
 end
@@ -78,6 +100,9 @@ function Elements.pick(params)
         picked[element.duration[1]] = params[element.duration[1]]
         if element.extra ~= nil then
             picked[element.extra[1]] = params[element.extra[1]]
+        end
+        for j, carried in ipairs(element.carry or {}) do
+            picked[carried[1]] = params[carried[1]]
         end
     end
     return picked
@@ -104,7 +129,8 @@ local function chain(form, hit, x, y)
         end
     end
     table.sort(found, function(a, b) return a.d < b.d end)
-    for i = 1, math.min(CHAIN_TARGETS, #found) do
+    local targets = (values.chainTargets or 0) > 0 and values.chainTargets or CHAIN_TARGETS
+    for i = 1, math.min(targets, #found) do
         local target = found[i]
         ElementFx.bolt(x, y, target.x, target.y)
         local amount = Crit.roll(form, form.damage * values.chainDamage * Statuses.shatterFactor(target.enemy), target.x, target.y)

@@ -17,6 +17,9 @@ local MIN_MARK_QUALITY = 0.25
 local MAX_PIERCE = 8
 local EXTRA_COMPLEXITY = 3          -- Per pierce past the plain 1
 
+-- What its marks do, the grimoire shows these
+PierceRune.markHelp = {{"pierce", "One more pierce each"}, "Better drawn marks pierce more"}
+
 function PierceRune:readMarks(marks)
     local sum = 0
     for i, mark in ipairs(marks) do

@@ -22,6 +22,11 @@ function Rune:new(name, kind, complexity, manaCost, color)
     -- Forms list their own params for the editor to show, as {label, param name, format string or function(value) text}
     -- (a param a form lists itself isnt shown again in the stats every form has, hiddenStats leaves others out)
     rune.stats = nil
+    -- markKinds lists mark shapes only this rune uses(Fire's flames), the shared ones are always read(see Strokes)
+    rune.markKinds = nil
+    -- markHelp lists what its marks do, the grimoire shows them(set next to readMarks): a line each, {shape, text} draws
+    -- the mark shape to draw(a kind in Strokes.MARK_SHAPES) before the text, a plain string is a note under them
+    rune.markHelp = nil
     -- Runes that read marks drawn around them set these(see Split):
     -- readMarks(self, marks) turns the marks from Strokes.readMarks into a plain table that is saved with the slot,
     -- or returns nil and a reason when the marks cant go together(two aim arrows on a Bullet)
@@ -69,8 +74,9 @@ end
 local AIM_MIN_QUALITY = 0.25        -- Arrows drawn worse than this dont count
 local AIM_COMPLEXITY = 1
 
-function Rune:useAimMarks()
-    -- Gives a form the aim arrow mark(see Bullet and Laser)
+function Rune:useAimMarks(help)
+    -- Gives a form the aim arrow mark(see Bullet and Laser), help is the grimoire line for it
+    self.markHelp = {{"arrow", help or "One arrow: the cast turns from your aim the way it points"}}
     function self:readMarks(marks)
         local arrows = {}
         for i, mark in ipairs(marks) do

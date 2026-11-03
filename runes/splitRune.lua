@@ -21,6 +21,9 @@ local EXTRA_COMPLEXITY = 4          -- Cost of each projectile past the 2 a plai
 local EXTRA_MANA = 2.5
 local MIN_MARK_QUALITY = 0.25       -- Arrows drawn worse than this dont count
 
+-- What its marks do, the grimoire shows these
+SplitRune.markHelp = {{"arrow", "Arrows pointing out: one projectile each"}, "The fan covers the angle the arrows span"}
+
 function SplitRune:readMarks(marks)
     -- marks are from Strokes.readMarks: {kind, quality, angle, outward(arrows only), strokes}
     -- Returns {count, spread}, spread nil when the arrows dont make a fan(then the form keeps its own)

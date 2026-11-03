@@ -15,6 +15,9 @@ GravityRune.glyph = {
 local MIN_MARK_QUALITY = 0.25
 local ARROW_COMPLEXITY = 1
 
+-- What its marks do, the grimoire shows these
+GravityRune.markHelp = {{"arrow", "One arrow: the way gravity pulls the spell"}}
+
 function GravityRune:readMarks(marks)
     local arrows = {}
     for i, mark in ipairs(marks) do

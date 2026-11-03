@@ -51,8 +51,11 @@ for i, info in ipairs(RUNES) do
     rune.glyph = info.glyph
 
     function rune:settings(marks)
-        -- Marks only Frost reads so far(freeze dots and shatter cracks, see below)
-        return {power = 1, duration = 1, freeze = marks and marks.freeze or 0, shatter = marks and marks.shatter or 0}
+        -- What the marks set(Frost freeze dots and shatter cracks, Poison stack dots, Lightning forks, see below)
+        marks = marks or {}
+        return {power = 1, duration = 1, freeze = marks.freeze or 0, shatter = marks.shatter or 0,
+            stacks = marks.stacks or 0, forks = marks.forks or 0,
+            flare = marks.flare or 0, kindle = marks.kindle or 0, spread = marks.spread or 0}
     end
 
     rune.effects = {
@@ -72,6 +75,8 @@ local MIN_MARK_QUALITY = 0.25       -- Marks drawn worse than this dont count
 local MAX_FREEZE = 3
 local MAX_SHATTER = 3
 local MARK_COMPLEXITY = 1           -- Per mark
+
+Frost.markHelp = {{"dot", "A deeper, shorter slow each, three freeze solid"}, {"crack", "A shorter slow, hits on it shatter harder"}}
 
 function Frost:readMarks(marks)
     local freeze, shatter = 0, 0
@@ -115,6 +120,117 @@ function Frost:describeMarks(marks)
     end
     if marks.shatter > 0 then
         table.insert(parts, "shatter +" .. marks.shatter)
+    end
+    return table.concat(parts, ", ")
+end
+
+
+-- Marks that count one shape: every one drawn well enough adds one step to a setting, up to a most
+-- Poison dots allow one more stack each(every stack weaker), Lightning forks one more jump each(every jump weaker)
+-- (see the Poison and Lightning entries in magic/elements for the numbers)
+local function countedMarks(rune, kind, key, most, describe, help)
+    rune.markHelp = {{kind, help}}
+
+    function rune:readMarks(marks)
+        local count = 0
+        for i, mark in ipairs(marks) do
+            if mark.kind == kind and mark.quality >= MIN_MARK_QUALITY then
+                count = count + 1
+            end
+        end
+        if count == 0 then
+            return nil
+        end
+        return {[key] = math.min(most, count)}
+    end
+
+    function rune:checkMarks(saved)
+        local value = type(saved[key]) == "number" and math.max(0, math.min(most, math.floor(saved[key]))) or 0
+        if value == 0 then
+            return nil
+        end
+        return {[key] = value}
+    end
+
+    function rune:markCost(marks)
+        return (marks[key] or 0) * MARK_COMPLEXITY, 0
+    end
+
+    function rune:describeMarks(marks)
+        return describe(marks[key])
+    end
+end
+
+countedMarks(RUNE_REGISTRY.Poison, "dot", "stacks", 3, function(count)
+    return "stacks up to x" .. (POISON_MAX_STACKS + count) .. ", each weaker"
+end, "One more stack each, up to six, every stack a little weaker")
+RUNE_REGISTRY.Lightning.markKinds = {"fork"}
+countedMarks(RUNE_REGISTRY.Lightning, "fork", "forks", 3, function(count)
+    return "jumps to " .. (CHAIN_TARGETS + count) .. ", each weaker"
+end, "One more jump each, up to five, every jump a little weaker")
+
+
+-- Fire marks: flames flare(faster, shorter) and waves smoulder(slower, longer), counting against each other,
+-- spirals kindle(starts weaker, grows hotter while it keeps burning), sparks spread it when the burning one dies
+-- (see the Fire entry in magic/elements and Statuses.burnFactor and Statuses.died for the numbers)
+local Fire = RUNE_REGISTRY.Fire
+Fire.markKinds = {"flame", "wave", "spiral", "spark"}
+Fire.markHelp = {{"flame", "Burns faster for less time"}, {"wave", "Burns slower for longer, flames and waves cancel"},
+    {"spiral", "Starts weaker and grows hotter while it keeps burning"}, {"spark", "Passes on when the burning one dies"}}
+local MAX_FLARE = 3
+local MAX_KINDLE = 3
+local MAX_SPREAD = 3
+
+function Fire:readMarks(marks)
+    local counts = {flame = 0, wave = 0, spiral = 0, spark = 0}
+    for i, mark in ipairs(marks) do
+        if counts[mark.kind] ~= nil and mark.quality >= MIN_MARK_QUALITY then
+            counts[mark.kind] = counts[mark.kind] + 1
+        end
+    end
+    if counts.flame + counts.wave + counts.spiral + counts.spark == 0 then
+        return nil
+    end
+    -- Flames and waves cancel out, the cost is for every one drawn
+    return {flare = math.max(-MAX_FLARE, math.min(MAX_FLARE, counts.flame - counts.wave)), drawn = counts.flame + counts.wave,
+        kindle = math.min(MAX_KINDLE, counts.spiral), spread = math.min(MAX_SPREAD, counts.spark)}
+end
+
+
+function Fire:checkMarks(saved)
+    local function clean(value, low, high)
+        return type(value) == "number" and math.max(low, math.min(high, math.floor(value))) or 0
+    end
+    local marks = {flare = clean(saved.flare, -MAX_FLARE, MAX_FLARE), drawn = clean(saved.drawn, 0, 2 * MAX_FLARE + 6),
+        kindle = clean(saved.kindle, 0, MAX_KINDLE), spread = clean(saved.spread, 0, MAX_SPREAD)}
+    if marks.drawn == 0 and marks.kindle == 0 and marks.spread == 0 then
+        return nil
+    end
+    return marks
+end
+
+
+function Fire:markCost(marks)
+    -- Every mark costs like any tuning mark, sparks cost more since they add power
+    local complexity = ((marks.drawn or 0) + marks.kindle + marks.spread) * MARK_COMPLEXITY + marks.spread * WILDFIRE_COMPLEXITY
+    return complexity, marks.spread * WILDFIRE_MANA
+end
+
+
+function Fire:describeMarks(marks)
+    local parts = {}
+    if marks.flare > 0 then
+        table.insert(parts, "flare +" .. marks.flare)
+    elseif marks.flare < 0 then
+        table.insert(parts, "smoulder +" .. -marks.flare)
+    elseif (marks.drawn or 0) > 0 then
+        table.insert(parts, "flames and waves cancel")
+    end
+    if marks.kindle > 0 then
+        table.insert(parts, "kindling +" .. marks.kindle)
+    end
+    if marks.spread > 0 then
+        table.insert(parts, "wildfire x" .. marks.spread)
     end
     return table.concat(parts, ", ")
 end

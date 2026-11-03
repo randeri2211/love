@@ -60,9 +60,12 @@ BASE_SPELL_PARAMS = {
     glow = 0,                   -- Light runes on it, each makes it a brighter light source(see Form:light)
     -- Element runes switch these on(see magic/elements), 0 is off
     burnDps = 0, burnTime = 0,          -- Fire: damage per second while burning, and for how long
+    burnKindle = 0, burnSpread = 0,     -- Fire: spiral marks(the burn ramps up) and spark marks(it passes on when the target dies)
     frostSlow = 0, frostTime = 0,       -- Frost: part of the speed taken away, and for how long
     frostShatter = 0,                   -- Frost: extra part of the damage hits deal to something it slowed
     poisonDps = 0, poisonTime = 0,      -- Poison: damage per second per stack, and for how long
+    poisonMax = 0,                      -- Poison: most stacks it builds to(dots on the rune raise it)
+    chainTargets = 0,                   -- Lightning: how many enemies a hit jumps to(forks on the rune raise it)
     chainDamage = 0, chainRange = 0,    -- Lightning: part of the hit that jumps to nearby enemies, and how far(pixels)
 }
 
@@ -80,6 +83,19 @@ FREEZE_TIME = 0.75
 SHATTER_STEP = 1.8
 SHATTER_TIME = 0.6
 CHAIN_TARGETS = 2               -- Enemies a Lightning hit jumps to
+-- Poison dots: every dot allows one more stack and makes every stack weaker by POISON_DOT_SCALE(a higher cap, a slower ramp)
+POISON_DOT_SCALE = 0.9
+-- Lightning forks: every fork adds a jump target and makes every jump weaker by LIGHTNING_FORK_SCALE
+LIGHTNING_FORK_SCALE = 0.85
+-- Fire marks: every flame burns FLARE_STEP times faster for that much less time(waves the other way, the same total),
+-- every spiral starts the burn KINDLE_STEP weaker and lets it grow to KINDLE_STEP stronger over KINDLE_TIME of burning,
+-- every spark passes the burn on once to the nearest creature within WILDFIRE_RANGE when the burning one dies
+FLARE_STEP = 1.5
+KINDLE_STEP = 0.3
+KINDLE_TIME = 3
+WILDFIRE_RANGE = 5 * TILE_SIZE
+WILDFIRE_COMPLEXITY = 2         -- Extra complexity and mana a spark costs, it adds power instead of trading it
+WILDFIRE_MANA = 1
 ELEMENT_PARTICLES = 1500        -- Most element particles at once
 
 -- Self form(spells on the caster)

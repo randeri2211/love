@@ -16,17 +16,24 @@ function Statuses.apply(entity, values, source)
     local critMultiplier = source and source.critMultiplier or CRIT_MULTIPLIER
     if values.burnDps > 0 then
         -- A new burn refreshes the time and keeps the stronger flame, it doesnt stack
-        local burn = statuses.burn or {dps = 0, tick = 0}
+        -- A kindling burn keeps how long it has been burning, so hitting it again keeps it hot(see burnFactor)
+        local burn = statuses.burn or {dps = 0, tick = 0, burning = 0}
         burn.dps = math.max(burn.dps, values.burnDps)
         burn.time = math.max(burn.time or 0, values.burnTime)
+        burn.duration = math.max(burn.duration or 0, values.burnTime)   -- A full burn, what wildfire passes on
+        burn.kindle = math.max(burn.kindle or 0, values.burnKindle or 0)
+        burn.spread = math.max(burn.spread or 0, values.burnSpread or 0)
+        burn.fromPlayer = source ~= nil and source.player == player     -- Wildfire from the player never comes back to them
         burn.critChance, burn.critMultiplier = critChance, critMultiplier
         statuses.burn = burn
     end
     if values.poisonDps > 0 then
-        -- Every poisoned hit adds a stack, up to POISON_MAX_STACKS
+        -- Every poisoned hit adds a stack, up to POISON_MAX_STACKS or more for a Poison rune with dots(poisonMax)
         local poison = statuses.poison or {dps = 0, stacks = 0, tick = 0}
         poison.dps = math.max(poison.dps, values.poisonDps)
-        poison.stacks = math.min(POISON_MAX_STACKS, poison.stacks + 1)
+        local most = (values.poisonMax or 0) > 0 and values.poisonMax or POISON_MAX_STACKS
+        poison.max = math.max(poison.max or 0, most)
+        poison.stacks = math.min(poison.max, poison.stacks + 1)
         poison.time = math.max(poison.time or 0, values.poisonTime)
         poison.critChance, poison.critMultiplier = critChance, critMultiplier
         statuses.poison = poison
@@ -79,7 +86,8 @@ function Statuses.update(entity, dt)
     local burn = statuses.burn
     if burn ~= nil then
         ElementFx.trail({"Fire"}, x, y, spread, PARTICLE_RATE, dt)
-        hurt(entity, burn, dt, burn.dps, "Fire")
+        burn.burning = (burn.burning or 0) + dt
+        hurt(entity, burn, dt, burn.dps * Statuses.burnFactor(burn), "Fire")
         burn.time = burn.time - dt
         if burn.time <= 0 then
             statuses.burn = nil
@@ -106,6 +114,63 @@ function Statuses.update(entity, dt)
             entity.statsDirty = true
         end
     end
+end
+
+
+function Statuses.burnFactor(burn)
+    -- Kindling(spiral marks): the burn starts weaker and grows stronger the longer it has been burning, the same total
+    -- over one full burn, more for keeping it lit
+    local kindle = burn.kindle or 0
+    if kindle <= 0 then
+        return 1
+    end
+    local grown = math.min(1, (burn.burning or 0) / KINDLE_TIME)
+    return 1 - KINDLE_STEP * kindle + 2 * KINDLE_STEP * kindle * grown
+end
+
+
+function Statuses.died(entity)
+    -- Wildfire(spark marks): a burning creature that dies passes its burn, one spark fewer, to the nearest creature near it
+    -- A burn the player cast never jumps to the player
+    local burn = entity.statuses and entity.statuses.burn
+    if burn == nil or (burn.spread or 0) <= 0 or entity.body == nil or entity.body:isDestroyed() then
+        return
+    end
+    local x, y = entity.body:getWorldCenter()
+    local creatures = {}
+    if not burn.fromPlayer and player ~= nil and not player:isDead() then
+        table.insert(creatures, player)
+    end
+    for i, enemy in ipairs(map.enemies.enemies) do
+        table.insert(creatures, enemy)
+    end
+    local nearest, best = nil, WILDFIRE_RANGE
+    for i, creature in ipairs(creatures) do
+        if creature ~= entity and not creature.dying and creature.body ~= nil and not creature.body:isDestroyed() then
+            local cx, cy = creature.body:getWorldCenter()
+            local d = distance(x, y, cx, cy)
+            if d <= best then
+                nearest, best = creature, d
+            end
+        end
+    end
+    if nearest == nil then
+        return
+    end
+    local nx, ny = nearest.body:getWorldCenter()
+    ElementFx.bolt(x, y, nx, ny)
+    local statuses = nearest.statuses or {}
+    nearest.statuses = statuses
+    local passed = statuses.burn or {dps = 0, tick = 0, burning = 0}
+    passed.dps = math.max(passed.dps, burn.dps)
+    passed.time = math.max(passed.time or 0, burn.duration or burn.time)
+    passed.duration = math.max(passed.duration or 0, burn.duration or burn.time)
+    passed.kindle = math.max(passed.kindle or 0, burn.kindle or 0)
+    passed.spread = math.max(passed.spread or 0, burn.spread - 1)
+    passed.fromPlayer = burn.fromPlayer
+    passed.critChance, passed.critMultiplier = burn.critChance, burn.critMultiplier
+    statuses.burn = passed
+    ElementFx.emit("Fire", nx, ny, TILE_SIZE / 2, 16)
 end
 
 

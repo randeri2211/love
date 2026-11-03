@@ -97,6 +97,7 @@ function Entity:damage(damage, power, kind)
         if self.dropLoot ~= nil then
             self:dropLoot()
         end
+        Statuses.died(self)     -- A wildfire burn passes on
         self:die()
     end
 end

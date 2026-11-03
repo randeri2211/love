@@ -18,6 +18,9 @@ local MANA_FIRST = 0.5              -- The second cast costs half the spell agai
 local MANA_STEP = 0.25              -- and every cast after that a quarter more than the one before
 local EXTRA_COMPLEXITY = 2          -- Per repeat past the plain 2
 
+-- What its marks do, the grimoire shows these
+RepeatRune.markHelp = {{"dot", "One more cast each, up to six"}}
+
 function RepeatRune:readMarks(marks)
     local dots = 0
     for i, mark in ipairs(marks) do

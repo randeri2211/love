@@ -383,9 +383,9 @@ function SpellEditor:recognizeDrawing()
     end
 
     -- The recognized rune reads the marks its own way, runes without readMarks ignore them
-    local marks = Strokes.readMarks(markStrokes, 0, 0)
-    local reading, markProblem = nil, nil
     local rune = name and RUNE_REGISTRY[name]
+    local marks = Strokes.readMarks(markStrokes, 0, 0, rune and rune.markKinds)
+    local reading, markProblem = nil, nil
     if rune and rune.readMarks ~= nil and #marks > 0 then
         reading, markProblem = rune:readMarks(marks)
     end
@@ -822,6 +822,13 @@ function SpellEditor:info(x, y)
         -- Elements
         if params.burnDps > 0 then
             Slab.Text(string.format("Burn: %.1f/s for %.1fs", params.burnDps, params.burnTime))
+            if params.burnKindle > 0 then
+                Slab.Text(string.format("  kindles from %d%% to %d%%", math.floor((1 - KINDLE_STEP * params.burnKindle) * 100 + 0.5),
+                    math.floor((1 + KINDLE_STEP * params.burnKindle) * 100 + 0.5)))
+            end
+            if params.burnSpread > 0 then
+                Slab.Text(string.format("  spreads %d time%s when it kills", params.burnSpread, params.burnSpread > 1 and "s" or ""))
+            end
         end
         if params.frostSlow > 0 then
             local slow = math.min(params.frostSlow, FROST_MAX_SLOW)
@@ -831,10 +838,10 @@ function SpellEditor:info(x, y)
         end
         if params.poisonDps > 0 then
             Slab.Text(string.format("Poison: %.1f/s for %.1fs", params.poisonDps, params.poisonTime))
-            Slab.Text(string.format("  stacks up to x%d", POISON_MAX_STACKS))
+            Slab.Text(string.format("  stacks up to x%d", params.poisonMax))
         end
         if params.chainDamage > 0 then
-            Slab.Text(string.format("Lightning: %d%% to %d near", math.floor(params.chainDamage * 100 + 0.5), CHAIN_TARGETS))
+            Slab.Text(string.format("Lightning: %d%% to %d near", math.floor(params.chainDamage * 100 + 0.5), params.chainTargets))
             Slab.Text(string.format("  within %.1f tiles", params.chainRange / TILE_SIZE))
         end
 
