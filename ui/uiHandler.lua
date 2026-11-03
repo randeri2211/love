@@ -3,6 +3,8 @@ local Slab = require "libraries.Slab"
 local SpellEditor = require "ui.spellEditor"
 local CharacterScreen = require "ui.characterScreen"
 local Hud = require "ui.hud"
+local Grimoire = require "ui.grimoire"
+local Theme = require "ui.theme"
 local Spellbooks = require "magic.spellbooks"
 
 local UIHandler = {}
@@ -15,6 +17,8 @@ function UIHandler:new()
     uihandler.showMap = false
     uihandler.spellEditor = nil     -- Open spell editor, nil when closed
     uihandler.characterScreen = nil -- Open character and inventory screen, nil when closed(the game keeps running)
+    uihandler.grimoire = nil        -- Open grimoire, nil when closed(the game keeps running)
+    uihandler.toasts = {}           -- Short messages at the top of the screen, {text, color, time}
     uihandler.showQuitConfirm = false
     uihandler.wasPaused = false     -- Pause state to go back to when the quit confirmation is cancelled
     uihandler.showPauseMenu = false
@@ -30,6 +34,8 @@ function UIHandler:escape()
         self:closeQuitConfirm()
     elseif self.showPauseMenu then
         self:closePauseMenu()
+    elseif self.grimoire ~= nil then
+        self:toggleGrimoire()
     elseif self.characterScreen ~= nil then
         self:toggleCharacterScreen()
     elseif self.spellEditor ~= nil then
@@ -158,6 +164,7 @@ function UIHandler:toggleCharacterScreen()
         return
     end
     if self.characterScreen == nil then
+        self.grimoire = nil     -- One big screen at a time
         self.characterScreen = CharacterScreen:new(player)
     else
         self.characterScreen:close()
@@ -176,6 +183,28 @@ function UIHandler:openStation(block)
     else
         self.characterScreen.block = block
     end
+end
+
+
+function UIHandler:toggleGrimoire()
+    -- The grimoire, closes the character screen so they dont overlap
+    if self.showQuitConfirm or self.showPauseMenu or self.spellEditor ~= nil then
+        return
+    end
+    if self.grimoire == nil then
+        if self.characterScreen ~= nil then
+            self:toggleCharacterScreen()
+        end
+        self.grimoire = Grimoire:new(player)
+    else
+        self.grimoire = nil
+    end
+end
+
+
+function UIHandler:toast(text, color)
+    -- A short message at the top of the screen that fades(learning a rune)
+    table.insert(self.toasts, {text = text, color = color, time = 0})
 end
 
 
@@ -201,6 +230,14 @@ function UIHandler:update()
     elseif game_state == IN_WORLD_STATE then
         if self.showMap then
             self:map()
+        end
+
+        if self.grimoire ~= nil then
+            if self.grimoire.owner ~= player then
+                self.grimoire = nil
+            else
+                self.grimoire:update()
+            end
         end
 
         if self.characterScreen ~= nil then
@@ -248,6 +285,36 @@ function UIHandler:draw()
             self.hud = Hud:new(player)
         end
         self.hud:draw(Spellbooks.selectedEntry(player.spellbook))
+        self:drawToasts()
+    end
+end
+
+
+local TOAST_TIME = 3     -- Seconds a message stays
+
+function UIHandler:drawToasts()
+    -- Newest at the top, each fades out over its last second
+    local w = love.graphics.getWidth()
+    local font = love.graphics.getFont()
+    local y = 110
+    for i = #self.toasts, 1, -1 do
+        local toast = self.toasts[i]
+        toast.time = toast.time + love.timer.getDelta()
+        if toast.time >= TOAST_TIME then
+            table.remove(self.toasts, i)
+        else
+            local alpha = math.min(1, TOAST_TIME - toast.time)
+            local tw = font:getWidth(toast.text) + 24
+            love.graphics.push("all")
+            local panel = Theme.COLORS.panel
+            Theme.panel(w / 2 - tw / 2, y, tw, font:getHeight() + 14, {panel[1], panel[2], panel[3], panel[4] * alpha},
+                toast.color and {toast.color[1], toast.color[2], toast.color[3], alpha} or nil)
+            local c = toast.color or {1, 1, 1}
+            love.graphics.setColor(c[1], c[2], c[3], alpha)
+            love.graphics.print(toast.text, math.floor(w / 2 - font:getWidth(toast.text) / 2), y + 7)
+            love.graphics.pop()
+            y = y + font:getHeight() + 22
+        end
     end
 end
 

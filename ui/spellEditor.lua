@@ -1,4 +1,5 @@
 local Slab = require "libraries.Slab"
+local Knowledge = require "magic.knowledge"
 local Spell = require "magic.spell"
 local MagicCircle = require "magic.magicCircle"
 local Spellbooks = require "magic.spellbooks"
@@ -275,11 +276,14 @@ function SpellEditor:runeReference()
     if mx >= ox and my >= oy and column < REF_COLUMNS and row < rows then
         hovered = runes[row * REF_COLUMNS + column + 1]
     end
+    -- Only runes with their template can be traced, the others are drawn from memory
     if hovered ~= nil and Slab.IsMouseClicked(1) then
         if self.guide == hovered.name then
             self.guide = nil
-        else
+        elseif Knowledge.isTemplated(player.knowledge, hovered.name) then
             self.guide = hovered.name
+        else
+            self.guide = nil
         end
     end
 
@@ -298,12 +302,21 @@ function SpellEditor:runeReference()
         love.graphics.setLineWidth(bright and 3 or 1.5)
         love.graphics.circle("line", cx, cy, REF_ICON_RADIUS, 32)
         MagicCircle.drawGlyph(rune.glyph, cx, cy, REF_ICON_RADIUS * 0.6, 1.4)
+        -- Runes without their template get a small open ring, they cant be traced
+        if not Knowledge.isTemplated(player.knowledge, rune.name) then
+            love.graphics.setColor(HINT_COLOR)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.circle("line", cx + REF_ICON_RADIUS * 0.8, cy + REF_ICON_RADIUS * 0.8, 4, 12)
+        end
     end
     love.graphics.pop()
     Slab.Image("SpellRuneReference", {Image = self.refCanvas})
 
     if hovered ~= nil then
         Slab.Text(string.format("%s  (%s, %s mana)", hovered.name, hovered.kind, tostring(hovered.manaCost)), {Color = hovered.color})
+        if not Knowledge.isTemplated(player.knowledge, hovered.name) then
+            Slab.Text("No template, draw it from memory", {Color = HINT_COLOR})
+        end
     elseif self.guide ~= nil then
         Slab.Textf("Tracing " .. self.guide .. ", click it to hide", {Color = HINT_COLOR, W = DRAW_W - 20})
     else
@@ -364,6 +377,10 @@ function SpellEditor:recognizeDrawing()
     end
     local runeStrokes, markStrokes = Strokes.splitZones(self.strokes, 1)
     local name, quality = Strokes.recognize(runeStrokes, self:candidatesFor(self.target))
+    -- A templated rune never counts as drawn worse than TEMPLATE_QUALITY
+    if name ~= nil and Knowledge.isTemplated(player.knowledge, name) then
+        quality = math.max(quality, TEMPLATE_QUALITY)
+    end
 
     -- The recognized rune reads the marks its own way, runes without readMarks ignore them
     local marks = Strokes.readMarks(markStrokes, 0, 0)
@@ -385,6 +402,19 @@ end
 
 function SpellEditor:candidatesFor(target)
     -- Forms for the center, modifiers and triggers for the ring slots(cached, the recognizer keeps its clouds on them)
+    -- Only the runes the player knows, an unknown rune drawn perfectly is still not recognized(see magic/knowledge)
+    local known = {}
+    for i, candidate in ipairs(self:allCandidates(target)) do
+        if Knowledge.knows(player.knowledge, candidate.name) then
+            table.insert(known, candidate)
+        end
+    end
+    return known
+end
+
+
+function SpellEditor:allCandidates(target)
+    -- Every rune that fits the slot, known or not
     local key = target.slot == "core" and "core" or "ring"
     if candidates[key] == nil then
         candidates[key] = {}

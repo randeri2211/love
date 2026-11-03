@@ -5,6 +5,7 @@ local Humanoid = require "animations.humanoid"
 local Inventory = require "components.inventory"
 local Equipment = require "components.equipment"
 local Statuses = require "magic.statuses"
+local Knowledge = require "magic.knowledge"
 
 local Player = Entity:new()
 AS = 25
@@ -53,6 +54,7 @@ function Player:new(x, y, name)
     player.inventory = Inventory(INVENTORY_SIZE)    -- Saved in its own file like the spellbook
     player.equipment = Equipment()      -- Worn armor, adds to the stats(see CombatStats)
     player.hotbarSlot = 1               -- Selected hotbar slot, the first row of the inventory
+    player.knowledge = Knowledge.new()  -- Runes it knows(see magic/knowledge), saved with the player
 
     -- Player Init
     player.body:setGravityScale(1)
@@ -333,6 +335,7 @@ function Player:load(playerTable)
     self.last_direction = playerTable.last_direction
     self.hpBar = playerTable.hpBar
     self.manaBar = playerTable.manaBar
+    self.knowledge = Knowledge.fromData(playerTable.knowledge)     -- Saves from before rune knowledge know the starting runes
     self.statsDirty = true  -- Recalculate combat stats with the loaded values
 end
 

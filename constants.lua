@@ -1,6 +1,8 @@
 DEBUG = false
 DEBUG_DAY_LENGTH = 60           -- With DEBUG on a whole day takes this many seconds(the world keeps its own setting)
 DEBUG_ONE_HIT_BLOCKS = true
+DEBUG_GLYPH_WALL_KEY = "j"      -- With DEBUG on, places a glyph wall at the mouse that teaches a rune you dont know yet
+DEBUG_FORGET_KEY = "f"          -- With DEBUG on, forgets every rune but the starting ones(to test glyph walls)
 DEBUG_GIVE_KEY = "g"            -- With DEBUG on, gives every armor piece to test equipment     -- With DEBUG on, any hit breaks a block(bedrock still cant break), for digging around in development
 
 SCREEN_X  = 1920
@@ -240,6 +242,12 @@ BIOME_SIZES = {
     {"Large", 600},
 }
 DEFAULT_BIOME_SIZE = 2      -- Index in BIOME_SIZES
+
+-- Rune knowledge(see magic/knowledge): unknown runes cant be drawn, discovered ones are drawn from memory,
+-- templated ones have a trace guide and a quality floor
+ALL_RUNES_TEMPLATED = true      -- Every rune starts templated, for testing, until glyph walls and bosses are in the world
+STARTING_RUNES = {"Bullet", "Damage", "Dig"}    -- What a new character knows(templated) once that is off
+TEMPLATE_QUALITY = 0.7          -- A templated rune always counts as drawn at least this well
 
 -- Crafting(see items/crafting and the recipes folder)
 CRAFT_TIERS = {"Basic", "Copper", "Iron", "Gold", "Arcanite"}  -- Recipe tiers in the order the crafting list shows them

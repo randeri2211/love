@@ -215,6 +215,8 @@ function love.keypressed(key)
             uihandler:toggleSpellEditor()
         elseif key == CHARACTER_KEY then
             uihandler:toggleCharacterScreen()
+        elseif key == GRIMOIRE_KEY then
+            uihandler:toggleGrimoire()
         -- Save and load the open world, saving while paused is fine
         elseif key == SAVE_KEY then
             saveScene(currentWorld)
@@ -239,6 +241,28 @@ function love.keypressed(key)
                 else
                     player.hotbarSlot = key == "0" and 10 or tonumber(key)
                 end
+            elseif DEBUG and key == DEBUG_GLYPH_WALL_KEY then
+                -- A glyph wall at the mouse that teaches a rune this character doesnt know yet(any rune when it knows all)
+                local Knowledge = require "magic.knowledge"
+                local names = {}
+                for name in pairs(RUNE_REGISTRY) do
+                    if not Knowledge.knows(player.knowledge, name) then
+                        table.insert(names, name)
+                    end
+                end
+                if #names == 0 then
+                    for name in pairs(RUNE_REGISTRY) do
+                        table.insert(names, name)
+                    end
+                end
+                local mx, my = mouseToMap()
+                local wall = map:newBlock("GlyphWall", mx, my)
+                wall.rune = names[love.math.random(#names)]
+                map:set(mx, my, wall)
+            elseif DEBUG and key == DEBUG_FORGET_KEY then
+                -- Back to only the starting runes, so glyph walls have something to teach
+                require("magic.knowledge").forget(player.knowledge)
+                uihandler:toast("Forgot every rune but " .. table.concat(STARTING_RUNES, ", "))
             elseif DEBUG and key == DEBUG_GIVE_KEY then
                 -- Every armor piece and every wand part, to test equipment
                 local Inventories = require "items.inventories"

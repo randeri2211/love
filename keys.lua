@@ -11,4 +11,5 @@ PLACE_BUTTON = 2           -- Mouse button held to place the block in the select
 MINIMAP_KEY = "m"
 SPELL_EDITOR_KEY = "c"
 CHARACTER_KEY = "tab"      -- Character and inventory screen
+GRIMOIRE_KEY = "b"         -- The grimoire, every rune you know
 SPAWN_ZOMBIE_KEY = "z"     -- Testing: spawns a zombie at the mouse
