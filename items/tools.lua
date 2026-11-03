@@ -95,21 +95,38 @@ local function addParts(effect, stack, share)
 end
 
 
-function Tools.effect(equipment)
-    -- What the hands do to every spell: {digCap, damage, cooldown, manaCost(multipliers), knockback, complexity(added)}
-    -- Only the main hand casts, an off hand wand adds its parts at OFF_HAND_SHARE, empty hands cast with BARE_HANDS_DIG_CAP
-    local effect = {digCap = BARE_HANDS_DIG_CAP, damage = 1, cooldown = 1, manaCost = 1, knockback = 0, complexity = 0}
-    local main = equipment and equipment.mainHand
-    if not Tools.isValid(main) then
-        return effect
-    end
-    local kind = TOOL_KINDS[ITEM_REGISTRY[main.item].tool]
+local function single(tool)
+    -- What one tool does on its own in the main hand: its kind(wands faster and weaker) and all of its parts
+    local effect = {digCap = BARE_HANDS_DIG_CAP, damage = 1, cooldown = 1, manaCost = 1, knockback = 0, complexity = 0, manaRegen = 0}
+    local kind = TOOL_KINDS[ITEM_REGISTRY[tool.item].tool]
     effect.damage = effect.damage * kind.damage
     effect.cooldown = effect.cooldown * kind.cooldown
-    addParts(effect, main, 1)
+    effect.manaRegen = kind.manaRegen or 0
+    addParts(effect, tool, 1)
+    return effect
+end
+
+
+function Tools.effect(equipment)
+    -- What the hands do to every spell: {digCap, damage, cooldown, manaCost(multipliers), knockback, complexity, manaRegen(added)}
+    -- Only the main hand casts, an off hand wand adds OFF_HAND_SHARE of everything it would do on its own
+    -- (-20% damage on its own is -10% more on top of the main wand), empty hands cast with BARE_HANDS_DIG_CAP
+    local main = equipment and equipment.mainHand
+    if not Tools.isValid(main) then
+        return {digCap = BARE_HANDS_DIG_CAP, damage = 1, cooldown = 1, manaCost = 1, knockback = 0, complexity = 0, manaRegen = 0}
+    end
+    local effect = single(main)
     local off = equipment.offHand
     if Tools.isValid(off) then
-        addParts(effect, off, OFF_HAND_SHARE)
+        local extra = single(off)
+        -- The dig cap is the higher core in the hands, it doesnt get weaker in the off hand
+        effect.digCap = math.max(effect.digCap, extra.digCap)
+        for key in pairs(MULTIPLIED) do
+            effect[key] = effect[key] * (1 + (extra[key] - 1) * OFF_HAND_SHARE)
+        end
+        effect.knockback = effect.knockback + extra.knockback * OFF_HAND_SHARE
+        effect.complexity = effect.complexity + extra.complexity * OFF_HAND_SHARE
+        effect.manaRegen = effect.manaRegen + extra.manaRegen * OFF_HAND_SHARE
     end
     return effect
 end
@@ -175,6 +192,9 @@ function Tools.effectLines(effect)
     if effect.complexity ~= 0 then
         table.insert(lines, {text = string.format("Max complexity  %+d", effect.complexity), good = effect.complexity > 0})
     end
+    if (effect.manaRegen or 0) ~= 0 then
+        table.insert(lines, {text = string.format("Mana regen  %+.1f/s", effect.manaRegen), good = effect.manaRegen > 0})
+    end
     return lines
 end
 
@@ -211,7 +231,7 @@ function Tools.describe(stack)
         end
         table.insert(lines, {text = "Parts: " .. table.concat(names, ", ")})
         if item.tool == "Wand" then
-            table.insert(lines, {text = string.format("In the off hand it adds %d%% of its parts", OFF_HAND_SHARE * 100)})
+            table.insert(lines, {text = string.format("In the off hand it adds %d%% of all of this", OFF_HAND_SHARE * 100)})
         end
         return lines
     end

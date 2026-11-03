@@ -168,6 +168,10 @@ end
 function love.wheelmoved(x, y)
     -- The mouse wheel moves the hotbar selection, with shift held it moves through the spells instead
     -- Nothing while a window is open(Slab uses the wheel to scroll)
+    -- Over the debug item list the wheel scrolls it
+    if game_state == IN_WORLD_STATE and uihandler.itemBrowser ~= nil and uihandler.itemBrowser:wheel(y) then
+        return
+    end
     if game_state == IN_WORLD_STATE and not paused and uihandler.characterScreen == nil and uihandler.spellEditor == nil and y ~= 0 then
         local step = y > 0 and -1 or 1
         if love.keyboard.isDown("lshift", "rshift") then
@@ -241,6 +245,8 @@ function love.keypressed(key)
                 else
                     player.hotbarSlot = key == "0" and 10 or tonumber(key)
                 end
+            elseif DEBUG and key == DEBUG_ITEMS_KEY then
+                uihandler:toggleItemBrowser()
             elseif DEBUG and key == DEBUG_GLYPH_WALL_KEY then
                 -- A glyph wall at the mouse that teaches a rune this character doesnt know yet(any rune when it knows all)
                 local Knowledge = require "magic.knowledge"

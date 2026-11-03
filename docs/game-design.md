@@ -100,7 +100,11 @@ Proposed tiers (each cap is one point above the block it opens):
 - **Wands and staves go in equipment slots** (main hand and off hand, next to the armor), not the hotbar.
   Left click always casts with what is equipped, right click always places blocks, so building and casting never compete. No wand equipped means casting barehanded (dig cap 10).
 - **Dual wielding:** a second wand in the off hand **does not cast a spell of its own**.
-  It adds its bonuses to the main wand at **50% effectiveness**.
+  It adds **all of its overall stats** on top of the main wand(`OFF_HAND_SHARE = 1`): its wand base and all of its parts, as it would be on its own.
+  Two caps match one staff tip(a tip does twice a cap), so dual wands and a staff cost and give about the same in parts;
+  the difference is the base: two wands hit for 0.72x every 0.64x the cooldown(the fast build), a staff 1.3x every 1.25x(the big hits).
+- **Wands give mana regen**(+3/s each, `TOOL_KINDS`) instead of cheaper casts, to keep up with casting fast. Staves give none,
+  they are the mana efficient choice already(fewer, bigger casts).
 - **Wands are modular** and built from parts, and each part is responsible for different stats and optional rune bonuses.
   Plain materials do nothing special (wood), special ones add an effect (a bloodwood rod gives life leech on hit).
 - **Staves are slower and stronger, wands weaker and faster** with more mana regen and on-hit bonuses. Staves can favour a form or rune.

@@ -4,6 +4,7 @@ local SpellEditor = require "ui.spellEditor"
 local CharacterScreen = require "ui.characterScreen"
 local Hud = require "ui.hud"
 local Grimoire = require "ui.grimoire"
+local ItemBrowser = require "ui.itemBrowser"
 local Theme = require "ui.theme"
 local Spellbooks = require "magic.spellbooks"
 
@@ -18,6 +19,7 @@ function UIHandler:new()
     uihandler.spellEditor = nil     -- Open spell editor, nil when closed
     uihandler.characterScreen = nil -- Open character and inventory screen, nil when closed(the game keeps running)
     uihandler.grimoire = nil        -- Open grimoire, nil when closed(the game keeps running)
+    uihandler.itemBrowser = nil     -- Debug list of every item, nil when closed
     uihandler.toasts = {}           -- Short messages at the top of the screen, {text, color, time}
     uihandler.showQuitConfirm = false
     uihandler.wasPaused = false     -- Pause state to go back to when the quit confirmation is cancelled
@@ -34,6 +36,8 @@ function UIHandler:escape()
         self:closeQuitConfirm()
     elseif self.showPauseMenu then
         self:closePauseMenu()
+    elseif self.itemBrowser ~= nil then
+        self:toggleItemBrowser()
     elseif self.grimoire ~= nil then
         self:toggleGrimoire()
     elseif self.characterScreen ~= nil then
@@ -202,6 +206,17 @@ function UIHandler:toggleGrimoire()
 end
 
 
+function UIHandler:toggleItemBrowser()
+    -- Debug: every item with a filter, its text box lets go of the keyboard when it closes
+    if self.itemBrowser == nil then
+        self.itemBrowser = ItemBrowser:new(player)
+    else
+        self.itemBrowser = nil
+        Slab.SetInputFocus(nil)
+    end
+end
+
+
 function UIHandler:toast(text, color)
     -- A short message at the top of the screen that fades(learning a rune)
     table.insert(self.toasts, {text = text, color = color, time = 0})
@@ -219,7 +234,7 @@ end
 function UIHandler:update()
     -- Safety net: a text box can only keep keyboard focus while a window that has one is open,
     -- a stale focus blocks every game key and crashes Slab when a key is typed into a box that isnt drawn
-    if Slab.IsAnyInputFocused() and self.spellEditor == nil and not worldNameOpen() then
+    if Slab.IsAnyInputFocused() and self.spellEditor == nil and self.itemBrowser == nil and not worldNameOpen() then
         Slab.SetInputFocus(nil)
     end
 
@@ -230,6 +245,14 @@ function UIHandler:update()
     elseif game_state == IN_WORLD_STATE then
         if self.showMap then
             self:map()
+        end
+
+        if self.itemBrowser ~= nil then
+            if self.itemBrowser.owner ~= player then
+                self.itemBrowser = nil
+            else
+                self.itemBrowser:update()
+            end
         end
 
         if self.grimoire ~= nil then
@@ -273,6 +296,9 @@ function UIHandler:drawTop()
     if self.characterScreen ~= nil then
         self.characterScreen:drawHeld()
         self.characterScreen:drawTooltip()
+    end
+    if self.itemBrowser ~= nil then
+        self.itemBrowser:drawTooltip()
     end
 end
 

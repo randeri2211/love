@@ -295,7 +295,15 @@ end
 
 function Spell.toolEffect(caster)
     -- What the caster wand or staff does to spells(see items/tools), casters without combat stats cast plainly
-    return caster.combatStats and caster.combatStats.tool or {damage = 1, cooldown = 1, manaCost = 1, knockback = 0}
+    return caster.combatStats and caster.combatStats.tool or {damage = 1, cooldown = 1, manaCost = 1, knockback = 0, manaRegen = 0}
+end
+
+
+function Spell:getDamage(caster)
+    -- Damage a cast deals for this caster: the compiled damage, its magic damage stat and its wand or staff
+    -- The spell editor shows this too, so what it says is what lands
+    local magicDamage = caster.combatStats and caster.combatStats.magicDamage or 1
+    return self:getParams().damage * magicDamage * Spell.toolEffect(caster).damage
 end
 
 
@@ -402,17 +410,12 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
         caster:push(pushX * strength, pushY * strength)
     end
 
-    -- Magic damage bonus from the caster stats
-    local magicDamage = 1
-    if caster.combatStats ~= nil then
-        magicDamage = caster.combatStats.magicDamage
-    end
     -- Params for this cast only, reads everything else from the compiled params
     -- triggered tells forms the cast came from a trigger(like an Area centering on the hit point)
     -- target is what a trigger happened to, Self spells go on it(see Spells:trigger)
-    -- The wand or staff makes it stronger or weaker and adds its knockback
+    -- The caster stats and the wand or staff make it stronger or weaker(see getDamage), the tool adds its knockback
     local tool = Spell.toolEffect(caster)
-    local castParams = setmetatable({damage = params.damage * magicDamage * tool.damage, knockback = params.knockback + tool.knockback,
+    local castParams = setmetatable({damage = self:getDamage(caster), knockback = params.knockback + tool.knockback,
         triggered = triggered == true, target = target}, {__index = params})
 
     self:spawnVolley(caster, castParams, x, y, dirX, dirY)

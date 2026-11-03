@@ -758,7 +758,7 @@ function SpellEditor:info(x, y)
         Slab.Text("Click inside a circle to show it", {Color = HINT_COLOR})
         Slab.Separator()
 
-        Slab.Text("Mana: " .. self:manaText(params))
+        Slab.Text("Mana: " .. self:manaText(inspected))
         if params.complexityScale < 1 then
             Slab.Text(string.format("Complexity discount: -%.0f%%", (1 - params.complexityScale) * 100))
         end
@@ -783,8 +783,10 @@ function SpellEditor:info(x, y)
         Slab.NewLine()
 
         -- Stats every form has
-        Slab.Text(string.format("Damage: %.1f", params.damage))
-        Slab.Text(string.format("Terrain damage: %.1f (%.0f%%)", params.damage * params.terrainDamage, params.terrainDamage * 100))
+        -- What a cast by the player deals, with its stats and wand or staff(see Spell:getDamage)
+        local damage = inspected:getDamage(player)
+        Slab.Text(string.format("Damage: %.1f", damage))
+        Slab.Text(string.format("Terrain damage: %.1f (%.0f%%)", damage * params.terrainDamage, params.terrainDamage * 100))
         Slab.Text("Count: " .. params.count)
         if params.repeats > 1 then
             Slab.Text("Repeats: " .. params.repeats)
@@ -839,12 +841,12 @@ function SpellEditor:info(x, y)
 end
 
 
-function SpellEditor:manaText(params)
-    -- Cast cost plus what each trigger costs when it happens, e.g. "9 (+15 onHit)"
-    local text = tostring(params.manaCost)
-    for event, children in pairs(params.triggers) do
+function SpellEditor:manaText(spell)
+    -- Cast cost plus what each trigger costs when it happens, e.g. "9 (+15 onHit)", what the player pays with its wand or staff
+    local text = tostring(spell:getManaCost(player))
+    for event, children in pairs(spell:getParams().triggers) do
         for i, childSpell in ipairs(children) do
-            text = text .. " (+" .. childSpell:getParams().manaCost .. " " .. event .. ")"
+            text = text .. " (+" .. childSpell:getManaCost(player) .. " " .. event .. ")"
         end
     end
     return text

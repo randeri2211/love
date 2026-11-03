@@ -82,6 +82,7 @@ local function combatStats(entity)
     -- Concentration
     local concentrationManaRegenModifier = 1
     entity.manaBar.manaRegen = entity.manaBar.baseManaRegen + concentrationManaRegenModifier * stats.concentration
+        + combatStats.tool.manaRegen    -- Wands help keep up with fast casting
 
     local concentrationCooldownReductionModifier = 0.01
     combatStats.cooldownReduction = combatStats.cooldownReduction + concentrationCooldownReductionModifier * stats.concentration

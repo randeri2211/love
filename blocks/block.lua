@@ -2,6 +2,7 @@ local HPBar = require "components.hpBar"
 local Flora = require "world_utils.flora"
 local Block = {}
 registerBlock("Block",Block)
+Block.abstract = true   -- The base of every block, not a block of its own(read with rawget so block types dont inherit it)
 Block.solid = true      -- Trees and plants are not(see blocks/floraBlock), the map treats them as air for hitboxes and rays
 
 function Block:new(x, y, width, height)
