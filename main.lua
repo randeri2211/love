@@ -12,6 +12,7 @@ local Spellbooks = require "magic.spellbooks"
 local Background = require "world_utils.background"
 local WorldClock = require "world_utils.worldClock"
 local Building = require "world_utils.building"
+local Spawner = require "world_utils.spawner"
 local Theme = require "ui.theme"
 local MenuBackdrop = require "ui.menuBackdrop"
 local placeTimer = 0        -- Time until the held place button places the next block
@@ -69,6 +70,7 @@ function love.update(dt)
             end
 
             map.enemies:update(dt)
+            Spawner.update(dt)      -- New enemies around the player, far spawned ones go(see world_utils/spawner)
             map:update(dt)      -- Unloads chunks far from the player
             WorldClock.update(dt)
             spells:update(dt)

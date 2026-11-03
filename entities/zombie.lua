@@ -2,11 +2,16 @@ local Enemy = require "entities.enemy"
 local Entity = require "entities.entity"
 local Movement = require "components.movement"
 local Humanoid = require "animations.humanoid"
+local Elements = require "magic.elements"
+local ElementFx = require "magic.elementFx"
 
 -- A slow humanoid that shambles toward the player with its arms out, the same body as the player
 local Zombie = Enemy:new()
 registerEntity("Zombie", Zombie)
 Zombie.loot = {}        -- Nothing yet(see Enemy.loot), drops come with more enemies
+Zombie.skin = ZOMBIE_SKIN
+Zombie.hp = ZOMBIE_HP
+local AURA_RATE = 5     -- Element particles a second around an elemental zombie, so it can be told apart from far
 
 local ARM_BONES = {"right_hand", "left_hand"}
 local ARM_REACH = math.rad(12)      -- Arms point a little below level, reaching for the player
@@ -40,14 +45,14 @@ local WALK = {
 
 
 function Zombie:new(x, y)
-    local zombie = Entity:new(x, y, ZOMBIE_HP)
+    local zombie = Entity:new(x, y, self.hp)
     setmetatable(zombie, self)
     self.__index = self
 
     if x == nil or y == nil then
         return zombie
     end
-    zombie.name = "Zombie"
+    zombie.name = self.entityName or "Zombie"
     zombie.width = PLAYER_WIDTH
     zombie.height = PLAYER_HEIGHT
     zombie.radius = zombie.width / 2
@@ -99,7 +104,7 @@ end
 
 -- Animation
 function Zombie:animationSetup()
-    self.anim = Humanoid.build(self.width, self.height, ZOMBIE_SKIN)
+    self.anim = Humanoid.build(self.width, self.height, self.skin)
     self.animations = {
         right = Humanoid.walk(self.anim, WALK_CYCLE, WALK.right),
         left = Humanoid.walk(self.anim, WALK_CYCLE, WALK.left),
@@ -212,6 +217,9 @@ function Zombie:update(dt)
         return
     end
     local x, y = self.body:getWorldCenter()
+    if self.contactElement ~= nil then
+        ElementFx.trail({self.contactElement}, x, y, self.width / 2, AURA_RATE, dt)
+    end
 
     Entity.update(self, dt)
     groundRay(self)
@@ -296,6 +304,26 @@ function Zombie:load(data)
     self.hpBar = data.hpBar or self.hpBar
     self.statsDirty = true
     self.lastHitTime = nil      -- The game clock starts over when a world loads
+end
+
+
+-- Elemental zombies: the same body and walk, their own skin, a touch of their element and resistances(see Enemy)
+-- touch is how strong the statuses their touch leaves are(Elements.valuesFor), resistances block their own element
+-- and leave them weak to its opposite
+local VARIANTS = {
+    {name = "ScorchedZombie", skin = "zombie_scorched", hp = 36, element = "Fire", touch = {Fire = 0.75}, resistances = {Fire = 50, Frost = -50}},
+    {name = "FrostbittenZombie", skin = "zombie_frostbitten", hp = 36, element = "Frost", touch = {Frost = 1}, resistances = {Frost = 50, Fire = -50}},
+    {name = "RottingZombie", skin = "zombie_rotting", hp = 30, element = "Poison", touch = {Poison = 1}, resistances = {Poison = 50, Fire = -25}},
+}
+for i, variant in ipairs(VARIANTS) do
+    local class = Zombie:new()
+    class.entityName = variant.name
+    class.skin = variant.skin
+    class.hp = variant.hp
+    class.contactElement = variant.element
+    class.contactElements = Elements.valuesFor(variant.touch)
+    class.resistances = variant.resistances
+    registerEntity(variant.name, class)
 end
 
 return Zombie

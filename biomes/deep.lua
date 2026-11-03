@@ -9,6 +9,9 @@ registerBiome("Deep", {
         {block = "ArcaniteOre", minDepth = 0, threshold = 0.8},
     },
     spawns = {
-        {entity = "Zombie", weight = 12, where = "cave", group = {2, 3}},
+        {entity = "RottingZombie", weight = 6, where = "cave", group = {2, 3}},
+        {entity = "ScorchedZombie", weight = 4, where = "cave", group = {1, 2}},
+        {entity = "FrostbittenZombie", weight = 4, where = "cave", group = {1, 2}},
+        {entity = "Zombie", weight = 4, where = "cave", group = {2, 3}},
     },
 })

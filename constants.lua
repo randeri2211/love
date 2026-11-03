@@ -132,6 +132,18 @@ ZOMBIE_SKIN = "zombie"
 ENEMY_AWAKE_TIME = 5            -- Seconds an enemy stays awake after it was last hit
 ENEMY_LOAD_RADIUS = 6           -- Tiles around an awake enemy that get hitboxes, so it lands on real ground
 
+-- Spawning(see world_utils/spawner), distances in tiles
+SPAWNING = true                 -- Off for a calm world while testing
+SPAWN_INTERVAL = 3              -- Seconds between spawn tries
+SPAWN_MIN_DISTANCE = 34         -- Columns from the player a spawn happens at least, just off the screen
+SPAWN_MAX_DISTANCE = 56
+SPAWN_HEIGHT = 16               -- Rows above or below the player a spawn can start looking for ground
+SPAWN_CAP = 6                   -- Most spawned enemies near the player at once
+SPAWN_CAP_DISTANCE = 80         -- How near counts for the cap
+SPAWN_DAY_CHANCE = 0.25         -- By day a surface spawn try only goes ahead this often, nights and caves are full rate
+DESPAWN_DISTANCE = 90           -- Spawned enemies further than this from the player start to fade from the world
+DESPAWN_TIME = 15               -- Seconds far away before a spawned enemy is gone
+
 -- Contact damage, enemies with contactDamage hurt the player by touching them
 CONTACT_IMMUNITY_TIME = 0.8         -- Seconds after a melee hit(touch or swing) when no melee hit can land(spells still can)
 CONTACT_KNOCKBACK = 5 * TILE_SIZE   -- Push away from whatever hit, so the player isnt stuck inside it(0 turns it off)

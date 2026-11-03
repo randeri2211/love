@@ -20,6 +20,7 @@ registerBiome("Desert", {
         },
     },
     spawns = {
-        {entity = "Zombie", weight = 6, where = "surface", group = {1, 1}},
+        {entity = "ScorchedZombie", weight = 8, where = "surface", group = {1, 2}},
+        {entity = "Zombie", weight = 3, where = "surface", group = {1, 1}},
     },
 })

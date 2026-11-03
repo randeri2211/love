@@ -24,7 +24,8 @@ registerBiome("Plains", {
             {color = {0.26, 0.47, 0.3}, rim = {0.36, 0.6, 0.33}},
         },
     },
-    -- What can appear here, read by the spawner: entity, weight, where("surface" or "cave"), group size
+    -- What can appear here, read by the spawner(see world_utils/spawner): entity, weight, where("surface" or "cave"), group size,
+    -- and optionally time("day" or "night", any time when left out)
     spawns = {
         {entity = "Zombie", weight = 10, where = "surface", group = {1, 2}},
     },

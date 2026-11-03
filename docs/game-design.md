@@ -183,7 +183,7 @@ Some set items and trinkets are boss drops. Which ones and why is decided once b
 | 3 | **Damage types, crit and status effects** | Forge resistances and tanning crit have nothing to work on yet (elements are decided, see below) |
 | 4 | **Light:** torches and light from spells | Night and underground are dark, and deep ores are planned |
 | 5 | **Storage and home:** chests, spawn point or bed, the respawn timer | Basic sandbox loop (death itself is decided, see below) |
-| 6 | **Spawner and enemy roster:** biome and depth buckets, night spawns, enemies that cast runes | Materials and bosses depend on enemy variety |
+| 6 | **Spawner and enemy roster:** biome and depth buckets, night spawns, enemies that cast runes | Materials and bosses depend on enemy variety. **Done:** spawner(off screen, biome lists, cap, calmer days, temporary spawns), Scorched, Frostbitten and Rotting zombies. Still to come: day animals for hides, enemies that cast runes |
 | 7 | **Consumables:** potions from an alchemy station | Mana economy, and a second use for plants |
 | 8 | **Sound and onboarding** | No audio yet. Drawing runes is a skill, so it needs teaching |
 

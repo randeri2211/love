@@ -10,6 +10,7 @@ registerBiome("Caves", {
         {block = "GoldOre", minDepth = 0, threshold = 0.83},
     },
     spawns = {
-        {entity = "Zombie", weight = 10, where = "cave", group = {1, 2}},
+        {entity = "RottingZombie", weight = 8, where = "cave", group = {1, 2}},
+        {entity = "Zombie", weight = 6, where = "cave", group = {1, 2}},
     },
 })
