@@ -3,6 +3,7 @@ local BlockForm = require "forms.blockForm"
 
 local BlockRune = Rune:new("Block", "form", 3, 4, {0.55, 0.75, 1})
 registerRune("Block", BlockRune)
+BlockRune.lore = "Mana, told to hold still and be a wall for a while."    -- A line of lore, the grimoire shows it
 
 BlockRune.form = BlockForm
 

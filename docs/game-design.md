@@ -59,7 +59,7 @@ The shapes can reuse the spell editor's rune drawing code.
 - **Done:** the three states(`magic/knowledge`), saved with the player. Unknown runes are not listed or recognized in the spell editor,
   only templated runes can be traced, templated runes never count as drawn worse than `TEMPLATE_QUALITY`.
 - **Done:** the grimoire(`ui/grimoire`, key B): every rune as a known glyph or a blank, a page with the shape, state, cost, forms, marks,
-  where it was found and its lore(`magic/runeBook`).
+  where it was found and its lore. Every rune file carries its own page text: `lore`, `markHelp` and `affectsHelp`.
 - **Placeholder:** `GlyphWall` blocks teach their rune when read(interact key). The development key J places one at the mouse and F forgets
   every rune but the starting ones. Real shrines come with boss arenas in world generation.
 - For testing `ALL_RUNES_TEMPLATED` is on: every rune starts templated, `STARTING_RUNES` is what a character starts with once it is off.

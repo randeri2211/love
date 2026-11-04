@@ -16,6 +16,7 @@ function Rune:new(name, kind, complexity, manaCost, color)
     rune.manaCost = manaCost or 0
     rune.color = color or {1, 1, 1}  -- Used to color the spell and the magic circle
     rune.glyph = nil                -- Symbol drawn in the circle slot, set by each rune file
+    rune.lore = nil                 -- A line of lore the grimoire shows
     -- Modifiers set effects to a function per form name, "default" works on any form
     -- Forms without an effect(and no default) cant use the modifier, false blocks a form the default would cover
     rune.effects = nil
@@ -35,10 +36,12 @@ function Rune:new(name, kind, complexity, manaCost, color)
     -- describeMarks(self, marks) is the text the editor shows for them
     -- Runes can act on runes after them in the flow before anything reaches the spell:
     -- settings(self, marks) is the table a rune is changed through, its marks or its defaults(see Split)
-    -- affects maps a rune name to function(settings, strength) that changes that rune settings(see Focus)
+    -- affects maps a rune name to function(settings, strength) that changes that rune settings(see Focus),
+    -- affectsHelp says what it does in a line, the grimoire shows it
     -- Effects get the settings as a second argument
     -- Forms have no effects, their marks go through applyMarks(self, params, settings) instead(see Bullet)
     rune.affects = nil
+    rune.affectsHelp = nil
 
     return rune
 end

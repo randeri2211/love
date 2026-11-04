@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local PierceRune = Rune:new("Pierce", "modifier", 4, 3, {0.85, 0.9, 1})
 registerRune("Pierce", PierceRune)
+PierceRune.lore = "Walls are only suggestions."    -- A line of lore, the grimoire shows it
 
 -- An arrow going through a wall
 PierceRune.glyph = {

@@ -3,6 +3,7 @@ local Bullet = require "forms.bullet"
 
 local BulletRune = Rune:new("Bullet", "form", 5, 5, {0.9, 0.9, 0.9})
 registerRune("Bullet", BulletRune)
+BulletRune.lore = "The first shape every apprentice draws: a spark with somewhere to be."    -- A line of lore, the grimoire shows it
 
 BulletRune.form = Bullet
 

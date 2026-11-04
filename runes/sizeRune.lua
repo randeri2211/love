@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local SizeRune = Rune:new("Size", "modifier", 3, 2, {1, 0.8, 0.2})
 registerRune("Size", SizeRune)
+SizeRune.lore = "Grow the core and the rest follows."    -- A line of lore, the grimoire shows it
 
 -- A core pushed out to four corner brackets
 SizeRune.glyph = {
@@ -13,6 +14,7 @@ SizeRune.glyph = {
 }
 
 -- Every element after it in the flow lasts longer, Lightning jumps further
+SizeRune.affectsHelp = "Makes every element after it last longer"    -- The grimoire shows it
 SizeRune.affects = {
     element = function(settings, strength)
         settings.duration = settings.duration * 1.5 ^ strength

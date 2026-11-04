@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local DamageRune = Rune:new("Damage", "modifier", 4, 3, {1, 0.2, 0.2})
 registerRune("Damage", DamageRune)
+DamageRune.lore = "A blade's edge, pressed into mana."    -- A line of lore, the grimoire shows it
 
 -- A blade, sharp diamond plus a crossguard
 DamageRune.glyph = {
@@ -10,6 +11,7 @@ DamageRune.glyph = {
 }
 
 -- Every element after it in the flow hits harder: hotter burns, more slow, stronger poison and jumps
+DamageRune.affectsHelp = "Makes every element after it stronger"    -- The grimoire shows it
 DamageRune.affects = {
     element = function(settings, strength)
         settings.power = settings.power * 1.5 ^ strength

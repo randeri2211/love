@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local OnHitRune = Rune:new("OnHit", "trigger", 4, TRIGGER_CHAIN_COST.onHit, {1, 0.5, 0})
 registerRune("OnHit", OnHitRune)
+OnHitRune.lore = "When it lands, begin again."    -- A line of lore, the grimoire shows it
 
 -- Casts the child spell where the spell hits something
 OnHitRune.event = "onHit"

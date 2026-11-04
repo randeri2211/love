@@ -3,6 +3,7 @@ local Area = require "forms.area"
 
 local AreaRune = Rune:new("Area", "form", 6, 7, {0.3, 0.9, 0.8})
 registerRune("Area", AreaRune)
+AreaRune.lore = "A breath held, then let go all at once."    -- A line of lore, the grimoire shows it
 
 AreaRune.form = Area
 

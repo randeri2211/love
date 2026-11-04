@@ -3,6 +3,7 @@ local Strokes = require "magic.strokes"
 
 local SplitRune = Rune:new("Split", "modifier", 8, 5, {0.6, 1, 0.4})
 registerRune("Split", SplitRune)
+SplitRune.lore = "One becomes many, and none become weaker."    -- A line of lore, the grimoire shows it
 
 -- One path forking into two
 SplitRune.glyph = {

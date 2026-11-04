@@ -8,7 +8,7 @@ local Elements = require "magic.elements"
 -- Name, cost and color of each, glyphs drawn as a picture of the element
 local RUNES = {
     {
-        name = "Fire", complexity = 4, mana = 3, color = {1, 0.45, 0.15},
+        name = "Fire", complexity = 4, mana = 3, lore = "A flame drawn is a flame kept.", color = {1, 0.45, 0.15},
         -- A flame with three tongues and a small flame inside
         glyph = {
             {"line", 0, -0.9, 0.2, -0.45, 0.45, -0.62, 0.52, -0.1, 0.4, 0.5, 0, 0.78, -0.4, 0.5, -0.52, -0.1, -0.45, -0.62, -0.2, -0.45, 0, -0.9},
@@ -16,7 +16,7 @@ local RUNES = {
         },
     },
     {
-        name = "Frost", complexity = 4, mana = 3, color = {0.55, 0.85, 1},
+        name = "Frost", complexity = 4, mana = 3, lore = "Six arms, and every one of them cold.", color = {0.55, 0.85, 1},
         -- A snowflake: three crossed lines, the vertical one with ticks at both ends
         glyph = {
             {"line", 0, -0.85, 0, 0.85},
@@ -27,7 +27,7 @@ local RUNES = {
         },
     },
     {
-        name = "Poison", complexity = 4, mana = 3, color = {0.45, 0.9, 0.25},
+        name = "Poison", complexity = 4, mana = 3, lore = "A slow drink of something unkind.", color = {0.45, 0.9, 0.25},
         -- A flask: stopper, narrow neck opening to a wide bottom, the liquid line across it
         glyph = {
             {"line", -0.15, -0.85, 0.15, -0.85},
@@ -36,7 +36,7 @@ local RUNES = {
         },
     },
     {
-        name = "Lightning", complexity = 4, mana = 3, color = {1, 0.92, 0.4},
+        name = "Lightning", complexity = 4, mana = 3, lore = "It never strikes the same place once.", color = {1, 0.92, 0.4},
         -- A bolt with its arrow tip at the bottom
         glyph = {
             {"line", 0.3, -0.9, -0.3, 0.0, 0.25, 0.0, -0.3, 0.9},
@@ -49,6 +49,7 @@ for i, info in ipairs(RUNES) do
     local rune = Rune:new(info.name, "modifier", info.complexity, info.mana, info.color)
     rune.element = info.name    -- Marks it as an element: once per circle, other runes can change it through affects.element
     rune.glyph = info.glyph
+    rune.lore = info.lore       -- A line of lore, the grimoire shows it
 
     function rune:settings(marks)
         -- What the marks set(Frost freeze dots and shatter cracks, Poison stack dots, Lightning forks, see below)

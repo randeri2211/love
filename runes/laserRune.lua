@@ -3,6 +3,7 @@ local Laser = require "forms.laser"
 
 local LaserRune = Rune:new("Laser", "form", 6, 6, {1, 0.35, 0.7})
 registerRune("Laser", LaserRune)
+LaserRune.lore = "Light that refuses to bend, unless it is told to."    -- A line of lore, the grimoire shows it
 
 LaserRune.form = Laser
 

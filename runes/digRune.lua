@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local DigRune = Rune:new("Dig", "modifier", 3, 2, {0.8, 0.65, 0.45})
 registerRune("Dig", DigRune)
+DigRune.lore = "Miners carved this into their picks long before there were wands."    -- A line of lore, the grimoire shows it
 
 -- A pickaxe
 DigRune.glyph = {

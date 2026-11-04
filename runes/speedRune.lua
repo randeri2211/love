@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local SpeedRune = Rune:new("Speed", "modifier", 3, 1, {0.3, 0.6, 1})
 registerRune("Speed", SpeedRune)
+SpeedRune.lore = "Two chevrons, both impatient."    -- A line of lore, the grimoire shows it
 
 -- Double chevron pointing forward
 SpeedRune.glyph = {

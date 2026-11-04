@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local DecelerateRune = Rune:new("Decelerate", "modifier", 1, 0, {0.45, 0.7, 0.55})
 registerRune("Decelerate", DecelerateRune)
+DecelerateRune.lore = "The snail does not hurry, and still arrives."    -- A line of lore, the grimoire shows it
 
 -- A snail shell spiral
 DecelerateRune.glyph = {

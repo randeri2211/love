@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local OnExpireRune = Rune:new("OnExpire", "trigger", 3, TRIGGER_CHAIN_COST.onExpire, {0.6, 0.3, 1})
 registerRune("OnExpire", OnExpireRune)
+OnExpireRune.lore = "Even an ending can be a beginning."    -- A line of lore, the grimoire shows it
 
 -- Casts the child spell where the spell runs out of lifetime
 OnExpireRune.event = "onExpire"

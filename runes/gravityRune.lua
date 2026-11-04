@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local GravityRune = Rune:new("Gravity", "modifier", 1, 1, {0.55, 0.55, 1})
 registerRune("Gravity", GravityRune)
+GravityRune.lore = "The pull of the world, borrowed for a moment."    -- A line of lore, the grimoire shows it
 
 -- Weight falling onto the ground
 GravityRune.glyph = {

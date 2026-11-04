@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local WeakenRune = Rune:new("Weaken", "modifier", 1, 0, {0.6, 0.6, 0.68})
 registerRune("Weaken", WeakenRune)
+WeakenRune.lore = "A smaller spell asks less of its caster."    -- A line of lore, the grimoire shows it
 
 -- A minus in a circle, less power(it used to be two chevrons, too close to Speed when drawn)
 WeakenRune.glyph = {
@@ -10,6 +11,7 @@ WeakenRune.glyph = {
 }
 
 -- Every element after it in the flow is weaker(always fully, a drawback cant be drawn badly to dodge it)
+WeakenRune.affectsHelp = "Makes every element after it weaker"    -- The grimoire shows it
 WeakenRune.affects = {
     element = function(settings, strength)
         settings.power = settings.power * 0.6

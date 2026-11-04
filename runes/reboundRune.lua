@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local ReboundRune = Rune:new("Rebound", "modifier", 4, 3, {0.4, 1, 1})
 registerRune("Rebound", ReboundRune)
+ReboundRune.lore = "What is thrown comes back, if the walls agree."    -- A line of lore, the grimoire shows it
 
 -- A path bouncing off walls
 ReboundRune.glyph = {

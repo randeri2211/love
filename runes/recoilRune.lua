@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local RecoilRune = Rune:new("Recoil", "modifier", 2, 1, {0.95, 0.65, 0.85})
 registerRune("Recoil", RecoilRune)
+RecoilRune.lore = "Every push pushes back."    -- A line of lore, the grimoire shows it
 
 -- An arrow pushed back off a wall
 RecoilRune.glyph = {

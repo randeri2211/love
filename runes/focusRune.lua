@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local FocusRune = Rune:new("Focus", "modifier", 4, 3, {1, 1, 0.6})
 registerRune("Focus", FocusRune)
+FocusRune.lore = "Three paths that meet at a single point."    -- A line of lore, the grimoire shows it
 
 -- Lines converging
 FocusRune.glyph = {
@@ -12,6 +13,7 @@ FocusRune.glyph = {
 }
 
 -- Narrows the fan of every Split after it in the flow, a well drawn Focus narrows more
+FocusRune.affectsHelp = "Narrows the fan of every Split after it"    -- The grimoire shows it
 FocusRune.affects = {
     Split = function(settings, strength)
         settings.spreadScale = settings.spreadScale * 0.5 ^ strength

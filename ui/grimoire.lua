@@ -2,7 +2,6 @@ local Slab = require "libraries.Slab"
 local MagicCircle = require "magic.magicCircle"
 local Strokes = require "magic.strokes"
 local Knowledge = require "magic.knowledge"
-local RuneBook = require "magic.runeBook"
 local PixelFont = require "ui.pixelFont"
 
 -- The grimoire: every rune, the known ones with their shape and what they do, the unknown ones as blanks
@@ -249,14 +248,17 @@ function Grimoire:page(rune, knowledge)
     else
         Slab.Text("None", {Color = HINT_COLOR})
     end
-    if RuneBook.AFFECTS[rune.name] ~= nil then
-        Slab.Textf(RuneBook.AFFECTS[rune.name], {W = PAGE_W - 20})
+    -- What it does to runes after it in the flow, the rune says it itself(rune.affectsHelp, next to its affects)
+    if rune.affectsHelp ~= nil then
+        Slab.Textf(rune.affectsHelp, {W = PAGE_W - 20})
+    elseif rune.affects ~= nil then
+        Slab.Text("Changes runes after it in the flow", {Color = HINT_COLOR})
     end
 
     Slab.NewLine()
     Slab.Text(Knowledge.where(knowledge, rune.name) or "", {Color = HINT_COLOR})
-    if RuneBook.LORE[rune.name] ~= nil then
-        Slab.Textf(RuneBook.LORE[rune.name], {Color = LORE_COLOR, W = PAGE_W - 20})
+    if rune.lore ~= nil then
+        Slab.Textf(rune.lore, {Color = LORE_COLOR, W = PAGE_W - 20})
     end
 end
 

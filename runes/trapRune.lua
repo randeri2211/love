@@ -3,6 +3,7 @@ local Trap = require "forms.trap"
 
 local TrapRune = Rune:new("Trap", "form", 5, 6, {0.75, 0.55, 0.3})
 registerRune("Trap", TrapRune)
+TrapRune.lore = "Patience, written into the ground."    -- A line of lore, the grimoire shows it
 
 TrapRune.form = Trap
 

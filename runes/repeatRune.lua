@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local RepeatRune = Rune:new("Repeat", "modifier", 6, 3, {1, 0.75, 0.3})
 registerRune("Repeat", RepeatRune)
+RepeatRune.lore = "Said once, said again, said louder."    -- A line of lore, the grimoire shows it
 
 -- A loop arrow coming back around
 RepeatRune.glyph = {

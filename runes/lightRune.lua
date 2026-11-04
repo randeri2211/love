@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local LightRune = Rune:new("Light", "modifier", 1, 1, {1, 0.95, 0.7})
 registerRune("Light", LightRune)
+LightRune.lore = "Every spell shines a little. This one means it."    -- A line of lore, the grimoire shows it
 
 -- A sun: a core with four rays
 LightRune.glyph = {

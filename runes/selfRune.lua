@@ -3,6 +3,7 @@ local Self = require "forms.self"
 
 local SelfRune = Rune:new("Self", "form", 4, 4, {1, 0.9, 0.55})
 registerRune("Self", SelfRune)
+SelfRune.lore = "Magic turned inward, the caster becomes the page."    -- A line of lore, the grimoire shows it
 
 SelfRune.form = Self
 

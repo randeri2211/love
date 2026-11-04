@@ -2,6 +2,7 @@ local Rune = require "runes.rune"
 
 local RepelRune = Rune:new("Repel", "modifier", 3, 2, {0.95, 0.5, 0.2})
 registerRune("Repel", RepelRune)
+RepelRune.lore = "The polite way of saying not that close."    -- A line of lore, the grimoire shows it
 
 -- Waves of force hitting a target
 RepelRune.glyph = {
