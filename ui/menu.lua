@@ -121,7 +121,7 @@ local function newWorldDialog()
             if Slab.Button("Create", {Disabled = problem ~= nil}) then
                 -- Builds and saves the world, then stays in the world list where it now shows up
                 closeNewWorld()
-                initVars({biomeWidth = BIOME_SIZES[biomeSize][2], dayLength = DAY_LENGTH, flora = FLORA_VERSION})      -- New random seed, the generator builds the terrain from it
+                initVars({biomeWidth = BIOME_SIZES[biomeSize][2], dayLength = DAY_LENGTH, flora = FLORA_VERSION, structures = STRUCTURES_VERSION})      -- New random seed, the generator builds the terrain from it
                 saveScene(newWorldText)
                 worlds = nil
             end

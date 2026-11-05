@@ -298,6 +298,22 @@ structures placed by world generation.
   - **Arrows** (`world_utils/projectiles`) are real projectiles, not spells: plain damage (armor blocks it), stronger with
     the archer's Strength, they stick in blocks for 3s, and a mana block in the way takes the hit and fires back.
     An archer that cant see the player doesnt shoot, so a mana block wall is cover.
+- **Done (phases 3 and 4)**, the structure system (`world_utils/structures`, a `structures/` folder registered like biomes):
+  - Each type has its own grid of cells along the world; the seed decides if a cell has one, where, and (surface) only on
+    ground flat enough. Rarer types are placed first, none overlap, none within 60 tiles of spawn.
+    Worlds made before structures (no `structures` setting) never get them.
+  - A chunk being made writes in its part of every structure over it, from the blueprint (one character per block,
+    `.` air, a space keeps the world, `,` air with a back wall drawn behind it). Ruins lose some blocks, from the top down.
+  - Chests get seeded loot, glyph walls a rune the player doesnt start with, guard spots spawn guards with the
+    structure's level. Guards are saved, never despawn, and when the last dies the structure is cleared for good
+    (a message and 20 XP x its level).
+  - New blocks: stone bricks (need an iron dig cap), cracked stone bricks, planks, a campfire (gives light).
+  - **Ruined camp** (about one per 340 columns): broken walls, a plank lean-to, a campfire, a wooden chest, 3 guards
+    (the biome's zombies or skeleton archers). **Slime pit** (caves 25 to 100 deep, about one per 320 columns): a pocket
+    with 6 slimes and a copper or iron vein. **Mage tower** (about one per 940 columns): three floors joined by a
+    stairwell of ledges, torches, 4 apprentice mages, an iron chest and a glyph wall at the top.
+  - **Apprentice mage** (`entities/apprenticeMage`): the first real caster, keeps its distance and builds a cast circle
+    for a fire or frost bullet, its points go into Intelligence and Concentration.
 - **New enemies:** Slime (hops, splits into two small slimes when killed), Cave bat (flies in caves, swoops),
   Skeleton archer (keeps its distance, shoots arrows), **Apprentice mage** (the first real caster: builds a cast circle, casts a simple spell).
 - **Structures**, placed from the seed per chunk like ores and trees, laid out from blueprints. Their guards spawn once,

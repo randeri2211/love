@@ -1,0 +1,61 @@
+-- A mage tower on the surface: three floors of stone bricks with apprentice mages on every floor, a stairwell of ledges
+-- on the right to hop up through, and at the top an iron chest and a glyph wall that teaches a rune
+-- Rare, about one every 800 tiles, and placed before camps where both would fit(see world_utils/structures)
+registerStructure("MageTower", {
+    title = "mage tower",
+    where = "surface",
+    cell = 800,
+    chance = 0.95,
+    priority = 2,
+    ground = 20,        -- The ground floor sits on the surface
+    maxSlope = 3,
+    -- B stone bricks, b ledges in the stairwell, T torch, G glyph wall, C chest, z a mage, d foundation, . air,
+    -- , air inside with a brick wall behind it(backWall)
+    blueprint = {
+        "B.B.B.B.B.B",
+        "BBBBBBBBBBB",
+        "B,,,,,,,,,B",
+        "BT,,,,,,,,B",
+        "G,,,,,,,,,B",
+        "B,,,,,,,,,B",
+        "B,C,,z,,,,B",
+        "BBBBBBB,,,B",
+        "B,,,,,,b,,B",
+        "BT,,,,,,,,B",
+        "B,,,,,,,,bB",
+        "B,,,,,,,,,B",
+        "B,,z,z,,,,B",
+        "BBBBBBB,,,B",
+        "B,,,,,,b,,B",
+        "BT,,,,,,,,B",
+        "B,,,,,,,,bB",
+        ".,,,,,,,,,B",
+        ".,,z,,,,,,B",
+        "BBBBBBBBBBB",
+        "ddddddddddd",
+        "ddddddddddd",
+        "ddddddddddd",
+    },
+    legend = {
+        ["."] = false,
+        [","] = false,
+        ["B"] = "StoneBricks",
+        ["b"] = "StoneBricks",
+        ["T"] = "Torch",
+        ["G"] = {glyph = true},
+        ["C"] = {chest = "IronChest"},
+        ["z"] = {guard = true},
+        ["d"] = "Dirt",
+    },
+    backWall = {[","] = true, ["z"] = true, ["C"] = true, ["T"] = true},  -- Cells with the brick wall behind them
+    backWallTile = "stoneBricks",
+    guards = {{"ApprenticeMage", 1}},
+    loot = {
+        {"Torch", 6, 10},
+        {"IronBar", 3, 6},
+        {"GoldBar", 1, 3, 0.4},
+        {"IronCore", 1, 1, 0.3},
+        {"IronCap", 1, 1, 0.3},
+        {"IronTip", 1, 1, 0.3},
+    },
+})

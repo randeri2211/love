@@ -208,6 +208,15 @@ SKELETON_RANGE = {5 * TILE_SIZE, 11 * TILE_SIZE}    -- It backs off closer than 
 SKELETON_SIGHT = 18 * TILE_SIZE
 SKELETON_AIM_TIME = 0.7             -- Seconds drawing the bow before it shoots
 SKELETON_SHOT_REST = 1.8            -- Seconds between shots
+-- Apprentice mages(see entities/apprenticeMage): keep their distance and cast a fire or frost bullet
+MAGE_HP = 24
+MAGE_TOUCH = 4
+MAGE_XP = 20
+MAGE_SPEED = BASE_MOVE_SPEED * 0.45
+MAGE_RANGE = {6 * TILE_SIZE, 12 * TILE_SIZE}  -- It backs off closer than this and walks in further than that
+MAGE_SIGHT = 18 * TILE_SIZE
+MAGE_MANA = 50
+MAGE_MANA_REGEN = 6
 ARROW_DAMAGE = 9                    -- Plain damage(armor blocks it), Strength makes it stronger like a touch
 ARROW_SPEED = 16 * TILE_SIZE
 ARROW_GRAVITY = 0.45                -- Of the world gravity, arrows fly in a shallow arc
@@ -374,6 +383,11 @@ CRAFT_TIERS = {"Basic", "Copper", "Iron", "Gold", "Arcanite"}  -- Recipe tiers i
 
 -- Trees and plants(see world_utils/flora)
 FLORA_VERSION = 1       -- Saved with new worlds, worlds without it grow no trees or plants so their saved chunks still match
+STRUCTURES_VERSION = 1  -- The same for structures(see world_utils/structures)
+STRUCTURE_SPAWN_CLEAR = 60      -- Tiles around where the world starts that never have a structure
+STRUCTURE_XP = 20               -- XP for clearing a structure, times its level
+CAMPFIRE_LIGHT = {0.95, 0.6, 0.3}
+STRUCTURE_WALL_SHADE = 0.45     -- How dark the walls inside buildings are drawn(cave walls are WALL_SHADE)
 TREE_CELL = 8           -- Columns per tree spot, each spot has at most one tree so canopies never touch
 ROOT_HP_SCALE = 4       -- A block with a tree or cactus growing on it takes this many times longer to break
 

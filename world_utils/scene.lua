@@ -2,6 +2,7 @@ local binser = require "libraries.binser.binser"
 local Spellbooks = require "magic.spellbooks"
 local Inventories = require "items.inventories"
 local Equipments = require "items.equipments"
+local Levels = require "components.stats.levels"
 
 -- Saves are written with binser, which keeps numbers, booleans, strings and nested tables exactly
 local SAVEABLE = {string = true, number = true, boolean = true, table = true}
@@ -215,6 +216,11 @@ function loadEntities(entityData)
         if entityClass ~= nil then
             local entity = entityClass:new(data.x, data.y)
             entity:load(data)
+            -- A structure guard keeps its structure and the level it had
+            entity.structureId = data.structureId
+            if type(data.level) == "number" and entity.build ~= nil then
+                Levels.setLevel(entity, data.level, entity.build)
+            end
             map.enemies:addEnemy(entity)
         end
     end

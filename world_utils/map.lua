@@ -2,6 +2,7 @@ local Enemies = require "entities.enemies"
 local Generator = require "world_utils.generator"
 local Drops = require "world_utils.drops"
 local Projectiles = require "world_utils.projectiles"
+local Structures = require "world_utils.structures"
 local Map = {}
 
 function Map:new(height, seed, settings)
@@ -35,6 +36,8 @@ function Map:emptyMap()
     end
     self.drops = Drops:new()    -- Items lying in the world(see world_utils/drops)
     self.projectiles = Projectiles:new()    -- Arrows in flight or stuck in blocks(see world_utils/projectiles)
+    self.structures = {}        -- What is remembered about structures by id: guards, how many died, cleared(see world_utils/structures)
+    self.pendingGuards = {}     -- Guards of chunks just made, spawned on the next update
     self.chunks = {}    -- Chunks with real blocks, chunks["cx,cy"][cell index] = block
     self.saved = {}     -- Visited chunks from a save, kept as data until they are needed again
     -- Hitboxes: one static body per chunk holds the fixtures of its blocks that touch air
@@ -116,7 +119,46 @@ function Map:generateChunk(cx, cy)
             end
         end
     end
+    self:stampStructures(chunk, cx, cy)
     return chunk
+end
+
+
+function Map:stampStructures(chunk, cx, cy)
+    -- Writes in this chunk's part of every structure overlapping it(see world_utils/structures)
+    -- Chests get their loot, glyph walls their rune, guard spots queue their guard
+    local x1, y1 = cellOf(cx, cy, 1)
+    local x2, y2 = cellOf(cx, cy, CHUNK_SIZE * CHUNK_SIZE)
+    local tx1, ty2 = self:mapToTile(x1, y1)
+    local tx2, ty1 = self:mapToTile(x2, y2)
+    for i, found in ipairs(Structures.inArea(tx1, ty1, tx2, ty2)) do
+        local state = Structures.state(found.id, found)
+        for j, cell in ipairs(Structures.cells(found, tx1, ty1, tx2, ty2)) do
+            local x, y = cell.tx + self.center.x + 1, self.center.y + 1 - cell.ty
+            if y >= 1 and y <= self.height then
+                local key, ccx, ccy, index = chunkOf(x, y)
+                local entry = cell.entry
+                local block = nil
+                if type(entry) == "string" then
+                    block = self:newBlock(entry, x, y)
+                elseif type(entry) == "table" then
+                    if entry.chest ~= nil then
+                        block = self:newBlock(entry.chest, x, y)
+                        Structures.fillChest(found, block, cell.tx * 1000 + cell.ty)
+                    elseif entry.glyph then
+                        block = self:newBlock("GlyphWall", x, y)
+                        block.rune = Structures.glyphRune(found)
+                    elseif entry.ore then
+                        block = self:newBlock(found.def.ore(found.depth), x, y)
+                    elseif entry.guard and not state.cleared then
+                        table.insert(self.pendingGuards, {entity = Structures.guardFor(found, cell.tx * 1000 + cell.ty),
+                            tx = cell.tx, ty = cell.ty, id = found.id, level = state.level})
+                    end
+                end
+                chunk[index] = block
+            end
+        end
+    end
 end
 
 
@@ -499,6 +541,9 @@ end
 
 
 function Map:update(dt)
+    if #self.pendingGuards > 0 then
+        Structures.spawnGuards()
+    end
     self.drops:update(dt)
     self.projectiles:update(dt)
     -- Unloads faraway chunks every few seconds instead of every frame
@@ -519,7 +564,8 @@ function Map:toData()
     for key, chunk in pairs(self.chunks) do
         chunks[key] = encodeChunk(chunk)
     end
-    return {seed = self.seed, settings = self.settings, time = self.time, drops = self.drops:toData(), chunks = chunks}
+    return {seed = self.seed, settings = self.settings, time = self.time, drops = self.drops:toData(), chunks = chunks,
+        structures = self.structures}
 end
 
 
@@ -531,6 +577,7 @@ function Map:loadData(data)
     self.time = data.time or DAY_START * DAY_LENGTH   -- Worlds saved before the clock start in the morning
     self.saved = data.chunks or {}
     self.drops:loadData(data.drops)
+    self.structures = type(data.structures) == "table" and data.structures or {}
 end
 
 

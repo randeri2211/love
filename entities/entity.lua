@@ -103,6 +103,10 @@ function Entity:damage(damage, power, kind)
         if self.xpReward ~= nil then
             Levels.gain(player, self.xpReward * (self.level or 1))
         end
+        -- A structure's guard counts toward clearing it
+        if self.structureId ~= nil then
+            require("world_utils.structures").guardDied(self)
+        end
         self:die()
     end
 end

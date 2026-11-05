@@ -4,6 +4,7 @@ RUNE_REGISTRY = {}
 BIOME_REGISTRY = {}
 ITEM_REGISTRY = {}
 RECIPE_REGISTRY = {}    -- A list, recipes show in the order they were registered within their tier and category
+STRUCTURE_REGISTRY = {} -- A list, structures placed by world generation(see world_utils/structures)
 
 
 function registerAll()
@@ -11,6 +12,7 @@ function registerAll()
     registerFolder("entities")
     registerFolder("runes")
     registerFolder("biomes")
+    registerFolder("structures")
     registerFolder("items")     -- After blocks, every block becomes an item(see items/blockItems)
     registerFolder("recipes")   -- After items, recipes name them
 end
@@ -51,6 +53,24 @@ function registerRecipe(recipe)
     recipe.count = recipe.count or 1
     recipe.id = #RECIPE_REGISTRY + 1
     table.insert(RECIPE_REGISTRY, recipe)
+end
+
+
+function registerStructure(name, def)
+    -- def is a structure type(see world_utils/structures), its guard count comes from its blueprint
+    def.name = name
+    def.title = def.title or name
+    def.priority = def.priority or 0
+    def.guardCount = 0
+    for i, row in ipairs(def.blueprint) do
+        for c = 1, #row do
+            local entry = def.legend[row:sub(c, c)]
+            if type(entry) == "table" and entry.guard then
+                def.guardCount = def.guardCount + 1
+            end
+        end
+    end
+    table.insert(STRUCTURE_REGISTRY, def)
 end
 
 

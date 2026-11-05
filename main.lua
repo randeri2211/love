@@ -12,6 +12,7 @@ local Spellbooks = require "magic.spellbooks"
 local Background = require "world_utils.background"
 local WorldClock = require "world_utils.worldClock"
 local Lighting = require "world_utils.lighting"
+local Structures = require "world_utils.structures"
 local Building = require "world_utils.building"
 local Spawner = require "world_utils.spawner"
 local PlayerCasting = require "magic.playerCasting"
@@ -129,6 +130,7 @@ function love.draw()
         game_cam:attach()
             -- Rock walls behind the caves, then the blocks over them
             Background.drawWalls(camX, camY)
+            Structures.drawBackWalls(camX, camY)    -- The walls inside buildings(see world_utils/structures)
             -- Map draws entities aswell
             map:draw()
             if not player:isDead() then
