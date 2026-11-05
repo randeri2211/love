@@ -81,9 +81,10 @@ function love.update(dt)
             WorldClock.update(dt)
             spells:update(dt)
             
-            -- Setting the camera to the player position
+            -- Setting the camera to the player position, on whole pixels: between two pixels the pixel art tiles
+            -- pick up a line of their neighbors on the tilesheet, which flickers at every tile edge while walking
             local x,y = player.body:getWorldCenter()
-            game_cam:lookAt(x, y)
+            game_cam:lookAt(math.floor(x + 0.5), math.floor(y + 0.5))
             
             -- Animation update
             if (player.anim.actor:GetTransformer():GetPower("player") > 0) then

@@ -13,5 +13,7 @@ registerBiome("Deep", {
         {entity = "ScorchedZombie", weight = 4, where = "cave", group = {1, 2}},
         {entity = "FrostbittenZombie", weight = 4, where = "cave", group = {1, 2}},
         {entity = "Zombie", weight = 4, where = "cave", group = {2, 3}},
+        {entity = "Bat", weight = 6, where = "cave", group = {2, 4}},
+        {entity = "SkeletonArcher", weight = 6, where = "cave", group = {1, 3}},
     },
 })

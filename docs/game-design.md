@@ -288,6 +288,16 @@ structures placed by world generation.
   Enemies are one level higher every 200 tiles from spawn and every 100 tiles underground, a zombie gives 10 XP x its level
   and puts its points 5:3:2 into Constitution, Strength and Swiftness. A new rune gives 50 XP.
   Constitution now gives +5 HP a point, Strength also strengthens a creature's touch (+5% a point).
+- **Done (phase 2)**, in the open world:
+  - **Slimes** (`entities/slime`): big, medium and small, all three spawn; a big one splits into two medium, a medium into
+    two small (the halves keep its level). They sit, squash and hop at the player. Surface by day and night,
+    colored by the biome (green, sand in the desert, pale in the snow).
+  - **Cave bats** (`entities/bat`): fly at the player in a wavy line, bite, fly off for a moment and swoop again. Caves only.
+  - **Skeleton archers** (`entities/skeletonArcher`): the zombie body with a skeleton skin, keep 5 to 11 tiles away,
+    draw a bow and shoot arrows aimed for their arc. Surface at night and in caves.
+  - **Arrows** (`world_utils/projectiles`) are real projectiles, not spells: plain damage (armor blocks it), stronger with
+    the archer's Strength, they stick in blocks for 3s, and a mana block in the way takes the hit and fires back.
+    An archer that cant see the player doesnt shoot, so a mana block wall is cover.
 - **New enemies:** Slime (hops, splits into two small slimes when killed), Cave bat (flies in caves, swoops),
   Skeleton archer (keeps its distance, shoots arrows), **Apprentice mage** (the first real caster: builds a cast circle, casts a simple spell).
 - **Structures**, placed from the seed per chunk like ores and trees, laid out from blueprints. Their guards spawn once,

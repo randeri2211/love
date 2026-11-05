@@ -181,6 +181,37 @@ ZOMBIE_CONTACT_DAMAGE = 10         -- Touching the player hits them, shown as a 
 ZOMBIE_XP = 10                     -- XP a zombie gives, times its level
 
 -- Hit reaction and death
+-- Slimes(see entities/slime): big ones split into two medium, medium into two small, every size can spawn
+-- {size in tiles, hp, touch damage, xp}
+SLIME_SIZES = {
+    big = {size = 1.4, hp = 40, touch = 12, xp = 12, splits = "medium"},
+    medium = {size = 0.95, hp = 18, touch = 8, xp = 6, splits = "small"},
+    small = {size = 0.6, hp = 8, touch = 5, xp = 3},
+}
+SLIME_SIGHT = 16 * TILE_SIZE        -- How close the player has to be for it to hop at them
+SLIME_HOP_WAIT = {0.8, 1.6}         -- Seconds it sits between hops
+SLIME_HOP_SPEED = 3.5 * TILE_SIZE   -- Sideways speed of a hop
+SLIME_HOP_HEIGHT = 0.75             -- Of the player jump
+-- Cave bats(see entities/bat): fly at the player in a wavy line, back off after a bite, swoop again
+BAT_HP = 12
+BAT_TOUCH = 6
+BAT_XP = 5
+BAT_SPEED = 4 * TILE_SIZE
+BAT_SIGHT = 14 * TILE_SIZE
+BAT_RETREAT_TIME = 0.9              -- Seconds it flies away after a bite
+-- Skeleton archers(see entities/skeletonArcher): keep their distance and shoot arrows in an arc
+SKELETON_HP = 26
+SKELETON_TOUCH = 5
+SKELETON_XP = 12
+SKELETON_SPEED = BASE_MOVE_SPEED * 0.5
+SKELETON_RANGE = {5 * TILE_SIZE, 11 * TILE_SIZE}    -- It backs off closer than this and walks in further than that
+SKELETON_SIGHT = 18 * TILE_SIZE
+SKELETON_AIM_TIME = 0.7             -- Seconds drawing the bow before it shoots
+SKELETON_SHOT_REST = 1.8            -- Seconds between shots
+ARROW_DAMAGE = 9                    -- Plain damage(armor blocks it), Strength makes it stronger like a touch
+ARROW_SPEED = 16 * TILE_SIZE
+ARROW_GRAVITY = 0.45                -- Of the world gravity, arrows fly in a shallow arc
+ARROW_STUCK_TIME = 3                -- Seconds an arrow stays stuck in a block
 HIT_FLASH_TIME = 0.15               -- Seconds an enemy shows the hit tint
 HIT_TINT = {1, 0.35, 0.35}
 DEATH_FALL_TIME = 0.35              -- Seconds falling over

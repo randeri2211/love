@@ -28,5 +28,9 @@ registerBiome("Plains", {
     -- and optionally time("day" or "night", any time when left out)
     spawns = {
         {entity = "Zombie", weight = 10, where = "surface", group = {1, 2}},
+        {entity = "SmallSlime", weight = 4, where = "surface", group = {2, 3}},
+        {entity = "Slime", weight = 5, where = "surface", group = {1, 2}},
+        {entity = "BigSlime", weight = 2, where = "surface", group = {1, 1}},
+        {entity = "SkeletonArcher", weight = 4, where = "surface", group = {1, 2}, time = "night"},
     },
 })

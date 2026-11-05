@@ -22,5 +22,9 @@ registerBiome("Snow", {
     spawns = {
         {entity = "FrostbittenZombie", weight = 8, where = "surface", group = {1, 3}},
         {entity = "Zombie", weight = 3, where = "surface", group = {1, 2}},
+        {entity = "SmallSlime", weight = 3, where = "surface", group = {2, 3}},
+        {entity = "Slime", weight = 3, where = "surface", group = {1, 2}},
+        {entity = "BigSlime", weight = 1, where = "surface", group = {1, 1}},
+        {entity = "SkeletonArcher", weight = 4, where = "surface", group = {1, 2}, time = "night"},
     },
 })

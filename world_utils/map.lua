@@ -1,6 +1,7 @@
 local Enemies = require "entities.enemies"
 local Generator = require "world_utils.generator"
 local Drops = require "world_utils.drops"
+local Projectiles = require "world_utils.projectiles"
 local Map = {}
 
 function Map:new(height, seed, settings)
@@ -33,6 +34,7 @@ function Map:emptyMap()
         self.drops:clear()
     end
     self.drops = Drops:new()    -- Items lying in the world(see world_utils/drops)
+    self.projectiles = Projectiles:new()    -- Arrows in flight or stuck in blocks(see world_utils/projectiles)
     self.chunks = {}    -- Chunks with real blocks, chunks["cx,cy"][cell index] = block
     self.saved = {}     -- Visited chunks from a save, kept as data until they are needed again
     -- Hitboxes: one static body per chunk holds the fixtures of its blocks that touch air
@@ -498,6 +500,7 @@ end
 
 function Map:update(dt)
     self.drops:update(dt)
+    self.projectiles:update(dt)
     -- Unloads faraway chunks every few seconds instead of every frame
     self.unloadTimer = (self.unloadTimer or 0) + dt
     if self.unloadTimer >= CHUNK_UNLOAD_INTERVAL then
@@ -547,6 +550,7 @@ function Map:draw()
 
     self.drops:draw()
     map.enemies:draw()
+    self.projectiles:draw()
 end
 
 return Map

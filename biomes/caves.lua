@@ -12,5 +12,7 @@ registerBiome("Caves", {
     spawns = {
         {entity = "RottingZombie", weight = 8, where = "cave", group = {1, 2}},
         {entity = "Zombie", weight = 6, where = "cave", group = {1, 2}},
+        {entity = "Bat", weight = 7, where = "cave", group = {1, 3}},
+        {entity = "SkeletonArcher", weight = 4, where = "cave", group = {1, 2}},
     },
 })
