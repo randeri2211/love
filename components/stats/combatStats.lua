@@ -7,7 +7,7 @@ local function clampValue(value, low, high)
 end
 
 local function combatStats(entity)
-    -- Strength - Makes worn armor sturdier(more defense from it)
+    -- Strength - Makes worn armor sturdier(more defense from it), and a creature's touch hit harder
     -- Intelligence - Gives bonus magic damage and small max mana bonus
     -- Wisdom - Gives bonus max mana and slight cooldown reduction
     -- Concentration - Gives bonus mana regen and slight cooldown reduction
@@ -30,6 +30,7 @@ local function combatStats(entity)
     local armorDefense = entity.equipment and Equipments.defense(entity.equipment) or 0
     combatStats.defense = armorDefense * math.max(0, 1 + STRENGTH_ARMOR * stats.strength)
     combatStats.damageReduction = Equipments.damageReduction(combatStats.defense)
+    combatStats.touchScale = math.max(0, 1 + STRENGTH_TOUCH * stats.strength)  -- A creature's touch(see Entity:touchDamage)
 
     -- Element resistances: its own(entity.resistances) plus its armor, each blocks its element like defense blocks the rest
     combatStats.resistances = {}
@@ -95,7 +96,7 @@ local function combatStats(entity)
     entity.movement.jumpHeight = entity.movement.baseJumpHeight + swiftnessJumpHeightModifier * stats.swiftness
 
     -- Constitution
-    local constitutionMaxHPModifier = 1
+    local constitutionMaxHPModifier = CONSTITUTION_HP
     entity.hpBar.maxHP = entity.hpBar.baseMaxHP + constitutionMaxHPModifier * stats.constitution
     entity.hpBar.regen = entity.hpBar.baseRegen + CONSTITUTION_HP_REGEN * stats.constitution
 

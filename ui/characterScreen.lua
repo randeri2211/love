@@ -5,13 +5,18 @@ local Inventories = require "items.inventories"
 local Equipments = require "items.equipments"
 local CraftingPanel = require "ui.craftingPanel"
 local ArcanePanel = require "ui.arcanePanel"
+local ChestPanel = require "ui.chestPanel"
+local Crafting = require "items.crafting"
 local ArcaneTables = require "items.arcaneTables"
 local ItemTooltip = require "ui.itemTooltip"
+local Levels = require "components.stats.levels"
 
 -- Character screen: the character with its stats on the left, the inventory grid on the right with crafting under it
--- A block with slots(an arcane table) opened with the interact key takes the place of the stats while it is in reach
+-- A block with slots(an arcane table, a chest) opened with the interact key takes the place of the stats while it is in reach
 -- Items move with a stack held in the hand: left click picks up, places, merges or swaps a whole stack,
 -- right click picks up half a stack or places one item, clicking outside the window throws the held stack
+-- Shift+click sends a stack between the inventory and an open chest, Ctrl+click locks an inventory slot
+-- (locked slots and the hotbar stay put when storing to chests)
 local CharacterScreen = {}
 
 -- Layout
@@ -23,7 +28,7 @@ local PREVIEW_H = 170
 local PREVIEW_SCALE = 2.2   -- The character preview drawn bigger than in the world
 local MARGIN = 16
 local STATS_H = 962         -- Tall enough for the preview, the equipment slots and every stat line
-local INVENTORY_EXTRA_H = 78    -- Inventory window height over the grid: title and the hint lines
+local INVENTORY_EXTRA_H = 112   -- Inventory window height over the grid: title, the hint lines and Quick stack
 
 -- The row of equipment slots under the character: the armor, then the hands
 local EQUIP_SLOTS = {}
@@ -45,6 +50,8 @@ local HOTBAR_SLOT_COLOR = {0.16, 0.17, 0.25, 1}    -- The first row is the hotba
 local SELECTED_EDGE = {1, 0.85, 0.4, 1}            -- The selected hotbar slot
 local BONUS_COLOR = {0.6, 1, 0.6, 1}               -- Stats added by armor
 local EMPTY_LABEL_COLOR = {1, 1, 1, 0.25}
+local LOCK_COLOR = {1, 0.82, 0.4, 1}               -- The lock on a locked slot
+local GOOD_COLOR = {0.6, 1, 0.6, 1}
 
 
 function CharacterScreen:new(owner, block)
@@ -58,6 +65,9 @@ function CharacterScreen:new(owner, block)
     screen.crafting = CraftingPanel:new(owner)
     screen.block = block            -- Open block with slots, nil when only the character shows
     screen.arcane = ArcanePanel:new(screen)
+    screen.chest = ChestPanel:new(screen)
+    screen.chestHovered = nil       -- Slot index under the mouse in an open chest
+    screen.message = nil            -- What Quick stack did
     -- Its own copy of the body for the preview, standing still and facing right
     screen.preview = Humanoid.build(owner.width, owner.height, PLAYER_SKIN)
     Humanoid.face(screen.preview, "right")
@@ -86,22 +96,31 @@ function CharacterScreen:update()
     local w, h = love.graphics.getDimensions()
     local rows = math.ceil(self.owner.inventory.size / COLUMNS)
     local gridW, gridH = COLUMNS * CELL, rows * CELL
-    local totalW = STATS_W + gridW + 40 + MARGIN
-    local x = math.floor(w / 2 - totalW / 2)
-    -- A little above the middle, so the bottom stays clear of the hotbar
-    local y = math.max(MARGIN, math.floor(h / 2 - STATS_H / 2) - 40)
 
     -- The open block closes when it is gone or out of reach
     if self.block ~= nil and not self:blockInReach() then
         self.block = nil
     end
-    if self.block ~= nil then
+    local chest = self.block ~= nil and self.block.inventory ~= nil
+    self.chestHovered = nil
+    -- An open chest is as wide as its grid, the stats and the arcane table are narrower
+    local leftW = chest and gridW + 20 or STATS_W
+    local totalW = leftW + gridW + 40 + MARGIN
+    local x = math.floor(w / 2 - totalW / 2)
+    -- A little above the middle, so the bottom stays clear of the hotbar
+    local y = math.max(MARGIN, math.floor(h / 2 - STATS_H / 2) - 40)
+
+    if chest then
+        self.hoveredEquip = nil     -- The equipment row is hidden behind the chest
+        local chestRows = math.ceil(self.block.inventory.size / COLUMNS)
+        self.chest:update(x, y, leftW, gridW, chestRows * CELL, self.block)
+    elseif self.block ~= nil then
         self.hoveredEquip = nil     -- The equipment row is hidden behind the table
         self.arcane:update(x, y, STATS_W, STATS_H, self.block)
     else
         self:characterWindow(x, y)
     end
-    local inventoryX, inventoryH = x + STATS_W + MARGIN, gridH + INVENTORY_EXTRA_H
+    local inventoryX, inventoryH = x + leftW + MARGIN, gridH + INVENTORY_EXTRA_H
     self:inventoryWindow(inventoryX, y, gridW, gridH)
     -- Crafting fills the rest of the height under the inventory
     self.crafting:update(inventoryX, y + inventoryH + MARGIN, gridW + 20, STATS_H - inventoryH - MARGIN, self.held ~= nil)
@@ -177,12 +196,31 @@ function CharacterScreen:characterWindow(x, y)
         Slab.NewLine()
 
         -- Stats with what the armor adds
+        -- Level and experience, then the stats with what the armor adds and a + for every unspent point
+        if owner.level ~= nil then
+            Slab.Text(string.format("Level %d  -  %d / %d XP", owner.level, math.floor(owner.xp), Levels.xpToNext(owner.level)))
+            Slab.NewLine()
+        end
+        local points = owner.statPoints or 0
         Slab.Text("Stats", {Color = HEADER_COLOR})
+        if points > 0 then
+            Slab.SameLine()
+            Slab.Text(string.format("  %d point%s to spend", points, points > 1 and "s" or ""), {Color = LEVEL_COLOR})
+        end
         local stats = owner.stats
         local bonus = owner.combatStats and owner.combatStats.statBonus or {}
-        for i, stat in ipairs({"strength", "intelligence", "wisdom", "concentration", "swiftness", "constitution"}) do
+        for i, stat in ipairs(Levels.STATS) do
             local name = stat:sub(1, 1):upper() .. stat:sub(2)
             local extra = bonus[stat] or 0
+            if points > 0 then
+                -- Every + has its own id, Slab tells buttons apart by their label
+                Slab.PushID(stat)
+                if Slab.Button("+", {W = 22, H = 18}) then
+                    Levels.spend(owner, stat)
+                end
+                Slab.PopID()
+                Slab.SameLine()
+            end
             if extra ~= 0 then
                 Slab.Text(string.format("%s  %d", name, stats[stat] + extra))
                 Slab.SameLine()
@@ -301,50 +339,92 @@ end
 -- Inventory
 function CharacterScreen:inventoryWindow(x, y, gridW, gridH)
     Slab.BeginWindow("CharacterInventory", windowOptions("Inventory", x, y, gridW + 20, gridH + INVENTORY_EXTRA_H))
+        local inventory = self.owner.inventory
         local ox, oy = Slab.GetCursorPos({Absolute = true})
         self.gridX, self.gridY = ox, oy     -- Where the grid is on screen
-        self:handleGridMouse(ox, oy, gridW, gridH)
-        self:drawGrid(gridW, gridH)
-        Slab.Image("InventoryGrid", {Image = self.gridCanvas})
+        self.hovered = self:handleSlots(inventory, ox, oy, gridW, gridH)
+        Slab.Image("InventoryGrid", {Image = self:drawSlots("gridCanvas", inventory, gridW, gridH, self.hovered, true)})
 
         -- Name of what is under the mouse, or how to use the grid
-        local slot = self.hovered and self.owner.inventory.slots[self.hovered]
+        local slot = self.hovered and inventory.slots[self.hovered]
         if slot then
             Slab.Text(string.format("%s  x%d", Items.stackName(slot), slot.count))
+            Slab.Text(inventory.locked[self.hovered] and "Locked, Ctrl+click to unlock" or "Ctrl+click: lock the slot", {Color = HINT_COLOR})
         elseif self.held ~= nil then
             Slab.Text("Click outside to throw it", {Color = HINT_COLOR})
+            Slab.Text("")
         else
             Slab.Text("Left click: take or place a stack", {Color = HINT_COLOR})
             Slab.Text("Right click: take half or place one", {Color = HINT_COLOR})
+        end
+
+        -- Every unlocked item outside the hotbar goes to a chest in reach that already has that item
+        if Slab.Button("Quick stack to nearby chests", {W = gridW}) then
+            self:quickStack()
+        end
+        if self.message ~= nil then
+            Slab.SameLine()
+            Slab.Text(self.message, {Color = GOOD_COLOR})
         end
     Slab.EndWindow()
 end
 
 
-function CharacterScreen:handleGridMouse(ox, oy, gridW, gridH)
-    -- Slot under the mouse, and what a click on it does
-    local mx, my = Slab.GetMousePosition()
-    self.hovered = nil
-    if mx < ox or my < oy or mx >= ox + gridW or my >= oy + gridH then
-        return
-    end
-    local index = math.floor((my - oy) / CELL) * COLUMNS + math.floor((mx - ox) / CELL) + 1
-    if index > self.owner.inventory.size then
-        return
-    end
-    self.hovered = index
-    if Slab.IsMouseClicked(1) then
-        self:leftClick(index)
-    elseif Slab.IsMouseClicked(2) then
-        self:rightClick(index)
+function CharacterScreen:storeSkip()
+    -- The slots storing to a chest leaves alone: the hotbar and the locked ones
+    local locked = self.owner.inventory.locked
+    return function(index)
+        return index <= HOTBAR_SIZE or locked[index] == true
     end
 end
 
 
-function CharacterScreen:leftClick(index)
+function CharacterScreen:quickStack()
+    -- Store matching into every chest within reach, nearest first
+    local moved, chests = 0, Crafting.nearbyChests(self.owner)
+    for i, chest in ipairs(chests) do
+        moved = moved + Inventories.storeAll(self.owner.inventory, chest.inventory, true, self:storeSkip())
+    end
+    if #chests == 0 then
+        self.message = "No chest in reach"
+    else
+        self.message = moved > 0 and string.format("Stored %d stack%s", moved, moved > 1 and "s" or "") or "Nothing matches"
+    end
+end
+
+
+function CharacterScreen:handleSlots(inventory, ox, oy, gridW, gridH)
+    -- Slot of an inventory grid(the player one or a chest) under the mouse and what a click on it does, returns its index
+    local mx, my = Slab.GetMousePosition()
+    if mx < ox or my < oy or mx >= ox + gridW or my >= oy + gridH then
+        return nil
+    end
+    local index = math.floor((my - oy) / CELL) * COLUMNS + math.floor((mx - ox) / CELL) + 1
+    if index > inventory.size then
+        return nil
+    end
+    if Slab.IsMouseClicked(1) then
+        local chest = self.block ~= nil and self.block.inventory or nil
+        if love.keyboard.isDown("lctrl", "rctrl") and inventory == self.owner.inventory then
+            -- Locks or unlocks the slot
+            inventory.locked[index] = not inventory.locked[index] or nil
+        elseif love.keyboard.isDown("lshift", "rshift") and chest ~= nil and self.held == nil then
+            -- Sends the stack across, to the chest from the inventory or back
+            Inventories.moveSlot(inventory, index, inventory == chest and self.owner.inventory or chest)
+        else
+            self:leftClick(inventory, index)
+        end
+    elseif Slab.IsMouseClicked(2) then
+        self:rightClick(inventory, index)
+    end
+    return index
+end
+
+
+function CharacterScreen:leftClick(inventory, index)
     -- Pick up, place, merge or swap a whole stack
     self.equipHint = nil
-    local slots = self.owner.inventory.slots
+    local slots = inventory.slots
     local slot, held = slots[index], self.held
     if held == nil then
         if slot then
@@ -366,10 +446,10 @@ function CharacterScreen:leftClick(index)
 end
 
 
-function CharacterScreen:rightClick(index)
+function CharacterScreen:rightClick(inventory, index)
     -- Empty hand picks up half the stack, a full hand places one item
     self.equipHint = nil
-    local slots = self.owner.inventory.slots
+    local slots = inventory.slots
     local slot, held = slots[index], self.held
     if held == nil then
         if slot then
@@ -410,29 +490,43 @@ function drawStack(stack, x, y)
 end
 
 
-function CharacterScreen:drawGrid(gridW, gridH)
-    if self.gridCanvas == nil or self.gridCanvas:getHeight() ~= gridH then
-        self.gridCanvas = love.graphics.newCanvas(gridW, gridH)
+local function drawLock(x, y)
+    -- A small padlock in the top left corner of a slot
+    love.graphics.setColor(LOCK_COLOR)
+    love.graphics.setLineWidth(1.5)
+    love.graphics.arc("line", "open", x + 10, y + 10, 3, math.pi, 2 * math.pi, 8)
+    love.graphics.rectangle("fill", x + 6, y + 10, 8, 6, 1)
+end
+
+
+function CharacterScreen:drawSlots(key, inventory, gridW, gridH, hovered, isPlayer)
+    -- Draws an inventory grid onto the canvas kept as self[key] and returns it
+    -- The player one has the hotbar row(its selected slot outlined in gold) and the locks
+    if self[key] == nil or self[key]:getWidth() ~= gridW or self[key]:getHeight() ~= gridH then
+        self[key] = love.graphics.newCanvas(gridW, gridH)
     end
     love.graphics.push("all")
-    love.graphics.setCanvas(self.gridCanvas)
+    love.graphics.setCanvas(self[key])
     love.graphics.origin()
     love.graphics.clear(0, 0, 0, 0)
-    for i, slot in ipairs(self.owner.inventory.slots) do
+    for i, slot in ipairs(inventory.slots) do
         local x = ((i - 1) % COLUMNS) * CELL
         local y = math.floor((i - 1) / COLUMNS) * CELL
-        -- The first row is the hotbar, its selected slot outlined in gold
-        local selected = i == self.owner.hotbarSlot
-        love.graphics.setColor(i <= HOTBAR_SIZE and HOTBAR_SLOT_COLOR or SLOT_COLOR)
+        local selected = isPlayer and i == self.owner.hotbarSlot
+        love.graphics.setColor(isPlayer and i <= HOTBAR_SIZE and HOTBAR_SLOT_COLOR or SLOT_COLOR)
         love.graphics.rectangle("fill", x + 2, y + 2, CELL - 4, CELL - 4, 4)
-        love.graphics.setColor(i == self.hovered and HOVER_EDGE or (selected and SELECTED_EDGE or SLOT_EDGE))
-        love.graphics.setLineWidth((i == self.hovered or selected) and 2 or 1)
+        love.graphics.setColor(i == hovered and HOVER_EDGE or (selected and SELECTED_EDGE or SLOT_EDGE))
+        love.graphics.setLineWidth((i == hovered or selected) and 2 or 1)
         love.graphics.rectangle("line", x + 2, y + 2, CELL - 4, CELL - 4, 4)
         if slot then
             drawStack(slot, x, y)
         end
+        if isPlayer and inventory.locked[i] then
+            drawLock(x, y)
+        end
     end
     love.graphics.pop()
+    return self[key]
 end
 
 
@@ -452,7 +546,10 @@ end
 function CharacterScreen:hoveredStack()
     -- The stack under the mouse in any part of the screen, nil for none
     -- (crafting rows show what they make)
-    if self.block ~= nil then
+    if self.chestHovered ~= nil then
+        return self.block.inventory.slots[self.chestHovered] or nil
+    end
+    if self.block ~= nil and self.block.arcane ~= nil then
         local spot = self.arcane.hovered
         if spot == "output" then
             return ArcaneTables.output(self.block.arcane)

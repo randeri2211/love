@@ -1,5 +1,6 @@
 local Spellbooks = require "magic.spellbooks"
 local Items = require "items.items"
+local Levels = require "components.stats.levels"
 
 local Hud = {}
 
@@ -19,6 +20,7 @@ local BG_COLOR = {0.06, 0.07, 0.11, 0.85}
 local EDGE_COLOR = {0.6, 0.6, 0.75, 1}
 local HP_COLOR = {0.85, 0.2, 0.25, 1}
 local MANA_COLOR = {0.25, 0.5, 1, 1}
+local XP_COLOR = {LEVEL_COLOR[1] * 0.85, LEVEL_COLOR[2] * 0.75, LEVEL_COLOR[3], 1}
 local TRAIL_COLOR = {1, 1, 1, 0.35}
 local TEXT_COLOR = {1, 1, 1, 0.9}
 local MARKER_COLOR = {1, 1, 1, 0.9}
@@ -104,6 +106,14 @@ function Hud:drawOverhead(x, top)
     end
     if hpBar ~= nil and hpBar.currentHP < hpBar.maxHP then
         self:drawBar("hp", x - OVERHEAD_W / 2, y, nil, hpBar.currentHP, hpBar.maxHP, HP_COLOR, nil, OVERHEAD_W, OVERHEAD_H)
+        y = y - OVERHEAD_H
+    end
+    -- Its level, small above the bars
+    if entity.level ~= nil then
+        local text = "Lv " .. entity.level
+        local font = love.graphics.getFont()
+        love.graphics.setColor(TEXT_COLOR)
+        love.graphics.print(text, math.floor(x - font:getWidth(text) / 4), math.floor(y - font:getHeight() / 2 - 2), 0, 0.5, 0.5)
     end
     love.graphics.pop()
 end
@@ -187,6 +197,13 @@ function Hud:draw(spellEntry)
             manaCost = spell:getManaCost(entity)
         end
         self:drawBar("mana", x, y, "Mana", entity.manaBar.currentMana, entity.manaBar.maxMana, MANA_COLOR, manaCost)
+        y = y + BAR_H + 3
+    end
+
+    -- Experience toward the next level
+    if entity.xp ~= nil then
+        y = y + GAP - 3
+        self:drawBar("xp", x, y, "Lv " .. entity.level, entity.xp, Levels.xpToNext(entity.level), XP_COLOR)
         y = y + BAR_H + 3
     end
 

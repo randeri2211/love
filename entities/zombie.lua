@@ -5,6 +5,7 @@ local Humanoid = require "animations.humanoid"
 local Elements = require "magic.elements"
 local ElementFx = require "magic.elementFx"
 local EnemyCasting = require "magic.enemyCasting"
+local Levels = require "components.stats.levels"
 
 -- A slow humanoid that shambles toward the player with its arms out, the same body as the player
 local Zombie = Enemy:new()
@@ -12,6 +13,9 @@ registerEntity("Zombie", Zombie)
 Zombie.loot = {}        -- Nothing yet(see Enemy.loot), drops come with more enemies
 Zombie.skin = ZOMBIE_SKIN
 Zombie.hp = ZOMBIE_HP
+Zombie.xpReward = ZOMBIE_XP     -- Times its level, to the player when it dies
+-- Where its level's stat points go: mostly tougher, then a harder touch, a little faster
+Zombie.build = {constitution = 5, strength = 3, swiftness = 2}
 local AURA_RATE = 5     -- Element particles a second around an elemental zombie, so it can be told apart from far
 
 local ARM_BONES = {"right_hand", "left_hand"}
@@ -61,6 +65,8 @@ function Zombie:new(x, y)
     zombie.hpBar.regen = 0
     zombie.hpBar.baseRegen = 0
     zombie.contactDamage = ZOMBIE_CONTACT_DAMAGE    -- Hurts the player by touching them(see Player:checkContactDamage)
+    -- Stronger the further from spawn and the deeper it is, its points spread by its build(see components/stats/levels)
+    Levels.setLevel(zombie, Levels.forPosition(x, y), self.build)
     zombie.direction = "right"
     zombie.walkTime = 0     -- Drives the arm sway
 

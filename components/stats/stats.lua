@@ -1,6 +1,6 @@
 local DEFAULT_STATS = 0
 local function Stats(strength, intelligence, wisdom, concentration, swiftness, constitution)
-    -- Strength - Makes worn armor sturdier(more defense from it)
+    -- Strength - Makes worn armor sturdier(more defense from it), and a creature's touch hit harder
     -- Intelligence - Gives bonus magic damage and small max mana bonus
     -- Wisdom - Gives bonus max mana and slight cooldown reduction
     -- Concentration - Gives bonus mana regen and slight cooldown reduction

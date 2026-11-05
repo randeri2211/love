@@ -4,6 +4,7 @@ local Stats = require "components.stats.stats"
 local CombatStats = require "components.stats.combatStats"
 local Statuses = require "magic.statuses"
 local ManaBar = require "components.manaBar"
+local Levels = require "components.stats.levels"
 
 local Entity = {}
 
@@ -98,8 +99,18 @@ function Entity:damage(damage, power, kind)
             self:dropLoot()
         end
         Statuses.died(self)     -- A wildfire burn passes on
+        -- Enemies that give experience give it to the player, more the higher their level
+        if self.xpReward ~= nil then
+            Levels.gain(player, self.xpReward * (self.level or 1))
+        end
         self:die()
     end
+end
+
+function Entity:touchDamage()
+    -- What its touch hits for(zombies), Strength makes it stronger
+    local touch = self.contactDamage or 0
+    return touch * (self.combatStats and self.combatStats.touchScale or 1)
 end
 
 function Entity:selfBuff(key)

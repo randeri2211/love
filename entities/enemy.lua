@@ -131,7 +131,7 @@ function Enemy:hitManaBlocks(dt)
             local other = a:getBody() == self.body and b or a
             local block = other:getUserData()
             if block ~= nil and block.name == "ManaBlock" then
-                block:damage(self.contactDamage * MANA_BLOCK_CONTACT_SCALE, self.contactDamage, self)
+                block:damage(self:touchDamage() * MANA_BLOCK_CONTACT_SCALE, self.contactDamage, self)
                 self.blockHitTime = CONTACT_IMMUNITY_TIME
                 if self.onMeleeHit ~= nil then
                     self:onMeleeHit(block)

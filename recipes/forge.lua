@@ -32,3 +32,9 @@ for i, metal in ipairs(PART_METALS) do
             station = "Forge", tier = metal.tier, category = "Wand parts"})
     end
 end
+
+-- Chests: each one is the chest before it bound in metal, so a chest grows with the ores
+registerRecipe({output = "IronChest", inputs = {{item = "WoodenChest", count = 1}, {item = "IronBar", count = 8}},
+    station = "Forge", tier = 3, category = "Storage"})
+registerRecipe({output = "ArcaniteChest", inputs = {{item = "IronChest", count = 1}, {item = "ArcaniteBar", count = 8}},
+    station = "Forge", tier = 5, category = "Storage"})

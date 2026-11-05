@@ -125,7 +125,19 @@ PLAYER_CAST_RING_TIME = 0.15
 PLAYER_CAST_RUNE_TIME = 0.07
 CONCENTRATION_CAST_SPEED = 0.03 -- Cast speed every point of Concentration adds
 STRENGTH_ARMOR = 0.05           -- Part of the worn armor defense every point of Strength adds(10 Strength, +50% defense)
+STRENGTH_TOUCH = 0.05           -- Part of a creature's touch damage every point of Strength adds(zombies, not the player)
+CONSTITUTION_HP = 5             -- Max HP every point of Constitution adds
 CONSTITUTION_HP_REGEN = 0.05    -- HP a second every point of Constitution adds
+
+-- Experience and levels(see components/stats/levels)
+XP_BASE = 100                   -- XP from level 1 to 2, the next ones need XP_BASE * level ^ XP_EXPONENT
+XP_EXPONENT = 1.5
+STAT_POINTS_PER_LEVEL = 3
+MAX_LEVEL = 99
+LEVEL_DISTANCE = 200            -- Enemies are one level higher every this many tiles from spawn
+LEVEL_DEPTH = 100               -- And every this many tiles under the surface
+RUNE_XP = 50                    -- XP for learning a rune you didnt know(a glyph wall)
+LEVEL_COLOR = {1, 0.85, 0.4}    -- Level up messages and the XP bar
 MIN_CAST_SPEED = 0.2
 LASER_RELEASE_FADE = 0.12       -- Seconds a held laser takes to fade after the cast button is let go
 ENEMY_CAST_RANGE = 18           -- Tiles an enemy casts at the player from, it needs a clear line to them
@@ -166,6 +178,7 @@ ZOMBIE_HP = 30
 ZOMBIE_SPEED = BASE_MOVE_SPEED * 0.45
 ZOMBIE_SIGHT = 14 * TILE_SIZE      -- How close the player has to be for it to start walking at them
 ZOMBIE_CONTACT_DAMAGE = 10         -- Touching the player hits them, shown as a swipe(see Zombie:onMeleeHit)
+ZOMBIE_XP = 10                     -- XP a zombie gives, times its level
 
 -- Hit reaction and death
 HIT_FLASH_TIME = 0.15               -- Seconds an enemy shows the hit tint
@@ -214,6 +227,7 @@ BEDROCK_ROWS = 3        -- Unbreakable rows at the bottom of the world
 
 -- Items and inventory(see items/ and world_utils/drops)
 INVENTORY_SIZE = 40             -- Slots, 4 rows of 10
+CHEST_COLUMNS = 10              -- Chests have rows as wide as the inventory(see blocks/chestBlock)
 PLACE_REACH = 6 * TILE_SIZE     -- How far from the player blocks can be placed
 PLACE_INTERVAL = 0.12           -- Seconds between blocks while the place button is held
 PLACE_OK_COLOR = {0.4, 1, 0.5, 0.9}

@@ -4,6 +4,7 @@ local function Inventory(size)
     local inventory = {}
 
     inventory.size = size or INVENTORY_SIZE
+    inventory.locked = {}       -- Slot indexes the player locked, storing to chests leaves them where they are
     inventory.slots = {}
     for i = 1, inventory.size do
         inventory.slots[i] = false

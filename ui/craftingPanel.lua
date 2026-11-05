@@ -54,11 +54,12 @@ function CraftingPanel:layout()
     local rows, y = {}, 0
     local stations = Crafting.nearbyStations(self.owner)
     self.stations = stations
+    self.sources = Crafting.sources(self.owner)     -- Nearby chests and the inventory, what the recipes count from
     local recipes = Crafting.available(stations)
     if self.craftableOnly then
         local craftable = {}
         for i, recipe in ipairs(recipes) do
-            if Crafting.maxTimes(self.owner.inventory, recipe) > 0 then
+            if Crafting.maxTimes(self.sources, recipe) > 0 then
                 table.insert(craftable, recipe)
             end
         end
@@ -169,7 +170,7 @@ function CraftingPanel:draw(rows, listW, viewH, listH)
     if self.canvas == nil or self.canvas:getWidth() ~= listW or self.canvas:getHeight() ~= viewH then
         self.canvas = love.graphics.newCanvas(listW, viewH)
     end
-    local inventory = self.owner.inventory
+    local inventory = self.sources or {self.owner.inventory}
     local font = love.graphics.getFont()
     love.graphics.push("all")
     love.graphics.setCanvas(self.canvas)

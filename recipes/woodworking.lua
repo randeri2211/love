@@ -1,4 +1,5 @@
--- Woodworking station: rods for wands and large rods for staves(see docs/game-design)
+-- Woodworking station: rods for wands and large rods for staves(see docs/game-design), and the first chest
+registerRecipe({output = "WoodenChest", inputs = {{group = "Wood", count = 12}}, station = "WoodworkingStation", tier = 1, category = "Storage"})
 local WOODS = {"Oak", "Pine"}
 
 for i, wood in ipairs(WOODS) do

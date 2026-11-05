@@ -94,18 +94,73 @@ function Inventories.remove(inventory, name, count)
 end
 
 
-function Inventories.toData(inventory)
-    local slots = {}
+function Inventories.isEmpty(inventory)
     for i, slot in ipairs(inventory.slots) do
-        slots[i] = slot and Items.copy(slot) or false
+        if slot then
+            return false
+        end
     end
-    return {size = inventory.size, slots = slots}
+    return true
 end
 
 
-function Inventories.fromData(data)
+-- Moving between inventories(a chest and the player), what doesnt fit stays where it was
+function Inventories.moveSlot(from, index, to)
+    -- The stack in a slot of from goes into to, returns true when any of it moved
+    local slot = from.slots[index]
+    if not slot then
+        return false
+    end
+    local left = Inventories.addStack(to, slot)
+    if left == slot.count then
+        return false
+    end
+    if left > 0 then
+        slot.count = left
+    else
+        from.slots[index] = false
+    end
+    return true
+end
+
+
+function Inventories.storeAll(from, to, matchingOnly, skip)
+    -- Every slot of from into to, skip(index) leaves a slot out(the hotbar, locked slots)
+    -- matchingOnly only moves items to already has, so a sorted chest stays sorted, returns how many stacks moved
+    local moved = 0
+    for i = 1, #from.slots do
+        local slot = from.slots[i]
+        if slot and not (skip ~= nil and skip(i)) and (not matchingOnly or Inventories.count(to, slot.item) > 0) then
+            if Inventories.moveSlot(from, i, to) then
+                moved = moved + 1
+            end
+        end
+    end
+    return moved
+end
+
+
+function Inventories.toData(inventory)
+    local slots, locked = {}, {}
+    for i, slot in ipairs(inventory.slots) do
+        slots[i] = slot and Items.copy(slot) or false
+    end
+    for index in pairs(inventory.locked or {}) do
+        table.insert(locked, index)
+    end
+    return {size = inventory.size, slots = slots, locked = locked}
+end
+
+
+function Inventories.fromData(data, size)
     -- Items that dont exist anymore are dropped, counts are kept inside the stack size
-    local inventory = Inventory(INVENTORY_SIZE)
+    -- size is how many slots it has(a chest), the player inventory by default
+    local inventory = Inventory(size or INVENTORY_SIZE)
+    for i, index in ipairs(type(data) == "table" and type(data.locked) == "table" and data.locked or {}) do
+        if type(index) == "number" and index >= 1 and index <= inventory.size then
+            inventory.locked[index] = true
+        end
+    end
     for i, slot in ipairs(type(data) == "table" and data.slots or {}) do
         if i > inventory.size then
             break

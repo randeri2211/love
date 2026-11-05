@@ -207,7 +207,7 @@ Some set items and trinkets are boss drops. Which ones and why is decided once b
 | 2 | **Crafting core:** recipe registry, a "near a station" check, a crafting screen | Stations do nothing without it. **Done:** recipes folder (`registerRecipe`), stations within interaction distance, a crafting list in the Tab screen by tier and category, Woodworking Station and Forge, bars and rods |
 | 3 | **Damage types, crit and status effects** | Forge resistances and tanning crit have nothing to work on yet (elements are decided, see below) |
 | 4 | **Light:** torches and light from spells | Night and underground are dark, and deep ores are planned. **Done:** tile light (see Light below). |
-| 5 | **Storage and home:** chests, spawn point or bed, the respawn timer | Basic sandbox loop (death itself is decided, see below) |
+| 5 | **Storage and home:** chests, spawn point or bed, the respawn timer | Basic sandbox loop (death itself is decided, see below). **Done:** chests (see Storage below) and the respawn timer. Still to come: a bed or spawn point |
 | 6 | **Spawner and enemy roster:** biome and depth buckets, night spawns, enemies that cast runes | Materials and bosses depend on enemy variety. **Done:** spawner(off screen, biome lists, cap, calmer days, temporary spawns), Scorched, Frostbitten and Rotting zombies. Still to come: day animals for hides, enemies that cast runes |
 | 7 | **Consumables:** potions from an alchemy station | Mana economy, and a second use for plants |
 | 8 | **Sound and onboarding** | No audio yet. Drawing runes is a skill, so it needs teaching |
@@ -273,6 +273,47 @@ Room for magic in the light system, the user's idea:
     They are cast by whoever made the block and paid from their mana like any trigger. A permanent block saves its spell,
     one the player made always casts from the player (after loading or a respawn too).
   - Only Decelerate, Dig and Light work on it (`BlockRune.allows`), the editor shows the rest as blocked.
+
+### Early game: experience, enemies and structures (Decided)
+Enemies get stronger the further they are from spawn and the deeper they are, give more experience, and many of them live in
+structures placed by world generation.
+
+- **Experience and levels:** XP from killing enemies (scaled by their level), clearing a structure (when its last guard dies)
+  and learning a rune you didn't know. A level up gives **stat points to spend** on the six stats.
+- **Enemy levels:** from the horizontal distance to spawn and the depth, like ores get better deeper down.
+  An enemy follows the player's rules: its level gives it the stat points a player of that level would have,
+  spread by a fixed **build** per enemy type, so its stats scale everything (HP, touch, speed, spell damage, mana, cast speed).
+- **Done (phase 1)** (`components/stats/levels`): XP to the next level is `100 x level^1.5` (100, 283, 520, 800...),
+  3 stat points a level, spent with the + on the character screen, an XP bar under mana, enemies show their level.
+  Enemies are one level higher every 200 tiles from spawn and every 100 tiles underground, a zombie gives 10 XP x its level
+  and puts its points 5:3:2 into Constitution, Strength and Swiftness. A new rune gives 50 XP.
+  Constitution now gives +5 HP a point, Strength also strengthens a creature's touch (+5% a point).
+- **New enemies:** Slime (hops, splits into two small slimes when killed), Cave bat (flies in caves, swoops),
+  Skeleton archer (keeps its distance, shoots arrows), **Apprentice mage** (the first real caster: builds a cast circle, casts a simple spell).
+- **Structures**, placed from the seed per chunk like ores and trees, laid out from blueprints. Their guards spawn once,
+  **a cleared structure stays cleared** (saved with the map), the open world spawner keeps making normal enemies:
+  - **Ruined camp** (surface): broken walls and a campfire, zombies or skeleton archers around a wooden chest.
+  - **Slime pit** (caves): a cave pocket full of slimes with an ore vein.
+  - **Mage tower** (surface): a stone tower with apprentice mages on its floors and a glyph wall at the top, clearing it teaches a rune.
+  - **Later: a castle** with zombie knights, a large structure once the system has proven itself.
+- **Build order:** 1) XP, levels and enemy levels, 2) slime, bat and skeleton archer in the open world, 3) the structure system
+  (blueprints, new blocks, guards and cleared state, chest loot), 4) the camp, slime pit and mage tower.
+
+### Storage (Done)
+Chests (`blocks/chestBlock`, `ui/chestPanel`), opened with the interact key next to the inventory, rows as wide as the inventory:
+
+| Chest | Rows | Made from | Station |
+|---|---|---|---|
+| Wooden Chest | 4 | 12 wood | Woodworking Station |
+| Iron Chest | 6 | a Wooden Chest + 8 iron bars | Forge |
+| Arcanite Chest | 10 | an Iron Chest + 8 arcanite bars (it glows faintly) | Forge |
+
+- **Only an empty chest breaks**, so a stray spell never scatters what it holds.
+- **Crafting uses every chest within interaction distance**, nearest first, then the inventory, so what you carry stays with you.
+- **Moving items:** Shift+click sends a stack between the chest and the inventory. The chest has Store all, Store matching
+  (only items it already holds) and Take all. **Quick stack** on the inventory sends every item to any chest in reach
+  that already holds that item and has room.
+- **Locked slots:** Ctrl+click locks an inventory slot (saved with the inventory). Storing to chests leaves locked slots and the hotbar alone.
 
 ### Death (Decided)
 For now **no punishment**: the player respawns after a respawn timer.

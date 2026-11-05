@@ -54,6 +54,9 @@ function Player:new(x, y, name)
     player.spellbook = Spellbooks.default()    -- Loading a world replaces it with the saved one
     player.inventory = Inventory(INVENTORY_SIZE)    -- Saved in its own file like the spellbook
     player.equipment = Equipment()      -- Worn armor, adds to the stats(see CombatStats)
+    player.level = 1                    -- Experience and stat points to spend(see components/stats/levels)
+    player.xp = 0
+    player.statPoints = 0
     player.hotbarSlot = 1               -- Selected hotbar slot, the first row of the inventory
     player.knowledge = Knowledge.new()  -- Runes it knows(see magic/knowledge), saved with the player
 
@@ -245,7 +248,7 @@ function Player:checkContactDamage(dt)
                 local attacker = other:getUserData()
                 if attacker ~= nil and (attacker.contactDamage or 0) > 0 then
                     -- The attacker can show the hit, like a zombie swiping
-                    if self:meleeHit(attacker, attacker.contactDamage, CONTACT_KNOCKBACK) and attacker.onMeleeHit ~= nil then
+                    if self:meleeHit(attacker, attacker:touchDamage(), CONTACT_KNOCKBACK) and attacker.onMeleeHit ~= nil then
                         attacker:onMeleeHit(self)
                     end
                     break
@@ -356,6 +359,14 @@ function Player:load(playerTable)
     self.hpBar = playerTable.hpBar
     self.manaBar = playerTable.manaBar
     self.knowledge = Knowledge.fromData(playerTable.knowledge)     -- Saves from before rune knowledge know the starting runes
+    -- Level, experience and the stats the points went into, saves from before levels start at level 1
+    self.level = math.max(1, math.floor(tonumber(playerTable.level) or 1))
+    self.xp = math.max(0, tonumber(playerTable.xp) or 0)
+    self.statPoints = math.max(0, math.floor(tonumber(playerTable.statPoints) or 0))
+    for stat, value in pairs(self.stats) do
+        local saved = playerTable.stats and tonumber(playerTable.stats[stat])
+        self.stats[stat] = saved and math.floor(saved) or value
+    end
     self.statsDirty = true  -- Recalculate combat stats with the loaded values
 end
 

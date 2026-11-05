@@ -2,6 +2,7 @@ local Block = require "blocks.block"
 local HPBar = require "components.hpBar"
 local MagicCircle = require "magic.magicCircle"
 local Knowledge = require "magic.knowledge"
+local Levels = require "components.stats.levels"
 local Biomes = require "world_utils.biomes"
 
 -- A wall with a rune carved into it: reading it(the interact key) adds the rune to the grimoire(see magic/knowledge)
@@ -61,6 +62,7 @@ function GlyphWall:interact()
     local where = "A glyph wall in the " .. biome.name
     if Knowledge.discover(player.knowledge, rune, where) then
         uihandler:toast("You learned the " .. rune .. " rune", RUNE_REGISTRY[rune].color)
+        Levels.gain(player, RUNE_XP)
     else
         uihandler:toast("You already know " .. rune)
     end
