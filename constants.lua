@@ -11,6 +11,12 @@ SCREEN_X  = 1920
 SCREEN_Y  = 1080
 
 TILE_SIZE = 32
+-- Art pixels per tile: the art in assets/art32 is drawn 32 pixels to a tile, assets/art16 is the 16 pixel art kept to
+-- compare. Every sheet is laid out the same in both, ART_UNIT times bigger, and drawn ART_SCREEN screen pixels a pixel
+ART_PIXELS = 32
+ART_FOLDER = "assets/art" .. ART_PIXELS .. "/"
+ART_UNIT = ART_PIXELS / 16          -- Art pixels for every pixel of the 16 pixel layout(cells, pivots, anchors)
+ART_SCREEN = TILE_SIZE / ART_PIXELS -- Screen pixels per art pixel
 TILES_PER_METER = 1
 
 GRAVITY_MULTIPLIER = 2.5       -- Real world gravity felt too floaty, this makes falling snappier

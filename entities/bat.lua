@@ -16,76 +16,12 @@ local WOBBLE = 1.4 * TILE_SIZE  -- How far the wavy line swings
 local WOBBLE_SPEED = 5          -- Swings a second(radians)
 local FLAP_SPEED = 12           -- Wing frames a second
 
--- Pixel art frames, the left half of the bat(mirrored for the right): o outline, d wing, b body, l belly, e eye
--- center is the row the body is on, so every frame lines up while it flaps
-local FRAMES = {
-    up = {center = 4, half = {
-        "o........",
-        "do.......",
-        "ddo....o.",
-        "dddo..obb",
-        ".ddddobeb",
-        "..dddobbb",
-        "....oobbl",
-        "......obl",
-        ".......oo",
-    }},
-    level = {center = 2, half = {
-        ".......o.",
-        "......obb",
-        "ooo..obeb",
-        "dddoodbbb",
-        "ddddddbbl",
-        ".ddd.oobl",
-        "......oo.",
-    }},
-    down = {center = 2, half = {
-        ".......o.",
-        "......obb",
-        ".....obeb",
-        "....odbbb",
-        "...oddbbl",
-        "..odddobl",
-        ".oddd..oo",
-        "oddo.....",
-        "do.......",
-    }},
-}
+-- Frames from the bat sheet(creatures/bat.png): wings up, level and down
+-- center is the row(16 pixel layout) the body is on, so every frame lines up while it flaps
+local SHEET_CELL = {18, 9}
+local FRAMES = {up = {column = 1, center = 4}, level = {column = 2, center = 2}, down = {column = 3, center = 2}}
 local FLAP_ORDER = {"up", "level", "down", "level"}
-local PALETTE = {
-    o = {0.1, 0.07, 0.12, 1},
-    d = {0.38, 0.26, 0.42, 1},
-    b = {0.55, 0.44, 0.56, 1},
-    l = {0.72, 0.62, 0.68, 1},
-    e = {1, 0.32, 0.25, 1},
-}
-local sprites = {}
-
-
-local function sprite(frame)
-    -- The frame as an image, the half mirrored into a whole bat
-    if sprites[frame] ~= nil then
-        return sprites[frame]
-    end
-    local rows = {}
-    for i, half in ipairs(frame.half) do
-        rows[i] = half .. half:reverse()
-    end
-    local data = love.image.newImageData(#rows[1], #rows)
-    for py, row in ipairs(rows) do
-        for px = 1, #row do
-            local color = PALETTE[row:sub(px, px)]
-            if color ~= nil then
-                data:setPixel(px - 1, py - 1, color[1], color[2], color[3], color[4])
-            end
-        end
-    end
-    local image = love.graphics.newImage(data)
-    image:setFilter("nearest", "nearest")
-    sprites[frame] = image
-    return image
-end
-local DEATH_TIME = 0.5          -- Seconds it falls and fades
+local sheet, quad = nil, nil
 
 
 function Bat:new(x, y)
@@ -196,8 +132,11 @@ end
 
 
 function Bat:draw()
-    -- Pixel art like the blocks, the wings flapping through their frames, falling and fading when it dies
+    -- Its wings flapping through the frames, falling and fading when it dies
     local x, y = self.body:getWorldCenter()
+    if sheet == nil then
+        sheet, quad = creatureSheet("bat", SHEET_CELL[1], SHEET_CELL[2])
+    end
     local alpha = 1
     if self.dying ~= nil then
         alpha = math.max(0, 1 - self.dying / DEATH_TIME)
@@ -207,18 +146,15 @@ function Bat:draw()
     if self.dying ~= nil then
         frame = FRAMES.down
     end
-    local scale = TILE_SIZE / 16
-    local image = sprite(frame)
-    -- The body row of every frame sits on the bat center
-    local left = math.floor(x - image:getWidth() * scale / 2 + 0.5)
-    local top = math.floor(y - (frame.center + 0.5) * scale + 0.5)
+    local q = quad(frame.column)
+    local ox, oy = SHEET_CELL[1] * ART_UNIT / 2, (frame.center + 0.5) * ART_UNIT
     love.graphics.push("all")
     love.graphics.setColor(1, 1, 1, alpha)
-    love.graphics.draw(image, left, top, 0, scale, scale)
+    love.graphics.draw(sheet, q, math.floor(x + 0.5), math.floor(y + 0.5), 0, ART_SCREEN, ART_SCREEN, ox, oy)
     if (self.flashTime or 0) > 0 then
         love.graphics.setBlendMode("add")
         love.graphics.setColor(0.55, 0.12, 0.1, alpha)
-        love.graphics.draw(image, left, top, 0, scale, scale)
+        love.graphics.draw(sheet, q, math.floor(x + 0.5), math.floor(y + 0.5), 0, ART_SCREEN, ART_SCREEN, ox, oy)
     end
     love.graphics.pop()
 end

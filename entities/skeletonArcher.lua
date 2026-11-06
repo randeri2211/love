@@ -16,80 +16,12 @@ SkeletonArcher.xpReward = SKELETON_XP
 -- Where its level's stat points go: arrows hit harder(Strength), then tougher, a little faster
 SkeletonArcher.build = {strength = 5, constitution = 3, swiftness = 2}
 
--- The bow as pixel art pointing right(the way it shoots), drawn further as it aims: w wood, d grip, s string,
--- a arrow shaft, h arrow head, f fletching. GRIP is the pixel held in the hand, the bow turns around it
-local BOW_FRAMES = {
-    {
-        "......w.....",
-        "......sw....",
-        "......s.w...",
-        "......s.w...",
-        "......s..d..",
-        "......s..d..",
-        "......s..d..",
-        "......s.w...",
-        "......s.w...",
-        "......sw....",
-        "......w.....",
-    },
-    {
-        "......w.....",
-        "......sw....",
-        ".....s..w...",
-        ".....s..w...",
-        "....s....d..",
-        "...fsaaaaaah",
-        "....s....d..",
-        ".....s..w...",
-        ".....s..w...",
-        "......sw....",
-        "......w.....",
-    },
-    {
-        "......w.....",
-        ".....s.w....",
-        "....s...w...",
-        "...s....w...",
-        "..s......d..",
-        ".fsaaaaaaaah",
-        "..s......d..",
-        "...s....w...",
-        "....s...w...",
-        ".....s.w....",
-        "......w.....",
-    },
-}
+-- The bow from the bow sheet(creatures/bow.png) pointing right(the way it shoots): at rest, half and fully drawn
+-- GRIP is the pixel held in the hand(16 pixel layout), the bow turns around it
+local BOW_CELL = {12, 11}
+local BOW_FRAMES = 3
 local BOW_GRIP = {9, 5}
-local BOW_PALETTE = {
-    w = {0.58, 0.38, 0.2, 1},
-    d = {0.34, 0.21, 0.11, 1},
-    s = {0.92, 0.9, 0.84, 1},
-    a = {0.62, 0.46, 0.3, 1},
-    h = {0.8, 0.82, 0.86, 1},
-    f = {0.85, 0.3, 0.25, 1},
-}
-local bowImages = {}
-
-
-local function bowImage(index)
-    if bowImages[index] ~= nil then
-        return bowImages[index]
-    end
-    local rows = BOW_FRAMES[index]
-    local data = love.image.newImageData(#rows[1], #rows)
-    for y, row in ipairs(rows) do
-        for x = 1, #row do
-            local c = BOW_PALETTE[row:sub(x, x)]
-            if c ~= nil then
-                data:setPixel(x - 1, y - 1, c[1], c[2], c[3], c[4])
-            end
-        end
-    end
-    local image = love.graphics.newImage(data)
-    image:setFilter("nearest", "nearest")
-    bowImages[index] = image
-    return image
-end
+local bowSheet, bowQuad = nil, nil
 
 
 function SkeletonArcher:new(x, y)
@@ -217,11 +149,14 @@ function SkeletonArcher:draw()
         local angle = math.atan2(py - chest, px - x)
         local reach = self.width * 1.3              -- Out at the hand tips, clear of the skull
         local bx, by = x + math.cos(angle) * reach, chest + math.sin(angle) * reach
-        local drawn = math.min(#BOW_FRAMES, math.floor(self.aimTime / SKELETON_AIM_TIME * #BOW_FRAMES) + 1)
-        local scale = TILE_SIZE / 16
+        if bowSheet == nil then
+            bowSheet, bowQuad = creatureSheet("bow", BOW_CELL[1], BOW_CELL[2])
+        end
+        local drawn = math.min(BOW_FRAMES, math.floor(self.aimTime / SKELETON_AIM_TIME * BOW_FRAMES) + 1)
         love.graphics.push("all")
         love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.draw(bowImage(drawn), math.floor(bx + 0.5), math.floor(by + 0.5), angle, scale, scale, BOW_GRIP[1] + 0.5, BOW_GRIP[2] + 0.5)
+        love.graphics.draw(bowSheet, bowQuad(drawn), math.floor(bx + 0.5), math.floor(by + 0.5), angle, ART_SCREEN, ART_SCREEN,
+            (BOW_GRIP[1] + 0.5) * ART_UNIT, (BOW_GRIP[2] + 0.5) * ART_UNIT)
         love.graphics.pop()
     end
 end

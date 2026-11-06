@@ -3,13 +3,14 @@ local Animateable = require "animations.animateable"
 local Animation = require "animations.animation"
 
 -- The body plan the player and humanoid enemies share: a torso with a head, two legs and two hands
--- With a skin, every part is a piece of one skin sheet(assets/skins/<skin>.png, laid out like SHEET)
+-- With a skin, every part is a piece of one skin sheet(assets/art*/skins/<skin>.png, laid out like SHEET)
 -- Without one, head, torso and legs are white, the right hand blue and the left hand red
 local Humanoid = {}
 
 Humanoid.BONES = {"head", "torso", "right_hand", "left_hand", "right_leg", "left_leg"}
 
--- Skin sheet layout in art pixels, the same for every humanoid skin(assets/skins/humanoid_template.png shows it)
+-- Skin sheet layout, the same for every humanoid skin(humanoid_template.png in the art folder shows it)
+-- Written at the 16 pixel layout and made ART_UNIT times bigger for the art in use(a 32 pixel skin sheet is 58 x 26)
 -- Parts are drawn upright facing right, pivot is the joint the part turns around
 Humanoid.SHEET = {
     head = {x = 0, y = 0, w = 10, h = 10, pivot = {5, 10}},     -- Neck at the bottom
@@ -17,7 +18,11 @@ Humanoid.SHEET = {
     arm = {x = 20, y = 0, w = 4, h = 13, pivot = {2, 1}},       -- Shoulder at the top
     leg = {x = 24, y = 0, w = 5, h = 9, pivot = {2.5, 0}},      -- Hip at the top
 }
-Humanoid.ART_SCALE = 2      -- Screen pixels per art pixel, the same as the 16 pixel block tiles drawn at 32
+for part, p in pairs(Humanoid.SHEET) do
+    p.x, p.y, p.w, p.h = p.x * ART_UNIT, p.y * ART_UNIT, p.w * ART_UNIT, p.h * ART_UNIT
+    p.pivot = {p.pivot[1] * ART_UNIT, p.pivot[2] * ART_UNIT}
+end
+Humanoid.ART_SCALE = ART_SCREEN     -- Screen pixels per art pixel, the same as the block tiles
 Humanoid.FAR_SHADE = 0.7    -- The far arm and leg are drawn darker, they are behind the body
 Humanoid.LIE_LIFT = 8       -- Pixels a body lying down is raised, about half the torso width
 
@@ -27,7 +32,7 @@ local skins = {}    -- Skin sheet images by name, shared by every humanoid weari
 
 local function skinImage(skin)
     if skins[skin] == nil then
-        local image = love.graphics.newImage("assets/skins/" .. skin .. ".png")
+        local image = love.graphics.newImage(ART_FOLDER .. "skins/" .. skin .. ".png")
         image:setFilter("nearest", "nearest")   -- Crisp art pixels like the tiles
         skins[skin] = image
     end

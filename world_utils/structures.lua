@@ -187,7 +187,7 @@ function Structures.drawBackWalls(camX, camY)
                 local row = def.blueprint[r]
                 for c = math.max(1, tx1 - found.tx + 1), math.min(found.w, tx2 - found.tx + 1) do
                     if def.backWall[row:sub(c, c)] then
-                        love.graphics.draw(TILESHEET, quad, (found.tx + c - 1) * TILE_SIZE, (found.ty + r - 1) * TILE_SIZE, 0, TILE_SIZE / 16, TILE_SIZE / 16)
+                        love.graphics.draw(TILESHEET, quad, (found.tx + c - 1) * TILE_SIZE, (found.ty + r - 1) * TILE_SIZE, 0, ART_SCREEN, ART_SCREEN)
                     end
                 end
             end

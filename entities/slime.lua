@@ -23,84 +23,12 @@ local LAND_TIME = 0.12          -- Seconds it stays squashed after landing
 local SPLIT_PUSH = 2 * TILE_SIZE
 local DEATH_TIME = 0.35         -- Seconds it shrinks away
 
--- Pixel art frames, one character a pixel: o outline, l light, h shine, b body, d dark underside, . nothing
--- eyes are the columns of the left eye pixels(the eyes are drawn on top, so they can look at the player)
-local FRAMES = {
-    idle = {eyeRow = 5, eyes = {4, 10}, rows = {
-        "......oooo......",
-        "....oolhhloo....",
-        "...olhhllbbbo...",
-        "..olhllbbbbbbo..",
-        ".olllbbbbbbbbbo.",
-        ".obbbbbbbbbbbbo.",
-        "obbbbbbbbbbbbbbo",
-        "obbbbbbbbbbbbbdo",
-        "odbbbbbbbbbbbddo",
-        ".oddddddddddddo.",
-        "..oooooooooooo..",
-    }},
-    -- Flat and wide, before a hop and on landing
-    squash = {eyeRow = 4, eyes = {5, 11}, rows = {
-        "......oooooo......",
-        "...oollhhhlloo....",
-        "..olhhllbbbbbbo...",
-        ".olllbbbbbbbbbbbo.",
-        "obbbbbbbbbbbbbbbbo",
-        "obbbbbbbbbbbbbbbdo",
-        "odbbbbbbbbbbbbbddo",
-        ".oddddddddddddddo.",
-        "..oooooooooooooo..",
-    }},
-    -- Tall and narrow in the air
-    jump = {eyeRow = 6, eyes = {3, 9}, rows = {
-        ".....oooo.....",
-        "....olhhlo....",
-        "...olhhllbo...",
-        "..olhllbbbbo..",
-        "..olllbbbbbo..",
-        ".obbbbbbbbbbo.",
-        ".obbbbbbbbbbo.",
-        ".obbbbbbbbbbo.",
-        "obbbbbbbbbbbbo",
-        "obbbbbbbbbbbdo",
-        "odbbbbbbbbbddo",
-        ".oddddddddddo.",
-        "..oooooooooo..",
-    }},
-}
-
-local sprites = {}      -- Built frames by frame and color, every slime of a color shares them
-
-
-local function sprite(frame, color)
-    -- The frame as an image in a slime color: the body a little see-through, a dark outline, a light top and a shine
-    local key = tostring(frame) .. table.concat(color, ",")
-    if sprites[key] ~= nil then
-        return sprites[key]
-    end
-    local c = color
-    local palette = {
-        o = {c[1] * 0.3, c[2] * 0.3, c[3] * 0.3, 1},
-        b = {c[1], c[2], c[3], 0.88},
-        l = {c[1] + (1 - c[1]) * 0.35, c[2] + (1 - c[2]) * 0.35, c[3] + (1 - c[3]) * 0.35, 0.92},
-        h = {0.95, 0.98, 0.95, 1},
-        d = {c[1] * 0.68, c[2] * 0.68, c[3] * 0.68, 0.92},
-    }
-    local rows = frame.rows
-    local data = love.image.newImageData(#rows[1], #rows)
-    for py, row in ipairs(rows) do
-        for px = 1, #row do
-            local color = palette[row:sub(px, px)]
-            if color ~= nil then
-                data:setPixel(px - 1, py - 1, color[1], color[2], color[3], color[4])
-            end
-        end
-    end
-    local image = love.graphics.newImage(data)
-    image:setFilter("nearest", "nearest")
-    sprites[key] = image
-    return image
-end
+-- Frames from the slime sheet(creatures/slime.png): idle, squash and jump in columns, a color per row(COLORS order)
+-- They face right with the eyes painted on, a slime left of the player is drawn turned the other way
+local SHEET_CELL = {18, 13}         -- Cell size at the 16 pixel layout, the frame sits at the bottom middle
+local FRAMES = {idle = 1, squash = 2, jump = 3}
+local ROWS = {default = 1, Desert = 2, Snow = 3}
+local sheet, quad = nil, nil
 
 
 function Slime:new(x, y)
@@ -122,9 +50,11 @@ function Slime:new(x, y)
     slime.xpReward = info.xp
     slime.hopWait = love.math.random() * SLIME_HOP_WAIT[2]
     slime.squash = 0                -- 0 to 1 while it squashes down for a hop
-    slime.pixel = math.max(1, math.floor(slime.width / 16 + 0.5))   -- Screen pixels per art pixel, small 2, medium 3, big 4
+    -- How big it is drawn: the sheet frames are a small slime(one tile), medium ones 1.5 and big ones 2 times that
+    slime.pixel = ART_SCREEN * slime.width / TILE_SIZE
     local biome = Biomes.surface(math.floor(x / TILE_SIZE), map.seed, map.settings)
     slime.color = COLORS[biome.name] or COLORS.default
+    slime.row = ROWS[biome.name] or ROWS.default     -- Its row on the slime sheet
     Levels.setLevel(slime, Levels.forPosition(x, y), self.build)
 
     slime.body:setFixedRotation(true)
@@ -217,6 +147,7 @@ function Slime:updateDying(dt)
                 -- The halves keep its level and color, and go when it would have(spawned ones are temporary)
                 Levels.setLevel(child, self.level, child.build)
                 child.color = self.color
+                child.row = self.row
                 child.spawned = self.spawned
                 child.body:setLinearVelocity(side * SPLIT_PUSH, -SPLIT_PUSH)
                 child.lastHitTime = spells.time     -- Awake right away
@@ -232,9 +163,11 @@ end
 
 
 function Slime:draw()
-    -- Pixel art in the block style: the frame for what it is doing, scaled by a whole number so the pixels stay square,
-    -- its bottom on the ground, and two eyes that look at the player
+    -- Its frame for what it is doing, its bottom on the ground, turned to face the player
     local x, y = self.body:getWorldCenter()
+    if sheet == nil then
+        sheet, quad = creatureSheet("slime", SHEET_CELL[1], SHEET_CELL[2])
+    end
     local frame = FRAMES.idle
     if self.dying ~= nil or self.squash > 0.3 or (self.landTime or 0) > 0 then
         frame = FRAMES.squash
@@ -242,28 +175,19 @@ function Slime:draw()
         frame = FRAMES.jump
     end
     local scale = self.pixel
-    local w, h = #frame.rows[1], #frame.rows
-    local left = math.floor(x - w * scale / 2 + 0.5)
-    local top = math.floor(y + self.radius * 0.9 - h * scale + 0.5)
+    local w, h = SHEET_CELL[1] * ART_UNIT, SHEET_CELL[2] * ART_UNIT
+    local side = player.body:getX() >= x and 1 or -1
+    local bottom = math.floor(y + self.radius * 0.9 + 0.5)
     local alpha = self.dying ~= nil and math.max(0, 1 - self.dying / DEATH_TIME) or 1
-    local image = sprite(frame, self.color)
+    local q = quad(frame, self.row or 1)
     love.graphics.push("all")
     love.graphics.setColor(1, 1, 1, alpha)
-    love.graphics.draw(image, left, top, 0, scale, scale)
+    love.graphics.draw(sheet, q, math.floor(x + 0.5), bottom, 0, scale * side, scale, w / 2, h)
     if (self.flashTime or 0) > 0 then
         -- A hit lights it up red instead of darkening it
         love.graphics.setBlendMode("add")
         love.graphics.setColor(0.55, 0.12, 0.1, alpha)
-        love.graphics.draw(image, left, top, 0, scale, scale)
-        love.graphics.setBlendMode("alpha")
-    end
-    if self.dying == nil then
-        local px = player.body:getWorldCenter()
-        local look = px > x and 1 or 0     -- The eyes sit a pixel toward the player
-        love.graphics.setColor(0.06, 0.08, 0.06, alpha)
-        for i, ex in ipairs(frame.eyes) do
-            love.graphics.rectangle("fill", left + (ex + look) * scale, top + frame.eyeRow * scale, scale, scale * 2)
-        end
+        love.graphics.draw(sheet, q, math.floor(x + 0.5), bottom, 0, scale * side, scale, w / 2, h)
     end
     love.graphics.pop()
 end
@@ -281,6 +205,7 @@ end
 function Slime:load(data)
     self.hpBar = data.hpBar or self.hpBar
     self.color = data.color or self.color
+    self.row = data.row or self.row
     self.statsDirty = true
     self.lastHitTime = nil
 end

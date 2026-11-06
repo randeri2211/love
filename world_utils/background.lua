@@ -214,7 +214,7 @@ function Background.drawWalls(camX, camY)
                 tile = (depth >= DEEP_DEPTH and "deepstone" or "stone") .. variant
             end
             if wallBatch:getCount() < wallBatch:getBufferSize() then
-                wallBatch:add(BLOCK_TILES[tile], tx * TILE_SIZE, ty * TILE_SIZE, 0, TILE_SIZE / 16, TILE_SIZE / 16)
+                wallBatch:add(BLOCK_TILES[tile], tx * TILE_SIZE, ty * TILE_SIZE, 0, ART_SCREEN, ART_SCREEN)
             end
         end
     end
