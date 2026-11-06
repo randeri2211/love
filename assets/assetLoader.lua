@@ -24,7 +24,8 @@ end
 ITEM_SHEET = love.graphics.newImage("assets/items.png")
 ITEM_SHEET:setFilter("nearest", "nearest")
 ITEM_TILES = {}
-for i, name in ipairs({"helmet", "chestplate", "leggings", "boots", "bar", "rod", "largeRod", "wand", "staff", "core", "cap", "tip"}) do
+for i, name in ipairs({"helmet", "chestplate", "leggings", "boots", "bar", "rod", "largeRod", "wand", "staff", "core", "cap", "tip",
+        "trinket", "focus"}) do
     ITEM_TILES[name] = love.graphics.newQuad((i - 1) * 17, 0, 16, 16, ITEM_SHEET:getDimensions())
 end
 

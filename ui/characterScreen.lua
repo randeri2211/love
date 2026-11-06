@@ -10,6 +10,7 @@ local Crafting = require "items.crafting"
 local ArcaneTables = require "items.arcaneTables"
 local ItemTooltip = require "ui.itemTooltip"
 local Levels = require "components.stats.levels"
+local Sets = require "items.sets"
 
 -- Character screen: the character with its stats on the left, the inventory grid on the right with crafting under it
 -- A block with slots(an arcane table, a chest) opened with the interact key takes the place of the stats while it is in reach
@@ -24,19 +25,24 @@ local COLUMNS = 10
 local CELL = 46             -- Pixels per inventory slot
 local ICON = 32
 local STATS_W = 300
-local PREVIEW_H = 170
+local PREVIEW_H = 146
 local PREVIEW_SCALE = 2.2   -- The character preview drawn bigger than in the world
 local MARGIN = 16
-local STATS_H = 962         -- Tall enough for the preview, the equipment slots and every stat line
+local STATS_H = 972         -- Tall enough for the preview, the two rows of equipment slots and every stat line
 local INVENTORY_EXTRA_H = 112   -- Inventory window height over the grid: title, the hint lines and Quick stack
 
--- The row of equipment slots under the character: the armor, then the hands
+-- The equipment slots under the character: the armor and the hands on the first row, trinkets and the focus under them
+-- Every slot keeps where it is drawn(col and row, from 0)
 local EQUIP_SLOTS = {}
+local EQUIP_COLUMNS = #ARMOR_SLOTS + #HAND_SLOTS
 for i, slot in ipairs(ARMOR_SLOTS) do
-    table.insert(EQUIP_SLOTS, slot)
+    table.insert(EQUIP_SLOTS, {name = slot.name, label = slot.label, col = i - 1, row = 0})
 end
 for i, slot in ipairs(HAND_SLOTS) do
-    table.insert(EQUIP_SLOTS, slot)
+    table.insert(EQUIP_SLOTS, {name = slot.name, label = slot.label, col = #ARMOR_SLOTS + i - 1, row = 0})
+end
+for i, slot in ipairs(ACCESSORY_SLOTS) do
+    table.insert(EQUIP_SLOTS, {name = slot.name, label = slot.label, col = i - 1, row = 1})
 end
 
 -- Colors
@@ -254,6 +260,11 @@ function CharacterScreen:characterWindow(x, y)
             Slab.Text("Resist  " .. resist("Fire") .. "  " .. resist("Frost"))
             Slab.Text("        " .. resist("Poison") .. "  " .. resist("Lightning"))
             Slab.Text(string.format("Dig cap  %d", combat.digCap))
+            -- Set bonuses turned on by the armor worn
+            for i, bonus in ipairs(Sets.active(owner.equipment)) do
+                Slab.Textf(string.format("%s set %d: %s", bonus.set.title, bonus.pieces, table.concat(bonus.effect.text, ", ")),
+                    {Color = BONUS_COLOR, W = STATS_W - 20})
+            end
         end
         Slab.Text(string.format("HP regen  %.1f/s", owner.hpBar.regen))
         Slab.Text(string.format("Mana regen  %.1f/s", owner.manaBar.manaRegen))
@@ -269,10 +280,16 @@ function CharacterScreen:handleEquipmentMouse(ox, oy)
     -- Equipment slot under the mouse, a click swaps it with the held stack when the held item goes in that slot
     local mx, my = Slab.GetMousePosition()
     self.hoveredEquip = nil
-    if my < oy or my >= oy + CELL or mx < ox or mx >= ox + #EQUIP_SLOTS * CELL then
+    local col, row = math.floor((mx - ox) / CELL), math.floor((my - oy) / CELL)
+    local slot = nil
+    for i, s in ipairs(EQUIP_SLOTS) do
+        if s.col == col and s.row == row and mx >= ox and my >= oy then
+            slot = s
+        end
+    end
+    if slot == nil then
         return
     end
-    local slot = EQUIP_SLOTS[math.floor((mx - ox) / CELL) + 1]
     self.hoveredEquip = slot.name
     if Slab.IsMouseClicked(1) or Slab.IsMouseClicked(2) then
         self:equipClick(slot)
@@ -303,9 +320,9 @@ end
 
 
 function CharacterScreen:drawEquipment()
-    local w = #EQUIP_SLOTS * CELL
+    local w = EQUIP_COLUMNS * CELL
     if self.equipCanvas == nil then
-        self.equipCanvas = love.graphics.newCanvas(w, CELL)
+        self.equipCanvas = love.graphics.newCanvas(w, CELL * 2)
     end
     love.graphics.push("all")
     love.graphics.setCanvas(self.equipCanvas)
@@ -313,23 +330,23 @@ function CharacterScreen:drawEquipment()
     love.graphics.clear(0, 0, 0, 0)
     local font = love.graphics.getFont()
     for i, slot in ipairs(EQUIP_SLOTS) do
-        local x = (i - 1) * CELL
+        local x, y = slot.col * CELL, slot.row * CELL
         local hovered = slot.name == self.hoveredEquip
         love.graphics.setColor(SLOT_COLOR)
-        love.graphics.rectangle("fill", x + 2, 2, CELL - 4, CELL - 4, 4)
+        love.graphics.rectangle("fill", x + 2, y + 2, CELL - 4, CELL - 4, 4)
         love.graphics.setColor(hovered and HOVER_EDGE or SLOT_EDGE)
         love.graphics.setLineWidth(hovered and 2 or 1)
-        love.graphics.rectangle("line", x + 2, 2, CELL - 4, CELL - 4, 4)
+        love.graphics.rectangle("line", x + 2, y + 2, CELL - 4, CELL - 4, 4)
         local worn = self.owner.equipment[slot.name]
         if worn then
-            drawStack(worn, x, 0)
+            drawStack(worn, x, y)
         else
             -- Empty slots say what goes in them
             love.graphics.setColor(EMPTY_LABEL_COLOR)
             local label = slot.label
             -- Half size when it doesnt fit, the pixel font stays sharp at whole and half sizes
             local scale = font:getWidth(label) <= CELL - 8 and 1 or 0.5
-            love.graphics.print(label, x + CELL / 2 - font:getWidth(label) * scale / 2, CELL / 2 - font:getHeight() * scale / 2, 0, scale, scale)
+            love.graphics.print(label, x + CELL / 2 - font:getWidth(label) * scale / 2, y + CELL / 2 - font:getHeight() * scale / 2, 0, scale, scale)
         end
     end
     love.graphics.pop()

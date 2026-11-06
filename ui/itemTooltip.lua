@@ -1,9 +1,11 @@
 local Items = require "items.items"
 local Tools = require "items.tools"
 local Theme = require "ui.theme"
+local Sets = require "items.sets"
 
 -- The box next to the mouse that says what an item is and does, drawn over every window(see UIHandler:drawTop)
--- Parts and tools describe themselves(Tools.describe), armor shows its defense and stats, other items only their name
+-- Parts and tools describe themselves(Tools.describe), armor shows its defense, stats and set,
+-- trinkets and focuses what their effect does, other items only their name
 local ItemTooltip = {}
 
 local PAD = 8
@@ -25,6 +27,26 @@ function ItemTooltip.lines(stack)
         end
         for element, amount in pairs(item.armor.resist or {}) do
             table.insert(lines, {text = string.format("%+d %s resistance", amount, element), good = amount > 0})
+        end
+        -- Its set: every tier, lit when the player wears enough pieces of it
+        local set = item.armor.set and Sets.LIST[item.armor.set]
+        if set ~= nil then
+            local worn = player ~= nil and player.equipment and Sets.worn(player.equipment)[item.armor.set] or 0
+            table.insert(lines, {text = string.format("%s set (%d/4)", set.title, worn)})
+            for need = 1, 4 do
+                local tier = set.tiers[need]
+                if tier ~= nil then
+                    for j, text in ipairs(tier.text) do
+                        table.insert(lines, {text = string.format("  %d: %s", need, text), good = worn >= need or nil})
+                    end
+                end
+            end
+        end
+    end
+    if lines == nil and item ~= nil and item.effect ~= nil then
+        lines = {{text = item.trinket and "Trinket" or "Focus"}}
+        for i, text in ipairs(item.effect.text or {}) do
+            table.insert(lines, {text = text, good = true})
         end
     end
     return lines or {}

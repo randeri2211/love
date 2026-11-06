@@ -46,5 +46,7 @@ registerStructure("RuinedCamp", {
         {"IronBar", 1, 3, 0.3},
         {"CopperCore", 1, 1, 0.15},
         {"CopperCap", 1, 1, 0.2},
+        {"Feather", 1, 1, 0.12},
+        {"SandHourglass", 1, 1, 0.08},
     },
 })

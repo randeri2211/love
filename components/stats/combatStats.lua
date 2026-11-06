@@ -112,9 +112,14 @@ local function combatStats(entity)
 
     -- What every spell gets multiplied by, the stats and the wand or staff together
     -- Spells(Spell:getDamage, getCooldown, getManaCost) and the character screen both read these
+    -- Trinkets, the focus and set bonuses change casting too(see Equipments.casting)
+    local casting = entity.equipment and Equipments.casting(entity.equipment) or {manaCost = 1, cooldown = 1, complexity = 0, manaRegen = 0, spells = {}}
+    combatStats.spellMods = casting.spells      -- Changes to the spells cast, by form(see Spell:shoot)
+    combatStats.maxComplexity = combatStats.maxComplexity + casting.complexity
+    entity.manaBar.manaRegen = entity.manaBar.manaRegen + casting.manaRegen
     combatStats.spellDamage = combatStats.magicDamage * combatStats.tool.damage
-    combatStats.spellCooldown = (1 - combatStats.cooldownReduction) * combatStats.tool.cooldown
-    combatStats.spellManaCost = combatStats.tool.manaCost
+    combatStats.spellCooldown = (1 - combatStats.cooldownReduction) * combatStats.tool.cooldown * casting.cooldown
+    combatStats.spellManaCost = combatStats.tool.manaCost * casting.manaCost
 
     -- Buffs from Self spells on it go on top of the stats(a Self effect marks the stats dirty when it starts and ends)
     entity.movement.maxSpeed = entity.movement.maxSpeed * entity:selfBuff("haste") * Statuses.speedFactor(entity)    -- Frost slows

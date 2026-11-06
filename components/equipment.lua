@@ -9,6 +9,9 @@ local function Equipment()
     for i, slot in ipairs(HAND_SLOTS) do
         equipment[slot.name] = false
     end
+    for i, slot in ipairs(ACCESSORY_SLOTS) do
+        equipment[slot.name] = false
+    end
 
     return equipment
 end

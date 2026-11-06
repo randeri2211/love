@@ -445,6 +445,7 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
     local castParams = setmetatable({damage = self:getDamage(caster), knockback = params.knockback + tool.knockback,
         triggered = triggered == true, target = target, channel = not triggered and caster.channelCast == true,
         placement = placement, spell = self}, {__index = params})
+    Spell.applyMods(castParams, self.core, caster)
 
     self:spawnVolley(caster, castParams, x, y, dirX, dirY)
 
@@ -459,6 +460,23 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
             end
             self:spawnVolley(caster, castParams, shotX, shotY, dirX, dirY)
         end)
+    end
+end
+
+
+function Spell.applyMods(castParams, form, caster)
+    -- What the caster wears changes the cast(trinkets, a focus, set bonuses, see Equipments.casting):
+    -- every modifier for this form(or any form) multiplies and adds to one param, when names a param it needs above
+    -- a value first(above, 0 by default), so a Fire focus only changes spells with Fire
+    local mods = caster.combatStats and caster.combatStats.spellMods
+    for i, mod in ipairs(mods or {}) do
+        if mod.form == nil or mod.form == form then
+            local need = mod.when == nil or (castParams[mod.when] or 0) > (mod.above or 0)
+            local value = castParams[mod.param]
+            if need and type(value) == "number" then
+                castParams[mod.param] = value * (mod.mult or 1) + (mod.add or 0)
+            end
+        end
     end
 end
 

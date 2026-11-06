@@ -1,6 +1,22 @@
 local Slab = require "libraries.Slab"
 local Knowledge = require "magic.knowledge"
 local Spell = require "magic.spell"
+
+-- What the "With your gear" lines call the params gear can change, and how they show(see SpellEditor stats)
+local GEAR_COLOR = {0.6, 1, 0.6, 1}
+local GEAR_LABELS = {
+    damage = "Damage", areaRadius = "Area radius", expandTime = "Grow time", width = "Beam width", speed = "Speed",
+    count = "Count", burnDps = "Burn", burnSpread = "Burn spreads", burnTime = "Burn time", frostSlow = "Frost slow",
+    poisonDps = "Poison", chainDamage = "Lightning jump", lifetime = "Lifetime", reach = "Reach",
+}
+local function gearValue(key, value)
+    if key == "count" or key == "burnSpread" then
+        return string.format("%d", value)
+    elseif key == "expandTime" or key == "burnTime" or key == "lifetime" then
+        return string.format("%.2fs", value)
+    end
+    return string.format("%.1f", value)
+end
 local MagicCircle = require "magic.magicCircle"
 local Spellbooks = require "magic.spellbooks"
 local Strokes = require "magic.strokes"
@@ -843,6 +859,24 @@ function SpellEditor:info(x, y)
         if params.chainDamage > 0 then
             Slab.Text(string.format("Lightning: %d%% to %d near", math.floor(params.chainDamage * 100 + 0.5), params.chainTargets))
             Slab.Text(string.format("  within %.1f tiles", params.chainRange / TILE_SIZE))
+        end
+
+        -- What the trinkets, the focus and the set bonuses do to this spell when it is cast(see Spell.applyMods)
+        local base = setmetatable({damage = inspected:getDamage(player)}, {__index = params})
+        local geared = setmetatable({damage = base.damage}, {__index = params})
+        Spell.applyMods(geared, inspected.core, player)
+        local changes = {}
+        for key, value in pairs(geared) do
+            if type(value) == "number" and math.abs(value - base[key]) > 0.0001 then
+                table.insert(changes, key)
+            end
+        end
+        if #changes > 0 then
+            table.sort(changes)
+            Slab.Text("With your gear:", {Color = GEAR_COLOR})
+            for i, key in ipairs(changes) do
+                Slab.Text(string.format("  %s %s -> %s", GEAR_LABELS[key] or key, gearValue(key, base[key]), gearValue(key, geared[key])), {Color = GEAR_COLOR})
+            end
         end
 
         Slab.Rectangle({W = INFO_W - 20, H = 20, Color = params.color, Rounding = 4})

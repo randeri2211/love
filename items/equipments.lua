@@ -1,6 +1,7 @@
 local Equipment = require "components.equipment"
 local Items = require "items.items"
 local Tools = require "items.tools"
+local Sets = require "items.sets"
 
 -- Functions for equipment components(see components/equipment), the equipment itself is only data
 local Equipments = {}
@@ -35,7 +36,41 @@ function Equipments.fits(slotName, stack, equipment)
         end
         return true
     end
+    -- Trinkets in the trinket slots, two different ones, a focus in the focus slot
+    if slotName == "trinket1" or slotName == "trinket2" then
+        if not item.trinket then
+            return false, "Only trinkets go there"
+        end
+        local other = equipment and equipment[slotName == "trinket1" and "trinket2" or "trinket1"]
+        if other and other.item == stack.item then
+            return false, "You already wear that trinket"
+        end
+        return true
+    end
+    if slotName == "focus" then
+        if not item.focus then
+            return false, "Only a focus goes there"
+        end
+        return true
+    end
     return item.armor ~= nil and item.armor.slot == slotName
+end
+
+
+function Equipments.effects(equipment)
+    -- Every effect worn: the trinkets, the focus and the set bonuses turned on(see items/sets for the format)
+    local list = {}
+    for i, slot in ipairs(ACCESSORY_SLOTS) do
+        local stack = equipment[slot.name]
+        local item = stack and ITEM_REGISTRY[stack.item]
+        if item and item.effect ~= nil then      -- An empty slot is false, not nil
+            table.insert(list, item.effect)
+        end
+    end
+    for i, bonus in ipairs(Sets.active(equipment)) do
+        table.insert(list, bonus.effect)
+    end
+    return list
 end
 
 
@@ -47,12 +82,15 @@ function Equipments.defense(equipment)
             total = total + ITEM_REGISTRY[stack.item].armor.defense
         end
     end
+    for i, effect in ipairs(Equipments.effects(equipment)) do
+        total = total + (effect.defense or 0)
+    end
     return total
 end
 
 
 function Equipments.stats(equipment)
-    -- Stats every worn piece adds up to, by stat name
+    -- Stats every worn piece adds up to, by stat name, and what the effects add(castSpeed, critChance, critDamage)
     local total = {}
     for i, slot in ipairs(ARMOR_SLOTS) do
         local stack = equipment[slot.name]
@@ -62,7 +100,34 @@ function Equipments.stats(equipment)
             end
         end
     end
+    for i, effect in ipairs(Equipments.effects(equipment)) do
+        for stat, amount in pairs(effect.stats or {}) do
+            total[stat] = (total[stat] or 0) + amount
+        end
+        for j, key in ipairs({"castSpeed", "critChance", "critDamage"}) do
+            if effect[key] ~= nil then
+                total[key] = (total[key] or 0) + effect[key]
+            end
+        end
+    end
     return total
+end
+
+
+function Equipments.casting(equipment)
+    -- What the effects do to casting: mana cost and cooldown multipliers, complexity and mana regen added,
+    -- and every spell modifier(see Spell:shoot)
+    local casting = {manaCost = 1, cooldown = 1, complexity = 0, manaRegen = 0, spells = {}}
+    for i, effect in ipairs(Equipments.effects(equipment)) do
+        casting.manaCost = casting.manaCost * (effect.manaCost or 1)
+        casting.cooldown = casting.cooldown * (effect.cooldown or 1)
+        casting.complexity = casting.complexity + (effect.complexity or 0)
+        casting.manaRegen = casting.manaRegen + (effect.manaRegen or 0)
+        for j, mod in ipairs(effect.spells or {}) do
+            table.insert(casting.spells, mod)
+        end
+    end
+    return casting
 end
 
 
@@ -87,6 +152,11 @@ function Equipments.resistances(equipment)
             end
         end
     end
+    for i, effect in ipairs(Equipments.effects(equipment)) do
+        for element, amount in pairs(effect.resist or {}) do
+            total[element] = (total[element] or 0) + amount
+        end
+    end
     return total
 end
 
@@ -101,6 +171,10 @@ function Equipments.toData(equipment)
     for i, slot in ipairs(HAND_SLOTS) do
         local stack = equipment[slot.name]
         data[slot.name] = stack and Items.copy(stack, 1) or false
+    end
+    for i, slot in ipairs(ACCESSORY_SLOTS) do
+        local stack = equipment[slot.name]
+        data[slot.name] = stack and {item = stack.item, count = 1} or false
     end
     return data
 end
@@ -120,6 +194,12 @@ function Equipments.fromData(data)
         local stack = type(data) == "table" and data[slot.name]
         if type(stack) == "table" and Equipments.fits(slot.name, stack, equipment) then
             equipment[slot.name] = Items.copy(stack, 1)
+        end
+    end
+    for i, slot in ipairs(ACCESSORY_SLOTS) do
+        local stack = type(data) == "table" and data[slot.name]
+        if type(stack) == "table" and Equipments.fits(slot.name, stack, equipment) then
+            equipment[slot.name] = {item = stack.item, count = 1}
         end
     end
     return equipment

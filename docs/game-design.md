@@ -191,8 +191,23 @@ Several ores at different depths with different hardnesses. Copper, Iron, Gold, 
 - Sets give a **set bonus** plus **individual piece bonuses**: mana regen, health regen, intelligence, speed and so on.
 - **Done:** Copper and Iron armor, defense as diminishing damage reduction.
 
-### Trinkets (Decided)
+- **Done: item sets** (`items/sets`): armor pieces name their set, 2 and 4 worn pieces turn on its bonuses.
+  Copper: +8 every resistance / Area spells 20% bigger. Iron: +4 defense / +12 every resistance and Area spells 30% bigger.
+  Tooltips show the set with the tiers you have lit, the character screen lists the active bonuses.
+
+### Trinkets and focuses (Done in part)
 More creative bonuses: laser speed and width, area growth rate, Split amplification and so on.
+
+- **Slots:** two trinket slots (two different trinkets) and one focus slot, on a row under the armor and the hands.
+- **Effects:** sets, trinkets and focuses carry the same kind of effect (`items/sets` explains the format): stats,
+  defense, resistances, crit, cast speed, mana cost, cooldown, complexity, mana regen, and **spell modifiers** that change
+  a form's (or any form's) params when it is cast, optionally only when the spell has something (`when`, like Fire).
+- **A focus** can be about an element, a form or casting itself.
+- **First ones** (`items/trinkets`): Glass Lens (lasers 40% wider), Sand Hourglass (Area grows 40% faster), Prism (Split fans
+  one more), Feather Charm (bullets 30% faster); Ember Focus (Fire 30% hotter, burns spread once more), Lancer Focus
+  (lasers +25% damage, 20% wider), Arcane Focus (+20% cast speed, 10% cheaper spells).
+- **Where they come from** is decided per item as they are added (structure chests, crafting, rare drops).
+  For now camp chests can hold the Feather and the Hourglass, tower chests the Lens, the Prism and the focuses.
 
 ### Boss drops (Open)
 Some set items and trinkets are boss drops. Which ones and why is decided once bosses exist.

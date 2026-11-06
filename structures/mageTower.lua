@@ -57,5 +57,10 @@ registerStructure("MageTower", {
         {"IronCore", 1, 1, 0.3},
         {"IronCap", 1, 1, 0.3},
         {"IronTip", 1, 1, 0.3},
+        {"GlassLens", 1, 1, 0.25},
+        {"Prism", 1, 1, 0.2},
+        {"EmberFocus", 1, 1, 0.15},
+        {"LancerFocus", 1, 1, 0.15},
+        {"ArcaneFocus", 1, 1, 0.15},
     },
 })

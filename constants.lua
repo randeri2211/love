@@ -184,9 +184,9 @@ ZOMBIE_XP = 10                     -- XP a zombie gives, times its level
 -- Slimes(see entities/slime): big ones split into two medium, medium into two small, every size can spawn
 -- {size in tiles, hp, touch damage, xp}
 SLIME_SIZES = {
-    big = {size = 1.4, hp = 40, touch = 12, xp = 12, splits = "medium"},
-    medium = {size = 0.95, hp = 18, touch = 8, xp = 6, splits = "small"},
-    small = {size = 0.6, hp = 8, touch = 5, xp = 3},
+    big = {size = 2, hp = 40, touch = 12, xp = 12, splits = "medium"},
+    medium = {size = 1.5, hp = 18, touch = 8, xp = 6, splits = "small"},
+    small = {size = 1, hp = 8, touch = 5, xp = 3},
 }
 SLIME_SIGHT = 16 * TILE_SIZE        -- How close the player has to be for it to hop at them
 SLIME_HOP_WAIT = {0.8, 1.6}         -- Seconds it sits between hops
@@ -284,6 +284,12 @@ ARMOR_SLOTS = {
 HAND_SLOTS = {
     {name = "mainHand", label = "Main"},
     {name = "offHand", label = "Off"},
+}
+-- Trinket and focus slots(see items/trinkets), on a row of their own under the armor and the hands
+ACCESSORY_SLOTS = {
+    {name = "trinket1", label = "Trinket"},
+    {name = "trinket2", label = "Trinket"},
+    {name = "focus", label = "Focus"},
 }
 BARE_HANDS_DIG_CAP = 10         -- Hardest block a spell can damage without a wand or staff, below 10(dirt, sand, snow, sandstone, not stone)
 OFF_HAND_SHARE = 1              -- How much of what it does on its own an off hand wand adds to the main one

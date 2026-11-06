@@ -122,7 +122,7 @@ function Slime:new(x, y)
     slime.xpReward = info.xp
     slime.hopWait = love.math.random() * SLIME_HOP_WAIT[2]
     slime.squash = 0                -- 0 to 1 while it squashes down for a hop
-    slime.pixel = math.max(1, math.floor(slime.width / 16 + 0.5))   -- Screen pixels per art pixel, small 1, medium 2, big 3
+    slime.pixel = math.max(1, math.floor(slime.width / 16 + 0.5))   -- Screen pixels per art pixel, small 2, medium 3, big 4
     local biome = Biomes.surface(math.floor(x / TILE_SIZE), map.seed, map.settings)
     slime.color = COLORS[biome.name] or COLORS.default
     Levels.setLevel(slime, Levels.forPosition(x, y), self.build)

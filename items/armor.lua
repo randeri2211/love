@@ -35,7 +35,8 @@ for i, material in ipairs(MATERIALS) do
             maxStack = 1,
             icon = piece.icon,      -- In ITEM_TILES(assets/items.png)
             tint = material.tint,
-            armor = {slot = slot, defense = values.defense, stats = values.stats, resist = values.resist},
+            armor = {slot = slot, defense = values.defense, stats = values.stats, resist = values.resist,
+                set = material.name},     -- Wearing 2 or 4 pieces of a set turns on its bonuses(see items/sets)
         })
     end
 end
