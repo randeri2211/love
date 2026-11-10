@@ -2,10 +2,38 @@ BLOCK_IMG = {}
 BLOCK_IMG["FALLBACK"] = love.graphics.newImage("assets/blockFallback.png")    -- Blocks without a tile, a "?" so it stands out
 BLOCK_IMG["FALLBACK"]:setFilter("nearest", "nearest")
 
+-- Every art image with the file it came from, so the art can be read again while the game runs(see devLink, reloadArt)
+local ART_IMAGES = {}
+
+function artImage(path)
+    -- A pixel art image, kept sharp when scaled up
+    local image = love.graphics.newImage(path)
+    image:setFilter("nearest", "nearest")
+    table.insert(ART_IMAGES, {image = image, path = path})
+    return image
+end
+
+
+function reloadArt()
+    -- Reads every art image from its file again, into the same image so every quad and sprite using it keeps working
+    -- A file that changed size cant go into the same image, those need a restart. Returns the reloaded and the failed count
+    local done, failed = 0, {}
+    for _, art in ipairs(ART_IMAGES) do
+        local ok, data = pcall(love.image.newImageData, art.path)
+        if ok and data:getWidth() == art.image:getWidth() and data:getHeight() == art.image:getHeight() then
+            art.image:replacePixels(data)
+            done = done + 1
+        else
+            table.insert(failed, art.path)
+        end
+    end
+    return done, failed
+end
+
+
 -- Tilesheet with tiles in a row and a gap after each one(16 pixels and 1 at the 16 pixel layout, ART_UNIT times that),
 -- blocks draw their part of it by name, from the art folder in use(ART_FOLDER)
-TILESHEET = love.graphics.newImage(ART_FOLDER .. "blocks.png")
-TILESHEET:setFilter("nearest", "nearest")    -- Keeps the pixel art sharp when scaled up
+TILESHEET = artImage(ART_FOLDER .. "blocks.png")
 -- Numbered tiles are variants(stone1-3, see Block:variant) or ore nugget patterns drawn over stone(ore1-4, see OreBlock)
 local TILE_ORDER = {"grass", "dirt", "stone1", "stone2", "stone3", "deepstone1", "deepstone2", "deepstone3",
     "bedrock1", "bedrock2", "bedrock3", "sand", "sandstone", "snow", "ice", "bricks", "slab", "ore1", "ore2", "ore3", "ore4",
@@ -23,8 +51,7 @@ end
 
 
 -- Item icons that arent blocks, laid out like the tilesheet, drawn tinted by the item(see items/armor)
-ITEM_SHEET = love.graphics.newImage(ART_FOLDER .. "items.png")
-ITEM_SHEET:setFilter("nearest", "nearest")
+ITEM_SHEET = artImage(ART_FOLDER .. "items.png")
 ITEM_TILES = {}
 for i, name in ipairs({"helmet", "chestplate", "leggings", "boots", "bar", "rod", "largeRod", "wand", "staff", "core", "cap", "tip",
         "trinket", "focus"}) do
@@ -39,8 +66,7 @@ end
 -- A sheet of creature frames(assets/art*/creatures): cells of w x h at the 16 pixel layout with a 1 pixel gap,
 -- frames in columns and variants(colors) in rows. Returns the image and quad(column, row), both from 1
 function creatureSheet(name, w, h)
-    local image = love.graphics.newImage(ART_FOLDER .. "creatures/" .. name .. ".png")
-    image:setFilter("nearest", "nearest")
+    local image = artImage(ART_FOLDER .. "creatures/" .. name .. ".png")
     local quads = {}
     local function quad(column, row)
         local key = column .. "," .. (row or 1)

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+</head>
+<body>
+	<sdpi-item label="Show">
+		<sdpi-select setting="value" default="fps">
+			<option value="fps">FPS</option>
+			<option value="position">Position (tiles)</option>
+			<option value="enemies">Enemy count</option>
+			<option value="time">Time of day</option>
+			<option value="level">Player level</option>
+			<option value="hp">HP</option>
+			<option value="mana">Mana</option>
+			<option value="bodies">Physics bodies</option>
+			<option value="god">God mode</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="On press">
+		<sdpi-textfield setting="command" placeholder="optional command, e.g. god"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

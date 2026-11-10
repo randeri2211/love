@@ -6,6 +6,8 @@ DEBUG_GLYPH_WALL_KEY = "j"      -- Places a glyph wall at the mouse that teaches
 DEBUG_CASTER_KEY = "x"          -- Places a test caster at the mouse(a placeholder until the first casting enemy)
 DEBUG_FORGET_KEY = "f"          -- Forgets every rune but the starting ones(to test glyph walls)
 DEBUG_GIVE_KEY = "g"            -- Gives every armor piece and wand part to test equipment
+DEBUG_GOD = false               -- The player takes no damage
+DEV_LINK_PORT = 27615           -- The Stream Deck plugin talks to the game on this local port(see devLink), nil turns it off
 
 SCREEN_X  = 1920
 SCREEN_Y  = 1080
@@ -14,6 +16,10 @@ TILE_SIZE = 32
 -- Art pixels per tile: the art in assets/art32 is drawn 32 pixels to a tile, assets/art16 is the 16 pixel art kept to
 -- compare. Every sheet is laid out the same in both, ART_UNIT times bigger, and drawn ART_SCREEN screen pixels a pixel
 ART_PIXELS = 32
+-- Started with --art16 or --art32(the Stream Deck launch key) the game uses that art without editing this
+for _, a in ipairs(arg or {}) do
+    ART_PIXELS = tonumber(a:match("^%-%-art(%d+)$")) or ART_PIXELS
+end
 ART_FOLDER = "assets/art" .. ART_PIXELS .. "/"
 ART_UNIT = ART_PIXELS / 16          -- Art pixels for every pixel of the 16 pixel layout(cells, pivots, anchors)
 ART_SCREEN = TILE_SIZE / ART_PIXELS -- Screen pixels per art pixel

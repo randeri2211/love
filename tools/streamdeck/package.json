@@ -1,0 +1,17 @@
+{
+  "name": "magic-craft-streamdeck",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "link": "streamdeck link com.randeri2211.magiccraft.sdPlugin",
+    "restart": "streamdeck restart com.randeri2211.magiccraft"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^3.0.4"
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.10.4",
+    "esbuild": "^0.28.2"
+  }
+}

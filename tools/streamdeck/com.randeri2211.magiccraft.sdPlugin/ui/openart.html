@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+</head>
+<body>
+	<sdpi-item label="Sheet">
+		<sdpi-select setting="file" default="blocks.png">
+			<option value="blocks.png">Blocks</option>
+			<option value="items.png">Items</option>
+			<option value="creatures/slime.png">Slime</option>
+			<option value="creatures/bat.png">Bat</option>
+			<option value="creatures/bow.png">Bow</option>
+			<option value="skins/player.png">Player skin</option>
+			<option value="skins/zombie.png">Zombie skin</option>
+			<option value="skins/skeleton.png">Skeleton skin</option>
+			<option value="skins/apprentice_mage.png">Apprentice mage skin</option>
+			<option value="skins/humanoid_template.png">Humanoid template</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="Art">
+		<sdpi-select setting="art" default="32">
+			<option value="32">32 pixel</option>
+			<option value="16">16 pixel</option>
+		</sdpi-select>
+	</sdpi-item>
+	<sdpi-item label="Editor">
+		<sdpi-textfield setting="editorPath" placeholder="C:\Program Files\LibreSprite\libresprite.exe"></sdpi-textfield>
+	</sdpi-item>
+</body>
+</html>

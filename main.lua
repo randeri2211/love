@@ -18,6 +18,7 @@ local Spawner = require "world_utils.spawner"
 local PlayerCasting = require "magic.playerCasting"
 local Theme = require "ui.theme"
 local MenuBackdrop = require "ui.menuBackdrop"
+local DevLink = require "devLink"
 local placeTimer = 0        -- Time until the held place button places the next block
 local worldCanvas = nil     -- The world is drawn here first so the light can be laid over it(see love.draw)
 local new_frame = false
@@ -38,6 +39,7 @@ end
 function love.update(dt)
     Slab.Update(dt)
     uihandler:update()
+    DevLink.update(dt)      -- Commands from the Stream Deck plugin(see devLink)
 
     if game_state == IN_WORLD_STATE then
         if not paused then

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<script src="sdpi-components.js"></script>
+	<style>
+		.help { color: #aaa; font-size: 9pt; line-height: 1.5; margin: 8px 12px; }
+		.help code { color: #ddd; }
+	</style>
+</head>
+<body>
+	<sdpi-item label="Command">
+		<sdpi-textfield setting="command" placeholder="spawn Slime"></sdpi-textfield>
+	</sdpi-item>
+	<div class="help">
+		<code>art</code> reload art from disk<br />
+		<code>spawn Slime 3</code> enemies at the mouse<br />
+		<code>give Torch 20</code> items<br />
+		<code>time 22</code> or <code>time dawn/noon/dusk/night</code><br />
+		<code>xp 500</code>, <code>heal</code>, <code>tp</code> (to the mouse)<br />
+		<code>god</code>, <code>debug</code>, <code>onehit</code> toggles<br />
+		<code>save</code>, <code>key j</code> (press a game key)
+	</div>
+</body>
+</html>

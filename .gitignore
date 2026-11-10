@@ -3,3 +3,7 @@ saves/*
 
 # But do not ignore the folder itself or a placeholder file
 !saves/.gitkeep
+
+# LibreSprite/Aseprite project files, the game reads the exported png
+*.ase
+*.aseprite

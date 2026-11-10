@@ -448,7 +448,7 @@ end
 
 function Player:damage(damage, power, kind)
     -- Takes damage like any entity, but dying respawns instead of destroying the body
-    if self.deathTimer ~= nil then
+    if self.deathTimer ~= nil or DEBUG_GOD then
         return
     end
     self.hpBar.currentHP = math.max(0, self.hpBar.currentHP - damage * (1 - self:damageReduction(kind)))

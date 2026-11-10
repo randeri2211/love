@@ -1,0 +1,53 @@
+{
+	"Name": "Magic Craft Dev",
+	"Version": "0.1.0.0",
+	"Author": "randeri2211",
+	"Description": "Development keys for Some Magic Craft Game: launch it, send debug commands to it and show its state.",
+	"UUID": "com.randeri2211.magiccraft",
+	"Category": "Magic Craft Dev",
+	"CategoryIcon": "imgs/category",
+	"Icon": "imgs/plugin",
+	"CodePath": "bin/plugin.js",
+	"SDKVersion": 3,
+	"Software": { "MinimumVersion": "7.1" },
+	"OS": [{ "Platform": "windows", "MinimumVersion": "10" }],
+	"Nodejs": { "Version": "24" },
+	"Actions": [
+		{
+			"Name": "Game command",
+			"UUID": "com.randeri2211.magiccraft.command",
+			"Icon": "imgs/command-icon",
+			"Tooltip": "Sends a debug command to the running game (spawn, time, give, god...).",
+			"PropertyInspectorPath": "ui/command.html",
+			"Controllers": ["Keypad"],
+			"States": [{ "Image": "imgs/command", "TitleAlignment": "bottom" }]
+		},
+		{
+			"Name": "Game readout",
+			"UUID": "com.randeri2211.magiccraft.readout",
+			"Icon": "imgs/readout-icon",
+			"Tooltip": "Shows a live value from the running game, optionally runs a command when pressed.",
+			"PropertyInspectorPath": "ui/readout.html",
+			"Controllers": ["Keypad"],
+			"States": [{ "Image": "imgs/readout", "TitleAlignment": "middle" }]
+		},
+		{
+			"Name": "Launch game",
+			"UUID": "com.randeri2211.magiccraft.launch",
+			"Icon": "imgs/launch-icon",
+			"Tooltip": "Starts the game with the 32 or 16 pixel art.",
+			"PropertyInspectorPath": "ui/launch.html",
+			"Controllers": ["Keypad"],
+			"States": [{ "Image": "imgs/launch", "TitleAlignment": "bottom" }]
+		},
+		{
+			"Name": "Open art",
+			"UUID": "com.randeri2211.magiccraft.openart",
+			"Icon": "imgs/art-icon",
+			"Tooltip": "Opens one of the game's art sheets in the image editor.",
+			"PropertyInspectorPath": "ui/openart.html",
+			"Controllers": ["Keypad"],
+			"States": [{ "Image": "imgs/art", "TitleAlignment": "bottom" }]
+		}
+	]
+}

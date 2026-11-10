@@ -32,9 +32,7 @@ local skins = {}    -- Skin sheet images by name, shared by every humanoid weari
 
 local function skinImage(skin)
     if skins[skin] == nil then
-        local image = love.graphics.newImage(ART_FOLDER .. "skins/" .. skin .. ".png")
-        image:setFilter("nearest", "nearest")   -- Crisp art pixels like the tiles
-        skins[skin] = image
+        skins[skin] = artImage(ART_FOLDER .. "skins/" .. skin .. ".png")   -- Crisp art pixels like the tiles
     end
     return skins[skin]
 end
