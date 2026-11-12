@@ -69,8 +69,12 @@ function Items.drawIcon(name, x, y, size, stack)
             block = BLOCK_REGISTRY[item.block]:new(0, 0, TILE_SIZE, TILE_SIZE)
             sampleBlocks[name] = block
         end
-        block.x, block.y, block.width, block.height = x, y, size, size
-        block:draw()
+        if block.drawIcon ~= nil then
+            block:drawIcon(x, y, size)      -- Blocks bigger than a tile shrink to fit(see blocks/bigBlock)
+        else
+            block.x, block.y, block.width, block.height = x, y, size, size
+            block:draw()
+        end
     elseif item.icon ~= nil then
         -- An icon from the item sheet tinted with the item color(one shape serves every material)
         local quad = ITEM_TILES[item.icon]

@@ -586,11 +586,15 @@ function Map:draw()
     local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2) + CAMERA_RENDER_OFFSET)
     local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2) + CAMERA_RENDER_OFFSET)
     local p_x,p_y = loveToMap(player.body:getWorldCenter())
+    self.glowing = {}       -- Blocks with a part drawn after the light(see drawGlow)
     for x = p_x - x_diff,p_x + x_diff do
         for y = math.max(1, p_y - y_diff), math.min(self.height, p_y + y_diff) do
             local block = self:get(x, y)
             if block ~= nil then
                 block:draw()
+                if block.drawGlow ~= nil then
+                    table.insert(self.glowing, block)
+                end
             end
         end
     end
@@ -598,6 +602,14 @@ function Map:draw()
     self.drops:draw()
     map.enemies:draw()
     self.projectiles:draw()
+end
+
+
+function Map:drawGlow()
+    -- The parts of blocks that shine through the dark(the mana in a battery), drawn over the world light
+    for i, block in ipairs(self.glowing or {}) do
+        block:drawGlow()
+    end
 end
 
 return Map

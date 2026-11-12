@@ -1,6 +1,7 @@
 local Rune = require "runes.rune"
 local Elements = require "magic.elements"
 local Crit = require "magic.crit"
+local ManaNetwork = require "world_utils.manaNetwork"
 
 local Spell = {}
 
@@ -347,7 +348,7 @@ function Spell:canCast(caster)
     if self:cooldownLeft() > 0 then
         return false, "cooldown"
     end
-    if caster.manaBar.currentMana < self:getManaCost(caster) then
+    if ManaNetwork.available(caster) < self:getManaCost(caster) then
         return false, "mana"
     end
     return true
@@ -371,7 +372,7 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
 
     if triggered then
         -- Child spells still pay their own mana, and fizzle without enough
-        if caster.manaBar.currentMana < self:getManaCost(caster) then
+        if ManaNetwork.available(caster) < self:getManaCost(caster) then
             return
         end
     else
@@ -416,7 +417,7 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
         self.cooldownEnd = spells.time + self:getCooldown(caster)
         self.cooldownClock = spells
     end
-    caster.manaBar.currentMana = caster.manaBar.currentMana - self:getManaCost(caster)
+    ManaNetwork.pay(caster, self:getManaCost(caster))     -- The player's batteries pay first(see world_utils/manaNetwork)
 
     spells:addCircle(self, x, y, dirX, dirY, caster.castBuilt)
 

@@ -370,6 +370,56 @@ Later: a **per-world death setting** chosen when making the world and saved with
 Worlds made before the setting exists count as Gentle.
 Today the character is saved inside its world (`saves/<world>/`), so Hardcore death deletes that world folder. If characters ever become separate from worlds, Hardcore deletes both.
 
+### Mana network (Decided, base automation)
+Mana powers the base the way it powers spells: a battery stores it, conduits carry it, blocks around them use it.
+
+- **Mana battery** (2x2 tiles): stores mana and shows how full it is (the mana effect filling it up). It is the controller of
+  a network and reaches **5 tiles** around it.
+- **Mana conduit** (1 tile): extends the network, it also reaches 5 tiles. A battery and conduits within reach of each other
+  are one network, linked by **range only** (beams pass through blocks). A beam of the mana effect is drawn between linked nodes.
+- **Consumers** connect to the nearest node in reach, with a beam to it.
+- **Filling it, from the player:** while the player is in reach of a node with full mana, the mana they regenerate goes into
+  the network instead of being wasted, with a beam from that node to the player.
+- **Filling it, from the world: ley lines.** Lines of mana running through the world, made from the seed as random lines
+  scattered everywhere (through rock and sky alike). They are invisible unless the player wears **Ley Goggles**, an item that
+  shows them. A network node on a ley line taps it and fills the batteries by itself, **wider lines give more mana a second**
+  (a range from thin to wide lines).
+- **Feeding the player** (a toggle in the battery screen): while the player is in reach, spells are paid from the network
+  first and from the player's pool when it runs out.
+- **First consumers:**
+  - **Spell mana blocks** (the Block form) in reach have their lifetime topped up from the network, so a base wall stays up.
+    Damage they take is paid in network mana instead of HP, **unless the player dealt it**, which hurts the block as usual
+    so the player can still take their own walls down.
+  - **Rune turret:** a block that casts a spell at enemies in range, paid from the network. The spell comes from a
+    **spell scroll** (a spell bound into a scroll item) placed in the turret. Details later.
+  - **Powered stations** (later): need a rethink of crafting first. Today crafting is a list in the inventory screen that
+    only checks for a station nearby. Powered stations would need crafting that happens in the station (its own screen,
+    inputs and time), which mana can then speed up or unlock.
+- **The mana effect:** one shader (`manaShader`) drawn **smooth at screen resolution**, flowing over time, a deliberate
+  contrast with the pixel art (a style snapped to 2 pixel blocks with banded colors was tried and dropped). It is reused
+  for the battery fill, the beams, and later mana spell effects.
+- **Done (step 1):** the mana effect (`world_utils/manaShader`: a filling liquid and a beam, smooth), big blocks (`blocks/bigBlock`: an anchor and parts that point
+  back at it, placing checks the whole footprint, breaking drops one item, parts in another chunk save and load on their own)
+  and the Mana Battery as the first one: placed, broken and saved with its mana, its window shows the fill and glows at
+  night (the `battery 60` dev command fills the one under the mouse).
+- **Done (step 2)** (`world_utils/manaNetwork`, `ui/batteryPanel`): batteries within 5 tiles of the player (from their edge)
+  are one buffer. A full player's regen goes into the nearest one with room, with a beam from the player. Every spell
+  payment goes through `ManaNetwork.available` and `ManaNetwork.pay`, so batteries with **Feed the player** on pay first
+  (nearest first, a beam to the player) and the pool pays the rest. Interacting opens the battery screen: a tank of the
+  mana effect, the batteries in reach and the Feed toggle (saved with the battery). Recipe: 8 iron bars and 16 stone at
+  the Forge. Until conduits exist, the network is only what is in reach of the player.
+- **New engine piece: big blocks.** The battery is the first block bigger than one tile: one block owning several cells,
+  placed only where they are all free, broken as one and saved once. Later machines reuse it.
+- **Numbers (for now):** a battery holds **10,000 mana**, a point of damage to a mana block costs **1 mana**.
+- **Several batteries** in one network are one shared buffer: mana goes in and out through the nearest battery with room
+  (or with mana), and the network has the sum of them all.
+- **Open:** the mana a second for thin and wide ley lines, how many lines there are and how long, whether a node taps a
+  line it touches or one within its reach, what the goggles are (a helmet, a trinket) and how they are made,
+  how a scroll is made and bound.
+- **Build order:** 1) the mana shader with the pixel toggle and big blocks, 2) the battery (storage, fill, screen, player
+  overflow), 3) conduits and networks (linking, beams), 4) mana block upkeep and damage, 5) the rune turret,
+  6) ley lines from the seed and the Ley Goggles, 7) station crafting and powered stations.
+
 ---
 
 ## Build order (proposed)
@@ -378,7 +428,8 @@ Today the character is saved inside its world (`saves/<world>/`), so Hardcore de
 2. Crafting core (recipes, stations, screen) **Done**
 3. Wands and staves with the dig cap (parts, hand slots, dual wield, woodworking station, arcane table) **Done**
 4. Damage types, crit and resistances **Done**
-5. Spawner and enemy variety **Done** (enemies that cast are in, the first real caster is still to be picked)
+5. Spawner and enemy variety **Done** (the Apprentice mage is the first real caster)
 6. Rune knowledge, glyph walls and the grimoire **Done** (placeholder walls)
 7. Light: tile light, torches, glowing blocks **Done**, the Light rune and the Block form **Done**
-8. Bosses, trinkets and set bonuses
+8. Bosses, trinkets and set bonuses (trinkets and sets **Done**)
+9. Mana network: batteries, conduits, consumers (see Mana network)

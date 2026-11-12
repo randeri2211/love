@@ -162,13 +162,17 @@ function tooltipDraw()
 
     local block = map:get(mx, my)
     if block ~= nil then
-        if block.tooltipText ~= nil then
-            -- Draw tooltip
+        -- A block with something that changes(a battery's mana) says it with tooltip(), others can have a fixed tooltipText
+        local text = block.tooltip ~= nil and block:tooltip() or block.tooltipText
+        if text ~= nil then
+            -- Draw tooltip, as big as its text
+            local font = love.graphics.getFont()
+            local _, lines = font:getWrap(text, math.huge)
             mx, my = love.mouse.getPosition()
             love.graphics.setColor(0, 0, 0, 0.7) -- Semi-transparent background
-            love.graphics.rectangle("fill", mx + 10, my + 10, 250, 20)
+            love.graphics.rectangle("fill", mx + 10, my + 10, font:getWidth(text) + 10, #lines * font:getHeight() + 10)
             love.graphics.setColor(1, 1, 1, 1) -- White text
-            love.graphics.print(block.tooltipText, mx + 15, my + 15)
+            love.graphics.print(text, mx + 15, my + 15)
             love.graphics.setColor(1, 1, 1, 1) -- Reset color
         end
     end

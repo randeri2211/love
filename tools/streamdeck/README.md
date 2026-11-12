@@ -17,6 +17,7 @@ Stream Deck keys for working on the game. The game listens on `127.0.0.1:27615` 
   | `tp` | The player to the mouse |
   | `god`, `debug`, `onehit` | Toggle `DEBUG_GOD`, `DEBUG`, `DEBUG_ONE_HIT_BLOCKS` |
   | `save` | Saves the world |
+  | `battery 60` | Fills the mana battery under the mouse to a percent |
   | `key j` | Presses a game key, so every key in `keys.lua` and the debug keys work |
 
 - **Game readout**: shows FPS, position, enemy count, time, level, HP, mana, physics bodies or god mode. It can run a command when pressed (a God readout with `god` is a toggle that shows its state).

@@ -38,3 +38,7 @@ registerRecipe({output = "IronChest", inputs = {{item = "WoodenChest", count = 1
     station = "Forge", tier = 3, category = "Storage"})
 registerRecipe({output = "ArcaniteChest", inputs = {{item = "IronChest", count = 1}, {item = "ArcaniteBar", count = 8}},
     station = "Forge", tier = 5, category = "Storage"})
+
+-- The mana network(see docs/game-design: Mana network)
+registerRecipe({output = "ManaBattery", inputs = {{item = "IronBar", count = 8}, {item = "Stone", count = 16}},
+    station = "Forge", tier = 3, category = "Mana"})

@@ -39,20 +39,44 @@ function Building.target(player, x, y)
     local tx, ty = math.floor(x / TILE_SIZE), math.floor(y / TILE_SIZE)
     local cx, cy = tx * TILE_SIZE, ty * TILE_SIZE
     local mx, my = loveToMap(cx, cy)
-    local target = {block = item.block, item = stack.item, slot = slot, tx = tx, ty = ty, mx = mx, my = my, ok = false}
+    -- A block bigger than a tile(see blocks/bigBlock) goes up and right from the tile under the mouse
+    local footprint = BLOCK_REGISTRY[item.block].footprint or {1, 1}
+    local box = {cx, cy + TILE_SIZE - footprint[2] * TILE_SIZE, footprint[1] * TILE_SIZE, footprint[2] * TILE_SIZE}
+    local target = {block = item.block, item = stack.item, slot = slot, tx = tx, ty = ty, mx = mx, my = my, box = box, ok = false}
+
+    -- Every tile it would fill, and whether one of them has a solid block next to it(outside of it)
+    local blockedBy, supported, outside = nil, false, false
+    for i = 0, footprint[1] - 1 do
+        for j = 0, footprint[2] - 1 do
+            local tileX, tileY = cx + i * TILE_SIZE, cy - j * TILE_SIZE
+            local _, tileMy = loveToMap(tileX, tileY)
+            local existing = map:blockAt(tileX, tileY)
+            if tileMy < 1 or tileMy > map.height then
+                outside = true
+            elseif existing ~= nil and not existing.replaceable then
+                blockedBy = blockedBy or existing
+            end
+            for k, side in ipairs({{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) do
+                local si, sj = i + side[1], j - side[2]
+                local inside = si >= 0 and si < footprint[1] and sj >= 0 and sj < footprint[2]
+                if not inside and solidBlockAt(tileX + side[1] * TILE_SIZE, tileY + side[2] * TILE_SIZE) then
+                    supported = true
+                end
+            end
+        end
+    end
 
     local px, py = player.body:getWorldCenter()
-    if my < 1 or my > map.height then
+    if outside then
         target.reason = "Outside the world"
-    elseif map:blockAt(cx, cy) ~= nil and not map:blockAt(cx, cy).replaceable then
+    elseif blockedBy ~= nil then
         -- Small plants make way, a tree is in the way like any block
-        target.reason = map:blockAt(cx, cy).solid and "Already a block there" or "A tree is in the way"
-    elseif distance(px, py, cx + TILE_SIZE / 2, cy + TILE_SIZE / 2) > PLACE_REACH then
+        target.reason = blockedBy.solid and "Already a block there" or "A tree is in the way"
+    elseif distance(px, py, box[1] + box[3] / 2, box[2] + box[4] / 2) > PLACE_REACH then
         target.reason = "Too far"
-    elseif not (solidBlockAt(cx - TILE_SIZE, cy) or solidBlockAt(cx + TILE_SIZE, cy)
-        or solidBlockAt(cx, cy - TILE_SIZE) or solidBlockAt(cx, cy + TILE_SIZE)) then
+    elseif not supported then
         target.reason = "Needs a block next to it"
-    elseif overlapsBody(cx, cy, cx + TILE_SIZE, cy + TILE_SIZE) then
+    elseif overlapsBody(box[1], box[2], box[1] + box[3], box[2] + box[4]) then
         target.reason = "Something is in the way"
     else
         target.ok = true
@@ -67,15 +91,25 @@ function Building.place(player, x, y)
     if target == nil or not target.ok then
         return false
     end
-    -- A plant in the way is cleared first, dropping what it gives
-    local existing = map:get(target.mx, target.my)
-    if existing ~= nil then
-        local item = existing:dropItem()
-        if item ~= nil then
-            map.drops:spawn(item, 1, existing.x + existing.width / 2, existing.y + existing.height / 2)
+    -- Plants in the way are cleared first, dropping what they give
+    local footprint = BLOCK_REGISTRY[target.block].footprint or {1, 1}
+    for i = 0, footprint[1] - 1 do
+        for j = 0, footprint[2] - 1 do
+            local existing = map:get(target.mx + i, target.my + j)
+            if existing ~= nil then
+                local item = existing:dropItem()
+                if item ~= nil then
+                    map.drops:spawn(item, 1, existing.x + existing.width / 2, existing.y + existing.height / 2)
+                end
+                map:set(target.mx + i, target.my + j, nil)
+            end
         end
     end
-    map:set(target.mx, target.my, map:newBlock(target.block, target.mx, target.my))
+    local block = map:newBlock(target.block, target.mx, target.my)
+    map:set(target.mx, target.my, block)
+    if block.placeParts ~= nil then
+        block:placeParts()
+    end
     local stack = player.inventory.slots[target.slot]
     stack.count = stack.count - 1
     if stack.count <= 0 then
@@ -91,19 +125,19 @@ function Building.drawPreview(player, x, y)
     if target == nil then
         return
     end
-    local cx, cy = target.tx * TILE_SIZE, target.ty * TILE_SIZE
+    local bx, by, bw, bh = unpack(target.box)
     love.graphics.push("all")
     if target.ok then
         love.graphics.setColor(1, 1, 1, 0.45)
-        Items.drawIcon(target.item, cx, cy, TILE_SIZE)
+        Items.drawIcon(target.item, bx, by, math.max(bw, bh))
         love.graphics.setColor(PLACE_OK_COLOR)
     else
         love.graphics.setColor(PLACE_BLOCKED_COLOR)
     end
     love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", cx + 1, cy + 1, TILE_SIZE - 2, TILE_SIZE - 2)
+    love.graphics.rectangle("line", bx + 1, by + 1, bw - 2, bh - 2)
     if not target.ok and target.reason ~= nil then
-        love.graphics.print(target.reason, cx + TILE_SIZE + 4, cy + 4)
+        love.graphics.print(target.reason, bx + bw + 4, by + 4)
     end
     love.graphics.pop()
 end

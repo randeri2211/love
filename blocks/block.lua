@@ -105,13 +105,17 @@ function Block:breakApart()
         map.drops:spawn(item, 1, self.x + self.width / 2, self.y + self.height / 2)
     end
     self:destroy()
-    -- Whatever grew on it comes down too
-    Flora.fell(map, self.mx, self.my)
-    -- So do blocks it was holding up(torches)
+    Block.fallFrom(self.mx, self.my)
+end
+
+
+function Block.fallFrom(x, y)
+    -- Map cell x, y was just emptied: whatever grew on it comes down, so do blocks it was holding up(torches)
+    Flora.fell(map, x, y)
     for i, side in ipairs({{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) do
-        local x, y = self.mx + side[1], self.my + side[2]
-        local block = map:get(x, y)
-        if block ~= nil and block.needsSupport and not Block.supported(x, y) then
+        local sx, sy = x + side[1], y + side[2]
+        local block = map:get(sx, sy)
+        if block ~= nil and block.needsSupport and not Block.supported(sx, sy) then
             block:breakApart()
         end
     end

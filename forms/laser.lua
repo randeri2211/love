@@ -1,4 +1,5 @@
 local Form = require "forms.form"
+local ManaNetwork = require "world_utils.manaNetwork"
 
 local Laser = Form:new()
 
@@ -199,11 +200,11 @@ function Laser:updateHeld(dt)
 
     self.payTime = self.payTime - dt
     if self.payTime <= 0 then
-        if caster.manaBar.currentMana < self.manaCost then
+        if ManaNetwork.available(caster) < self.manaCost then
             self:release()
             return
         end
-        caster.manaBar.currentMana = caster.manaBar.currentMana - self.manaCost
+        ManaNetwork.pay(caster, self.manaCost)
         self.payTime = self.payTime + self.interval
         if self.push ~= nil then
             self.push(ax, ay)

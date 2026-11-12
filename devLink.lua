@@ -113,6 +113,18 @@ function COMMANDS.save()
     return "saved"
 end
 
+function COMMANDS.battery(args)
+    -- Fills the mana battery under the mouse to a percent: battery 60
+    assert(inWorld(), "not in a world")
+    local block = map:get(mouseToMap())
+    if block ~= nil and block.name == "BlockPart" then
+        block = block:owner()
+    end
+    assert(block ~= nil and block.mana ~= nil, "no battery under the mouse")
+    block.mana = math.max(0, math.min(100, tonumber(args[1]) or 100)) / 100 * MANA_BATTERY_CAPACITY
+    return string.format("battery %d / %d", block.mana, MANA_BATTERY_CAPACITY)
+end
+
 function COMMANDS.key(args)
     -- Presses a game key, so every key in keys.lua and the debug keys work from the Stream Deck too
     assert(args[1] ~= nil, "key takes a key name")

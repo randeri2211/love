@@ -368,6 +368,15 @@ MANA_BLOCK_PERMANENT = 180      -- Lasting longer than this it stays for good, a
 MANA_BLOCK_DIG_HP = 4           -- Every Dig rune multiplies its hp(1 hp breaks to any spell)
 BLOCK_CAST_REACH = 0.5          -- Tiles in front of the hands a directly cast block goes, like where a bullet starts
 MANA_BLOCK_CONTACT_SCALE = 0.1  -- Part of an enemy touch damage a mana block takes(a zombie takes 1 hp a swipe, like a spell)
+
+-- The mana effect(see world_utils/manaShader) and the mana network(see docs/game-design: Mana network)
+MANA_DEEP_COLOR = {0.1, 0.16, 0.55}     -- The mana color from its depths to its brightest
+MANA_BRIGHT_COLOR = {0.55, 0.9, 1}
+MANA_BATTERY_CAPACITY = 10000   -- Mana a battery holds
+MANA_BATTERY_HP = 12
+MANA_NETWORK_REACH = 5          -- Tiles a battery reaches(from its edge)
+MANA_BEAM_WIDTH = 6             -- Pixels across a network beam
+MANA_BEAM_LINGER = 0.25         -- Seconds a beam stays after mana stopped moving through it
 -- How bright the stars in the sky are
 STAR_ALPHA = {night = 1, dawn = 0.15, day = 0, dusk = 0.3}
 STAR_COUNT = 160
