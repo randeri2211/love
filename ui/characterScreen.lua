@@ -7,6 +7,7 @@ local CraftingPanel = require "ui.craftingPanel"
 local ArcanePanel = require "ui.arcanePanel"
 local ChestPanel = require "ui.chestPanel"
 local BatteryPanel = require "ui.batteryPanel"
+local AnchorPanel = require "ui.anchorPanel"
 local Crafting = require "items.crafting"
 local ArcaneTables = require "items.arcaneTables"
 local ItemTooltip = require "ui.itemTooltip"
@@ -74,6 +75,7 @@ function CharacterScreen:new(owner, block)
     screen.arcane = ArcanePanel:new(screen)
     screen.chest = ChestPanel:new(screen)
     screen.battery = BatteryPanel:new(screen)
+    screen.anchor = AnchorPanel:new(screen)
     screen.chestHovered = nil       -- Slot index under the mouse in an open chest
     screen.message = nil            -- What Quick stack did
     -- Its own copy of the body for the preview, standing still and facing right
@@ -122,6 +124,9 @@ function CharacterScreen:update()
         self.hoveredEquip = nil     -- The equipment row is hidden behind the chest
         local chestRows = math.ceil(self.block.inventory.size / COLUMNS)
         self.chest:update(x, y, leftW, gridW, chestRows * CELL, self.block)
+    elseif self.block ~= nil and self.block.anchorRadius ~= nil then
+        self.hoveredEquip = nil     -- The equipment row is hidden behind the anchor
+        self.anchor:update(x, y, STATS_W, STATS_H, self.block)
     elseif self.block ~= nil and self.block.mana ~= nil then
         self.hoveredEquip = nil     -- The equipment row is hidden behind the battery
         self.battery:update(x, y, STATS_W, STATS_H, self.block)

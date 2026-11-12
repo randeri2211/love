@@ -1,4 +1,5 @@
 require "ui.menu"
+local Minimap = require "ui.minimap"
 local Slab = require "libraries.Slab"
 local SpellEditor = require "ui.spellEditor"
 local CharacterScreen = require "ui.characterScreen"
@@ -438,25 +439,9 @@ end
 
 
 function UIHandler:map()
-    local w, h = love.graphics.getDimensions()
-
-    self.showMap = Slab.BeginWindow('Minimap', {
-        Title = "Minimap",
-        AllowMove = false,
-        AllowResize = false,
-        AutoSizeWindow = false,
-        -- IsOpen = self.showWindow,
-        ShowMinimize = false,
-        X = w - 200,
-        Y = 0,
-        W = 200,
-        H = 200,
-        NoSavedSettings = true,
-    })
-
-    Slab.Text("THIS WILL BE A MINIMAP.")
-
-    Slab.EndWindow()
+    -- The minimap window(see ui/minimap)
+    self.minimap = self.minimap or Minimap:new()
+    self.minimap:update(love.timer.getDelta())
 end
 
 

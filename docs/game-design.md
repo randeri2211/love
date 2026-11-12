@@ -407,7 +407,26 @@ Mana powers the base the way it powers spells: a battery stores it, conduits car
   payment goes through `ManaNetwork.available` and `ManaNetwork.pay`, so batteries with **Feed the player** on pay first
   (nearest first, a beam to the player) and the pool pays the rest. Interacting opens the battery screen: a tank of the
   mana effect, the batteries in reach and the Feed toggle (saved with the battery). Recipe: 8 iron bars and 16 stone at
-  the Forge. Until conduits exist, the network is only what is in reach of the player.
+  the Forge.
+- **Done (step 3)** (`blocks/manaConduit`): the **Mana Conduit** (1 tile, walk-through like a torch, picked up with the
+  interact key, 2 for 2 iron bars and 4 stone at the Forge). Batteries and conduits are network nodes: two link when their
+  edges are within 5 tiles, linked nodes are one network. The player joins through the nearest node in reach and its
+  whole network's batteries are their buffer, the beam to the player comes from that node. Beams show only the shortest
+  links that join every node (a minimum spanning tree), not every pair in reach. The map keeps a list of every node, and a
+  chunk holding a node never unloads (the save lists those chunks and loads them with the world), so a network works
+  however far it reaches. Nodes are linked again only when one is added or removed.
+- **Done: simulated chunks** (`world_utils/simulation`, `blocks/chunkAnchor`, `ui/anchorPanel`): chunks that keep
+  **running while the player is away, simulated but not drawn**. A chunk holding a **Chunk Anchor** or a machine
+  runs for free. Batteries and conduits only keep their chunk *loaded* (so the network holds together), nothing in it
+  runs, otherwise a line of cheap conduits would keep any chunk running. A **Chunk Anchor** (a network node, 6 iron bars, 2 gold bars and 12 stone at the Forge) also runs the chunks around
+  its own, a radius of 0 to 2 chunks set in its screen (radius 2 is 5 x 5 chunks), for **0.5 mana a second per extra
+  chunk** from its network; without the mana only its own chunk runs. A running chunk stays loaded and has hitboxes of
+  its own, so enemies, drops, arrows and spells in it move and collide; **nothing spawns there** (the spawner stays
+  around the player, and spawned enemies far from the player still despawn). Blocks with an `update` are ticked near the player
+  or in a running chunk, which is how machines (a furnace) will keep working. The **minimap** (M, `ui/minimap`) shows the blocks
+  around the player, a pixel a tile in the average color of each tile's art (ores in their nugget color), only from
+  loaded chunks. Two options: the **chunk grid**, and the **anchor chunks** (the chunks kept running, with the anchors'
+  mana a second), which also outlines them in the world.
 - **New engine piece: big blocks.** The battery is the first block bigger than one tile: one block owning several cells,
   placed only where they are all free, broken as one and saved once. Later machines reuse it.
 - **Numbers (for now):** a battery holds **10,000 mana**, a point of damage to a mana block costs **1 mana**.

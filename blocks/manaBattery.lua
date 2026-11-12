@@ -8,6 +8,7 @@ local ManaShader = require "world_utils.manaShader"
 -- Interacting opens its screen next to the inventory(see ui/batteryPanel)
 local ManaBattery = BigBlock:new()
 ManaBattery.footprint = {2, 2}
+ManaBattery.manaNode = true     -- Part of a mana network(see world_utils/manaNetwork)
 ManaBattery.WINDOW = {6, 5, 20, 22}     -- The glass in its 32 x 32 picture at the 16 pixel layout: x, y, width, height
 
 local image = nil   -- The housing(assets/art*/machines/manaBattery.png), loaded with the first battery
@@ -37,6 +38,13 @@ end
 function ManaBattery:fillAmount()
     -- How full it is, 0 to 1
     return self.mana / MANA_BATTERY_CAPACITY
+end
+
+
+function ManaBattery:beamPoint()
+    -- Where network beams leave it: the top of its window
+    local x, y, w = self:box()
+    return x + w / 2, y + TILE_SIZE / 2
 end
 
 

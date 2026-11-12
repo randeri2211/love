@@ -20,6 +20,7 @@ local Theme = require "ui.theme"
 local MenuBackdrop = require "ui.menuBackdrop"
 local DevLink = require "devLink"
 local ManaNetwork = require "world_utils.manaNetwork"
+local Simulation = require "world_utils.simulation"
 local placeTimer = 0        -- Time until the held place button places the next block
 local worldCanvas = nil     -- The world is drawn here first so the light can be laid over it(see love.draw)
 local new_frame = false
@@ -80,6 +81,7 @@ function love.update(dt)
             end
 
             ManaNetwork.update(dt)      -- A full player's regen fills the batteries around them(see world_utils/manaNetwork)
+            Simulation.update(dt)       -- Network chunks keep running while the player is away(see world_utils/simulation)
             map.enemies:update(dt)
             Spawner.update(dt)      -- New enemies around the player, far spawned ones go(see world_utils/spawner)
             map:update(dt)      -- Unloads chunks far from the player
@@ -154,6 +156,9 @@ function love.draw()
         game_cam:attach()
             map:drawGlow()      -- Mana in batteries and the like shines like the spells
             ManaNetwork.draw()
+            if uihandler.showMap and uihandler.minimap ~= nil and uihandler.minimap.showAnchors then
+                Simulation.drawOutlines()   -- The chunks the anchors keep running, while the minimap shows them
+            end
             spells:draw()
             map.enemies:drawCasting()
             PlayerCasting.draw(player)

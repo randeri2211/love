@@ -377,6 +377,13 @@ MANA_BATTERY_HP = 12
 MANA_NETWORK_REACH = 5          -- Tiles a battery reaches(from its edge)
 MANA_BEAM_WIDTH = 6             -- Pixels across a network beam
 MANA_BEAM_LINGER = 0.25         -- Seconds a beam stays after mana stopped moving through it
+MANA_LINK_WIDTH = 4             -- Pixels across a beam between two network nodes
+MANA_CONDUIT_LIGHT = {0.08, 0.16, 0.35}
+CHUNK_ANCHOR_MANA = 0.5         -- Mana a second for every chunk an anchor keeps running around its own
+CHUNK_ANCHOR_MAX_RADIUS = 2     -- Chunks out from its own an anchor can reach(2 is 5 x 5 chunks)
+CHUNK_ANCHOR_HP = 10
+SIM_FREE_COLOR = {0.35, 0.75, 1, 0.9}       -- Minimap and world outline of chunks running for free(an anchor or a machine in them)
+SIM_ANCHOR_COLOR = {0.75, 0.5, 1, 0.9}      -- Chunks running around an anchor, paid with mana
 -- How bright the stars in the sky are
 STAR_ALPHA = {night = 1, dawn = 0.15, day = 0, dusk = 0.3}
 STAR_COUNT = 160

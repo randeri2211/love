@@ -51,6 +51,13 @@ function Map:emptyMap()
     -- Map areas that have hitboxes by owner, {x1, y1, x2, y2}: the player and enemies that are awake(see updateHitboxes)
     self.hitboxWindows = {}
     self.pendingHitboxes = {}   -- Cells changed during a physics callback, refreshed on the next update
+    -- Mana network nodes that exist as blocks(batteries, conduits), their chunks never unload so a network works
+    -- wherever it reaches(see world_utils/manaNetwork), nodesVersion goes up with every node added or removed
+    -- (the version only ever goes up, a loaded world can have as many nodes as before but they are new blocks)
+    self.manaNodes = {}
+    self.nodesVersion = (self.nodesVersion or 0) + 1
+    self.tickers = {}       -- Loaded blocks with an update, run every frame(see world_utils/simulation)
+    self.simChunks = {}     -- Chunks simulated wherever the player is, by key: "free" or "anchor"(see world_utils/simulation)
 end
 
 
@@ -191,8 +198,50 @@ function Map:getChunk(key, cx, cy)
             chunk = self:generateChunk(cx, cy)
         end
         self.chunks[key] = chunk
+        for index, block in pairs(chunk) do
+            self:trackNode(block, true)
+        end
     end
     return chunk
+end
+
+
+function Map:trackNode(block, added)
+    -- Keeps manaNodes and tickers up to date as blocks come and go, other blocks are ignored
+    if block == nil then
+        return
+    end
+    if block.update ~= nil then
+        self.tickers[block] = added or nil
+    end
+    if not block.manaNode or (self.manaNodes[block] ~= nil) == added then
+        return
+    end
+    self.manaNodes[block] = added or nil
+    self.nodesVersion = self.nodesVersion + 1
+end
+
+
+function Map.chunkKey(x, y)
+    -- The key of the chunk a map cell is in and the chunk position
+    local key, cx, cy = chunkOf(x, y)
+    return key, cx, cy
+end
+
+
+function Map.chunkArea(cx, cy)
+    -- Map cells of a chunk: x1, y1, x2, y2
+    return cx * CHUNK_SIZE + 1, cy * CHUNK_SIZE + 1, (cx + 1) * CHUNK_SIZE, (cy + 1) * CHUNK_SIZE
+end
+
+
+local function holdsNode(chunk)
+    for index, block in pairs(chunk) do
+        if block.manaNode then
+            return true
+        end
+    end
+    return false
 end
 
 
@@ -203,6 +252,21 @@ function Map:get(x, y)
     end
     local key, cx, cy, index = chunkOf(x, y)
     return self:getChunk(key, cx, cy)[index]
+end
+
+
+function Map:peek(x, y)
+    -- Block at map coordinates only if its chunk is loaded: the block or nil, and false for the second value when the
+    -- chunk isnt loaded(the minimap looks without making chunks)
+    if y < 1 or y > self.height then
+        return nil, true
+    end
+    local key, cx, cy, index = chunkOf(x, y)
+    local chunk = self.chunks[key]
+    if chunk == nil then
+        return nil, false
+    end
+    return chunk[index], true
 end
 
 
@@ -347,8 +411,10 @@ function Map:set(x, y, block)
     local chunk = self:getChunk(key, cx, cy)
     if chunk[index] ~= nil and chunk[index] ~= block then
         chunk[index]:destroyHitbox()
+        self:trackNode(chunk[index], false)
     end
     chunk[index] = block
+    self:trackNode(block, true)
     self.lightVersion = self.lightVersion + 1
 
     -- The block and its neighbors may have started or stopped touching air
@@ -524,10 +590,13 @@ function Map:unloadFarChunks(x, y)
     for key, chunk in pairs(self.chunks) do
         local cx, cy = key:match("^(-?%d+),(-?%d+)$")
         cx, cy = tonumber(cx), tonumber(cy)
-        if not kept[key] and math.max(math.abs(cx - pcx), math.abs(cy - pcy)) > CHUNK_UNLOAD_DISTANCE then
+        -- Chunks with a mana network node and simulated chunks stay, the network works wherever it reaches
+        if not kept[key] and math.max(math.abs(cx - pcx), math.abs(cy - pcy)) > CHUNK_UNLOAD_DISTANCE
+                and not holdsNode(chunk) and self.simChunks[key] == nil then
             -- Hitboxes go first, nothing far away should stay in the physics world
             for index, block in pairs(chunk) do
                 block:destroyHitbox()
+                self:trackNode(block, false)
             end
             if self.chunkBodies[key] ~= nil then
                 self.chunkBodies[key]:destroy()
@@ -564,8 +633,13 @@ function Map:toData()
     for key, chunk in pairs(self.chunks) do
         chunks[key] = encodeChunk(chunk)
     end
+    -- The chunks holding network nodes, loaded with the world so the network works from the start
+    local nodeChunks = {}
+    for block in pairs(self.manaNodes) do
+        nodeChunks[chunkOf(block.mx, block.my)] = true
+    end
     return {seed = self.seed, settings = self.settings, time = self.time, drops = self.drops:toData(), chunks = chunks,
-        structures = self.structures}
+        structures = self.structures, nodeChunks = nodeChunks}
 end
 
 
@@ -578,6 +652,10 @@ function Map:loadData(data)
     self.saved = data.chunks or {}
     self.drops:loadData(data.drops)
     self.structures = type(data.structures) == "table" and data.structures or {}
+    for key in pairs(type(data.nodeChunks) == "table" and data.nodeChunks or {}) do
+        local cx, cy = key:match("^(-?%d+),(-?%d+)$")
+        self:getChunk(key, tonumber(cx), tonumber(cy))
+    end
 end
 
 

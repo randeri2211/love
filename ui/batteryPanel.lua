@@ -56,14 +56,14 @@ function BatteryPanel:update(x, y, w, h, battery)
             math.floor(battery:fillAmount() * 100)), {Color = MANA_TEXT})
         Slab.Image("BatteryTank", {Image = self.canvas})
 
-        -- Batteries in reach of the player are one buffer
+        -- The batteries of the player's network are one buffer
         local count, total = 0, 0
         for i, b in ipairs(ManaNetwork.inReach()) do
             count = count + 1
             total = total + b.mana
         end
         Slab.NewLine()
-        Slab.Text(string.format("In reach: %d %s", count, count == 1 and "battery" or "batteries"))
+        Slab.Text(string.format("Your network: %d %s", count, count == 1 and "battery" or "batteries"))
         Slab.Text(string.format("%d / %d", math.floor(total), count * MANA_BATTERY_CAPACITY), {Color = MANA_TEXT})
 
         Slab.NewLine()
@@ -71,10 +71,10 @@ function BatteryPanel:update(x, y, w, h, battery)
             battery.feedPlayer = not battery.feedPlayer
         end
         Slab.Text("Your spells use its mana first", {Color = HINT_COLOR})
-        Slab.Text("while you are in its reach", {Color = HINT_COLOR})
+        Slab.Text("while you are on its network", {Color = HINT_COLOR})
         Slab.NewLine()
         Slab.Text("With full mana, your regen", {Color = HINT_COLOR})
-        Slab.Text(string.format("fills batteries %d tiles away", MANA_NETWORK_REACH), {Color = HINT_COLOR})
+        Slab.Text("fills your network's batteries", {Color = HINT_COLOR})
     Slab.EndWindow()
 end
 

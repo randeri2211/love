@@ -1,43 +1,172 @@
 local ManaShader = require "world_utils.manaShader"
 
--- The mana network(see docs/game-design: Mana network), for now the mana batteries within MANA_NETWORK_REACH tiles of the player:
+-- The mana network(see docs/game-design: Mana network)
+-- Nodes are blocks with manaNode(batteries and conduits), two nodes link when their edges are within MANA_NETWORK_REACH tiles,
+-- and nodes linked to each other, directly or through others, are one network
+-- The player joins a network through the nearest node in their reach, the batteries of that network are one buffer:
 -- - while the player's mana is full, what they regenerate goes into the nearest battery with room instead of being lost
 -- - batteries with "Feed the player" on pay the player's spells first(see available and pay), the pool pays the rest
--- Batteries in reach are one buffer: mana goes in and out through the nearest one that has room, or has mana
--- A beam of the mana effect shows while mana moves between a battery and the player
+-- Beams of the mana effect show the links(the fewest that join every node, not every pair in reach),
+-- and the link to the player while mana moves through it
+-- The map keeps every node and never unloads their chunks(see Map:trackNode), so a network works however big it is,
+-- it is linked again only when a node is added or removed
 local ManaNetwork = {}
 
-local near = {}     -- Batteries in reach of the player this frame, nearest first
-local beams = {}    -- Battery -> {time left, true when the mana flows to the player}
+local nodes = {}        -- Every node in the map
+local networkOf = {}    -- Node -> the node that stands for its network(kept here, not on the blocks, so saving never sees it)
+local links = {}        -- Pairs of nodes the beams join, {a, b}
+local scanned = nil     -- What the links were made for: {map, version}
+local batteries = {}    -- Batteries in the player's network, nearest to the player first
+local attached = nil    -- The node the player is joined through, nil when none is in reach
+local playerBeam = nil  -- {time left, true when the mana flows to the player}
 
 
-local function boxDistance(px, py, battery)
-    -- Tiles from a love point to the nearest edge of a battery
-    local x, y, w, h = battery:box()
+local function boxDistance(px, py, node)
+    -- Tiles from a love point to the nearest edge of a node
+    local x, y, w, h = node:box()
     local dx = math.max(x - px, 0, px - (x + w))
     local dy = math.max(y - py, 0, py - (y + h))
     return math.sqrt(dx * dx + dy * dy) / TILE_SIZE
 end
 
 
-local function findNear(px, py)
-    -- Every battery whose edge is within reach of the love point, nearest first
-    local found, seen = {}, {}
-    local mx, my = loveToMap(px, py)
-    local r = MANA_NETWORK_REACH + 2
-    for x = mx - r, mx + r do
-        for y = my - r, my + r do
-            local block = map:get(x, y)
-            if block ~= nil and block.name == "BlockPart" then
-                block = block:owner()
+local function nodeDistance(a, b)
+    -- Tiles between the nearest edges of two nodes
+    local ax, ay, aw, ah = a:box()
+    local bx, by, bw, bh = b:box()
+    local dx = math.max(ax - (bx + bw), 0, bx - (ax + aw))
+    local dy = math.max(ay - (by + bh), 0, by - (ay + ah))
+    return math.sqrt(dx * dx + dy * dy) / TILE_SIZE
+end
+
+
+local function stillThere(node)
+    return map:get(node.mx, node.my) == node
+end
+
+
+local function link()
+    -- Links every node of the map: every pair in reach is linked, a node's network is everything it links to(union find),
+    -- and the beams are the shortest links that join each network(Kruskal)
+    nodes, networkOf = {}, {}
+    for block in pairs(map.manaNodes) do
+        table.insert(nodes, block)
+        networkOf[block] = block        -- Every node starts as its own network
+    end
+
+    local function find(node)
+        while networkOf[node] ~= node do
+            networkOf[node] = networkOf[networkOf[node]]
+            node = networkOf[node]
+        end
+        return node
+    end
+    local candidates = {}
+    for i = 1, #nodes do
+        for j = i + 1, #nodes do
+            local d = nodeDistance(nodes[i], nodes[j])
+            if d <= MANA_NETWORK_REACH then
+                table.insert(candidates, {nodes[i], nodes[j], d})
             end
-            if block ~= nil and block.mana ~= nil and not seen[block] then
-                seen[block] = true
-                local d = boxDistance(px, py, block)
-                if d <= MANA_NETWORK_REACH then
-                    table.insert(found, {battery = block, distance = d})
-                end
-            end
+        end
+    end
+    table.sort(candidates, function(a, b) return a[3] < b[3] end)
+    links = {}
+    for i, pair in ipairs(candidates) do
+        local ra, rb = find(pair[1]), find(pair[2])
+        if ra ~= rb then
+            networkOf[rb] = ra
+            table.insert(links, pair)
+        end
+    end
+    for i, node in ipairs(nodes) do
+        networkOf[node] = find(node)
+    end
+end
+
+
+local function join(px, py)
+    -- The player's network: the nearest node in reach and the batteries of its network, nearest first
+    attached = nil
+    local best = math.huge
+    for i, node in ipairs(nodes) do
+        local d = boxDistance(px, py, node)
+        if d <= MANA_NETWORK_REACH and d < best and stillThere(node) then
+            attached, best = node, d
+        end
+    end
+    batteries = {}
+    if attached == nil then
+        return
+    end
+    local found = {}
+    for i, node in ipairs(nodes) do
+        if networkOf[node] == networkOf[attached] and node.mana ~= nil and stillThere(node) then
+            table.insert(found, {battery = node, distance = boxDistance(px, py, node)})
+        end
+    end
+    table.sort(found, function(a, b) return a.distance < b.distance end)
+    for i, f in ipairs(found) do
+        batteries[i] = f.battery
+    end
+end
+
+
+local function showBeam(toPlayer)
+    playerBeam = {MANA_BEAM_LINGER, toPlayer}
+end
+
+
+local function deposit(amount)
+    -- Puts mana into the batteries of the player's network, nearest first, what doesnt fit is lost
+    for i, battery in ipairs(batteries) do
+        if amount <= 0 then
+            return
+        end
+        local take = math.min(MANA_BATTERY_CAPACITY - battery.mana, amount)
+        if take > 0 then
+            battery.mana = battery.mana + take
+            amount = amount - take
+            showBeam(false)
+        end
+    end
+end
+
+
+function ManaNetwork.update(dt)
+    -- Finds the network around the player and moves the regen of a full player into it
+    if playerBeam ~= nil then
+        playerBeam[1] = playerBeam[1] - dt
+        if playerBeam[1] <= 0 then
+            playerBeam = nil
+        end
+    end
+    -- Linked first, machines use their network wherever the player is(see drain)
+    if scanned == nil or scanned.map ~= map or scanned.version ~= map.nodesVersion then
+        link()
+        scanned = {map = map, version = map.nodesVersion}
+    end
+    if player == nil or player:isDead() then
+        attached, batteries = nil, {}
+        return
+    end
+    local px, py = player.body:getWorldCenter()
+    join(px, py)
+    local bar = player.manaBar
+    if bar.currentMana >= bar.maxMana and bar.manaRegen > 0 then
+        deposit(bar.manaRegen * dt)
+    end
+end
+
+
+function ManaNetwork.batteriesOf(node)
+    -- The batteries in a node's network, nearest to the node first
+    local found = {}
+    local x, y, w, h = node:box()
+    local cx, cy = x + w / 2, y + h / 2
+    for i, other in ipairs(nodes) do
+        if other.mana ~= nil and networkOf[other] ~= nil and networkOf[other] == networkOf[node] and stillThere(other) then
+            table.insert(found, {battery = other, distance = boxDistance(cx, cy, other)})
         end
     end
     table.sort(found, function(a, b) return a.distance < b.distance end)
@@ -49,62 +178,39 @@ local function findNear(px, py)
 end
 
 
-local function stillThere(battery)
-    return map:get(battery.mx, battery.my) == battery
-end
-
-
-local function showBeam(battery, toPlayer)
-    beams[battery] = {MANA_BEAM_LINGER, toPlayer}
-end
-
-
-local function deposit(amount)
-    -- Puts mana into the batteries in reach, nearest first, what doesnt fit is lost
-    for i, battery in ipairs(near) do
+function ManaNetwork.drain(node, amount)
+    -- A machine takes mana from its network's batteries, nearest first
+    -- All or nothing: true when the network had it all and paid it, false(nothing taken) when it didnt
+    local list = ManaNetwork.batteriesOf(node)
+    local total = 0
+    for i, battery in ipairs(list) do
+        total = total + battery.mana
+    end
+    if total < amount then
+        return false
+    end
+    for i, battery in ipairs(list) do
+        local take = math.min(battery.mana, amount)
+        battery.mana = battery.mana - take
+        amount = amount - take
         if amount <= 0 then
-            return
-        end
-        local take = math.min(MANA_BATTERY_CAPACITY - battery.mana, amount)
-        if take > 0 and stillThere(battery) then
-            battery.mana = battery.mana + take
-            amount = amount - take
-            showBeam(battery, false)
+            break
         end
     end
-end
-
-
-function ManaNetwork.update(dt)
-    -- Finds the batteries around the player and moves the regen of a full player into them
-    for battery, beam in pairs(beams) do
-        beam[1] = beam[1] - dt
-        if beam[1] <= 0 then
-            beams[battery] = nil
-        end
-    end
-    if player == nil or player:isDead() then
-        near = {}
-        return
-    end
-    near = findNear(player.body:getWorldCenter())
-    local bar = player.manaBar
-    if bar.currentMana >= bar.maxMana and bar.manaRegen > 0 then
-        deposit(bar.manaRegen * dt)
-    end
+    return true
 end
 
 
 function ManaNetwork.inReach()
-    -- The batteries in reach of the player, nearest first
-    return near
+    -- The batteries in the player's network, nearest first
+    return batteries
 end
 
 
 local function feeding()
     -- The batteries that pay the player's spells, nearest first
     local list = {}
-    for i, battery in ipairs(near) do
+    for i, battery in ipairs(batteries) do
         if battery.feedPlayer and battery.mana > 0 and stillThere(battery) then
             table.insert(list, battery)
         end
@@ -132,7 +238,7 @@ function ManaNetwork.pay(caster, amount)
             local take = math.min(battery.mana, amount)
             battery.mana = battery.mana - take
             amount = amount - take
-            showBeam(battery, true)
+            showBeam(true)
             if amount <= 0 then
                 return
             end
@@ -143,20 +249,21 @@ end
 
 
 function ManaNetwork.draw()
-    -- World space, over the light: the beams between batteries and the player while mana moves
-    if player == nil then
-        return
+    -- World space, over the light: the links between nodes, and the link to the player while mana moves through it
+    for i, link in ipairs(links) do
+        if stillThere(link[1]) and stillThere(link[2]) then
+            local ax, ay = link[1]:beamPoint()
+            local bx, by = link[2]:beamPoint()
+            ManaShader.beam(ax, ay, bx, by, MANA_LINK_WIDTH)
+        end
     end
-    local px, py = player.body:getWorldCenter()
-    for battery, beam in pairs(beams) do
-        if stillThere(battery) then
-            local x, y, w = battery:box()
-            local bx, by = x + w / 2, y + TILE_SIZE / 2
-            if beam[2] then
-                ManaShader.beam(bx, by, px, py, MANA_BEAM_WIDTH)
-            else
-                ManaShader.beam(px, py, bx, by, MANA_BEAM_WIDTH)
-            end
+    if playerBeam ~= nil and attached ~= nil and stillThere(attached) and player ~= nil then
+        local px, py = player.body:getWorldCenter()
+        local nx, ny = attached:beamPoint()
+        if playerBeam[2] then
+            ManaShader.beam(nx, ny, px, py, MANA_BEAM_WIDTH)
+        else
+            ManaShader.beam(px, py, nx, ny, MANA_BEAM_WIDTH)
         end
     end
 end
