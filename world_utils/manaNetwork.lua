@@ -19,6 +19,7 @@ local scanned = nil     -- What the links were made for: {map, version}
 local batteries = {}    -- Batteries in the player's network, nearest to the player first
 local attached = nil    -- The node the player is joined through, nil when none is in reach
 local playerBeam = nil  -- {time left, true when the mana flows to the player}
+local flows = {}        -- Short beams from a node to a point where mana was just used: {node, x, y, time left}
 
 
 local function boxDistance(px, py, node)
@@ -141,6 +142,12 @@ function ManaNetwork.update(dt)
             playerBeam = nil
         end
     end
+    for i = #flows, 1, -1 do
+        flows[i][4] = flows[i][4] - dt
+        if flows[i][4] <= 0 then
+            table.remove(flows, i)
+        end
+    end
     -- Linked first, machines use their network wherever the player is(see drain)
     if scanned == nil or scanned.map ~= map or scanned.version ~= map.nodesVersion then
         link()
@@ -178,26 +185,57 @@ function ManaNetwork.batteriesOf(node)
 end
 
 
-function ManaNetwork.drain(node, amount)
-    -- A machine takes mana from its network's batteries, nearest first
-    -- All or nothing: true when the network had it all and paid it, false(nothing taken) when it didnt
-    local list = ManaNetwork.batteriesOf(node)
+function ManaNetwork.stored(node)
+    -- All the mana in a node's network
     local total = 0
-    for i, battery in ipairs(list) do
+    for i, battery in ipairs(ManaNetwork.batteriesOf(node)) do
         total = total + battery.mana
     end
-    if total < amount then
-        return false
-    end
-    for i, battery in ipairs(list) do
-        local take = math.min(battery.mana, amount)
+    return total
+end
+
+
+function ManaNetwork.take(node, amount)
+    -- Takes up to amount from a node's network, nearest battery first, and returns what it got
+    local got = 0
+    for i, battery in ipairs(ManaNetwork.batteriesOf(node)) do
+        local take = math.min(battery.mana, amount - got)
         battery.mana = battery.mana - take
-        amount = amount - take
-        if amount <= 0 then
+        got = got + take
+        if got >= amount then
             break
         end
     end
+    return got
+end
+
+
+function ManaNetwork.drain(node, amount)
+    -- A machine takes mana from its network: all or nothing, true when the network had it all and paid it
+    if ManaNetwork.stored(node) < amount then
+        return false
+    end
+    ManaNetwork.take(node, amount)
     return true
+end
+
+
+function ManaNetwork.nodeNear(x, y)
+    -- The nearest node whose edge is within reach of a love point, nil when none is
+    local best, bestDistance = nil, math.huge
+    for i, node in ipairs(nodes) do
+        local d = boxDistance(x, y, node)
+        if d <= MANA_NETWORK_REACH and d < bestDistance and stillThere(node) then
+            best, bestDistance = node, d
+        end
+    end
+    return best
+end
+
+
+function ManaNetwork.flow(node, x, y)
+    -- Shows a short beam from a node to a love point, where its mana was just used
+    table.insert(flows, {node, x, y, MANA_BEAM_LINGER})
 end
 
 
@@ -255,6 +293,12 @@ function ManaNetwork.draw()
             local ax, ay = link[1]:beamPoint()
             local bx, by = link[2]:beamPoint()
             ManaShader.beam(ax, ay, bx, by, MANA_LINK_WIDTH)
+        end
+    end
+    for i, flow in ipairs(flows) do
+        if stillThere(flow[1]) then
+            local nx, ny = flow[1]:beamPoint()
+            ManaShader.beam(nx, ny, flow[2], flow[3], MANA_LINK_WIDTH)
         end
     end
     if playerBeam ~= nil and attached ~= nil and stillThere(attached) and player ~= nil then

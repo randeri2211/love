@@ -1,10 +1,13 @@
 local Block = require "blocks.block"
 local HPBar = require "components.hpBar"
+local ManaNetwork = require "world_utils.manaNetwork"
 
 -- A block made of mana by the Block form(see forms/blockForm): solid, in its spell color, no hardness so any spell clears it
 -- It drops nothing. It keeps its spell and who cast it, timed or permanent: onHit goes off every time it is damaged and
 -- onExpire when it is gone(broken or timed out), cast by its caster and paid from their mana like any trigger
 -- A timed block isnt saved(it is gone after loading), a permanent one is saved with its spell
+-- Within reach of a mana network(see world_utils/manaNetwork) a timed block's timer is kept full while the network pays
+-- for it(see BlockForm:update), and damage it takes is paid in network mana instead of hp, unless the player dealt it
 local ManaBlock = Block:new()
 ManaBlock.noItem = true     -- Made by a spell, not carried
 ManaBlock.drop = false
@@ -104,12 +107,31 @@ function ManaBlock:attackDirection(source)
 end
 
 
+local function byThePlayer(source)
+    -- True when the player dealt a hit: their own touch, or one of their spells
+    return source ~= nil and (source == player or (source.spell ~= nil and source.player == player))
+end
+
+
 function ManaBlock:damage(dmg, power, source)
     -- Every hit that lands sets off its onHit, aimed back at what hit it, then it takes the damage like any block
     -- A spell another mana block sent off still damages it but doesnt set it off, or blocks would fire at each other
     -- (and back at their own caster) in a chain
     if source == nil or source.fromBlock == nil then
         self:fire("onHit", self:attackDirection(source))
+    end
+    -- A network in reach pays for the hit, MANA_BLOCK_NETWORK_HIT mana a point of damage, what it cant pay hits the hp
+    -- The player's own hits always hurt it, so they can still take their walls down
+    if not byThePlayer(source) and dmg > 0 then
+        local cx, cy = self.x + self.width / 2, self.y + self.height / 2
+        local node = ManaNetwork.nodeNear(cx, cy)
+        if node ~= nil then
+            local paid = ManaNetwork.take(node, dmg * MANA_BLOCK_NETWORK_HIT) / MANA_BLOCK_NETWORK_HIT
+            if paid > 0 then
+                ManaNetwork.flow(node, cx, cy)
+            end
+            dmg = dmg - paid
+        end
     end
     Block.damage(self, dmg, power)
 end
@@ -124,6 +146,15 @@ function ManaBlock:breakApart()
         self.form = nil
         spells:destroy(form)
     end
+end
+
+
+function ManaBlock:tooltip()
+    local state = "Permanent"
+    if self.form ~= nil then
+        state = self.form.sustained and "Kept up by a mana network" or string.format("%d s left", math.ceil(self.form.lifetime))
+    end
+    return string.format("Mana Block\n%d / %d hp\n%s", math.ceil(self.hpBar.currentHP), self.hpBar.maxHP, state)
 end
 
 

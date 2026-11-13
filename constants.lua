@@ -368,6 +368,9 @@ MANA_BLOCK_PERMANENT = 180      -- Lasting longer than this it stays for good, a
 MANA_BLOCK_DIG_HP = 4           -- Every Dig rune multiplies its hp(1 hp breaks to any spell)
 BLOCK_CAST_REACH = 0.5          -- Tiles in front of the hands a directly cast block goes, like where a bullet starts
 MANA_BLOCK_CONTACT_SCALE = 0.1  -- Part of an enemy touch damage a mana block takes(a zombie takes 1 hp a swipe, like a spell)
+MANA_BLOCK_UPKEEP = DECELERATE_BLOCK_MANA / DECELERATE_BLOCK_TIME   -- Mana a second a network pays to keep a timed block up,
+                                                                    -- the price of the time a Decelerate rune buys
+MANA_BLOCK_NETWORK_HIT = 1      -- Network mana a point of damage to a mana block costs instead of its hp
 
 -- The mana effect(see world_utils/manaShader) and the mana network(see docs/game-design: Mana network)
 MANA_DEEP_COLOR = {0.1, 0.16, 0.55}     -- The mana color from its depths to its brightest

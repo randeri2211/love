@@ -1,4 +1,5 @@
 local Form = require "forms.form"
+local ManaNetwork = require "world_utils.manaNetwork"
 
 -- A mana block: a solid block made of mana, placed into the map(see blocks/manaBlock)
 -- Cast directly it appears in front of the hands and moves whoever is in the way(onto it, or next to it),
@@ -179,6 +180,13 @@ function BlockForm:update(dt)
     if map:get(self.mx, self.my) ~= self.block then
         self.block.form = nil
         spells:destroy(self)
+        return
+    end
+    -- A network in reach keeps it up: it pays the upkeep and the timer stays full(see world_utils/manaNetwork)
+    local node = ManaNetwork.nodeNear(self:getPosition())
+    self.sustained = node ~= nil and ManaNetwork.drain(node, MANA_BLOCK_UPKEEP * dt)
+    if self.sustained then
+        self.lifetime = self.duration
         return
     end
     self.lifetime = self.lifetime - dt

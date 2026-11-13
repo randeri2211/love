@@ -427,6 +427,12 @@ Mana powers the base the way it powers spells: a battery stores it, conduits car
   around the player, a pixel a tile in the average color of each tile's art (ores in their nugget color), only from
   loaded chunks. Two options: the **chunk grid**, and the **anchor chunks** (the chunks kept running, with the anchors'
   mana a second), which also outlines them in the world.
+- **Done (step 4)** (`blocks/manaBlock`, `forms/blockForm`): a mana block within 5 tiles of a network node is a consumer.
+  A timed one's timer is kept full while the network pays its upkeep, **about 0.067 mana a second** (the price of the time
+  a Decelerate rune buys, `MANA_BLOCK_UPKEEP`), so base walls stay up. Damage a mana block takes is paid **1 mana a point**
+  from the network instead of its hp (a short beam from the nearest node shows it), what the network cant pay hits the hp,
+  and **the player's own hits always hurt it**. onHit still goes off on every hit. Its tooltip says whether it is timed
+  (seconds left), kept up by a network or permanent.
 - **New engine piece: big blocks.** The battery is the first block bigger than one tile: one block owning several cells,
   placed only where they are all free, broken as one and saved once. Later machines reuse it.
 - **Numbers (for now):** a battery holds **10,000 mana**, a point of damage to a mana block costs **1 mana**.
