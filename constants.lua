@@ -127,6 +127,7 @@ RECOIL_SPEED = 6 * TILE_SIZE * math.sqrt(GRAVITY_MULTIPLIER)    -- Push speed of
 PUSH_DECAY = 6                  -- How fast horizontal knockback fades(per second)
 
 AREA_PULL_SPEED = 120           -- Pixels per second a gravity Area pulls enemies toward its center
+CREATURE_REACH = 3 * TILE_SIZE  -- Pixels from a creature's center to the far edge of the biggest one, a quick first check
 
 -- Magic circle shown in the world when a spell is cast
 CAST_CIRCLE_SCALE = 0.2         -- Size compared to the editor circle

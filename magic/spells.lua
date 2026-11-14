@@ -103,6 +103,7 @@ function Spells:drawCircles()
         MagicCircle.draw(circle.spell, 0, 0, CAST_CIRCLE_SCALE * size, {
             alpha = math.max(0, alpha),
             progress = circle.time / CAST_DRAW_IN_TIME,
+            cached = true,      -- Once drawn in it is drawn from images(see MagicCircle.draw)
         })
         love.graphics.pop()
     end

@@ -278,16 +278,17 @@ local function fillCircle(x, y, radius, color, alpha)
     end
 end
 
-local function drawBands(cx, cy, ring, scale, depth, p)
-    -- Ticked outer band and dotted inner ring turning opposite ways(alternating per depth)
-    local lineWidth = width(scale)
+local function bandRadii(ring, scale)
+    -- The inner and outer edge of a ring's ticked band
     local b1 = ring + MagicCircle.SLOT_RADIUS * scale + 10 * scale
-    local b2 = b1 + 9 * scale
-    strokeArc(cx, cy, b1, TOP, TOP + TAU * p, MagicCircle.RING_COLOR, lineWidth * 0.5, 0.6)
-    strokeArc(cx, cy, b2, TOP, TOP + TAU * p, MagicCircle.RING_COLOR, lineWidth * 0.5, 0.6)
+    return b1, b1 + 9 * scale
+end
 
-    local direction = depth % 2 == 1 and 1 or -1
-    local rotation = style.time * 0.35 * direction
+
+local function drawTicks(cx, cy, ring, scale, rotation, p)
+    -- The ticks across the band, turned by rotation
+    local lineWidth = width(scale)
+    local b1, b2 = bandRadii(ring, scale)
     local ticks = 72
     for k = 0, math.floor(ticks * p) - 1 do
         local a = rotation + k * TAU / ticks
@@ -297,12 +298,33 @@ local function drawBands(cx, cy, ring, scale, depth, p)
         local c, s = math.cos(a), math.sin(a)
         strokeLine(cx + c * r1, cy + s * r1, cx + c * r2, cy + s * r2, MagicCircle.RING_COLOR, lineWidth * (long and 0.6 or 0.4), long and 0.8 or 0.45)
     end
+end
 
+
+local function drawDots(cx, cy, scale, rotation, p)
+    -- The dotted inner ring around the core, turned by rotation
     local inner = MagicCircle.CORE_RADIUS * scale + 14 * scale
     for k = 0, 23 do
-        local a = -rotation * 1.6 + k * TAU / 24
+        local a = rotation + k * TAU / 24
         fillCircle(cx + math.cos(a) * inner, cy + math.sin(a) * inner, math.max(0.6, 1.6 * scale), MagicCircle.RING_COLOR, 0.6 * p)
     end
+end
+
+
+local function drawBands(cx, cy, ring, scale, depth, p)
+    -- Ticked outer band and dotted inner ring turning opposite ways(alternating per depth)
+    -- A cached circle draws only the band's edges here, its ticks and dots are ready images it turns(see drawCached)
+    local lineWidth = width(scale)
+    local b1, b2 = bandRadii(ring, scale)
+    strokeArc(cx, cy, b1, TOP, TOP + TAU * p, MagicCircle.RING_COLOR, lineWidth * 0.5, 0.6)
+    strokeArc(cx, cy, b2, TOP, TOP + TAU * p, MagicCircle.RING_COLOR, lineWidth * 0.5, 0.6)
+    if style.turnedBands then
+        return
+    end
+    local direction = depth % 2 == 1 and 1 or -1
+    local rotation = style.time * 0.35 * direction
+    drawTicks(cx, cy, ring, scale, rotation, p)
+    drawDots(cx, cy, scale, -rotation * 1.6, p)
 end
 
 local worldDrawer = {
@@ -512,12 +534,11 @@ function MagicCircle.timeline(spell, ringTime, runeTime)
 end
 
 
-function MagicCircle.draw(spell, cx, cy, scale, options)
-    -- Draws the circle with love.graphics, every layer is on unless turned off in options
-    -- options.alpha(0-1), options.time(seconds, drives rotation and sparks), options.progress(0-1 draw-in)
-    -- options.timeline(MagicCircle.timeline) with options.clock(seconds into it) builds the circle part by part instead,
-    -- options.spiral adds the spiral arm that leads every ring in
-    options = options or {}
+-- Cached circles(options.cached, see drawCached): by spell, then by scale, {canvas, size, rings, params}
+local cache = setmetatable({}, {__mode = "k"})
+
+
+local function setStyle(options)
     style.timeline = options.timeline
     style.clock = options.clock or 0
     style.spiral = options.spiral == true
@@ -530,6 +551,104 @@ function MagicCircle.draw(spell, cx, cy, scale, options)
     style.signature = options.signature ~= false
     style.particles = options.particles ~= false
     style.drawIn = options.drawIn ~= false
+    style.turnedBands = options.turnedBands == true
+end
+
+
+local function bake(size, draw)
+    -- A canvas of size x size with something drawn around its middle
+    local canvas = love.graphics.newCanvas(size, size)
+    love.graphics.push("all")
+    love.graphics.setCanvas(canvas)
+    love.graphics.origin()
+    love.graphics.clear(0, 0, 0, 0)
+    love.graphics.setLineJoin("bevel")
+    draw(size / 2)
+    love.graphics.pop()
+    return canvas
+end
+
+
+local function build(spell, scale)
+    -- The parts of a fully drawn circle that dont move, in one image, and an image of every ring's ticks and dots
+    -- (they only turn, so a turned image is the same as drawing them turned)
+    local rings, reach = {}, 0
+    MagicCircle.layout(spell, 0, 0, scale, 1, {
+        ring = function(x, y, radius, ringScale, depth)
+            local _, b2 = bandRadii(radius, ringScale)
+            table.insert(rings, {x = x, y = y, radius = radius, depth = depth, scale = ringScale})
+            reach = math.max(reach, math.abs(x) + b2, math.abs(y) + b2)
+        end,
+    })
+    local margin = width(scale) * 6 + 4      -- Room for the widest glow stroke
+    local size = math.ceil(reach + margin) * 2      -- Even, so its middle is on a whole pixel like the live circle
+    local entry = {size = size, rings = rings, params = spell:getParams()}
+    setStyle({time = 0, particles = false, drawIn = false, turnedBands = true})
+    entry.canvas = bake(size, function(c) MagicCircle.layout(spell, c, c, scale, 1, worldDrawer) end)
+    for i, ring in ipairs(rings) do
+        -- Nested circles are smaller, each ring's ticks and dots at its own scale
+        local _, b2 = bandRadii(ring.radius, ring.scale)
+        ring.tickSize = math.ceil(b2 + margin) * 2
+        ring.ticks = bake(ring.tickSize, function(c) drawTicks(c, c, ring.radius, ring.scale, 0, 1) end)
+        ring.dotSize = math.ceil(MagicCircle.CORE_RADIUS * ring.scale + 14 * ring.scale + margin) * 2
+        ring.dots = bake(ring.dotSize, function(c) drawDots(c, c, ring.scale, 0, 1) end)
+    end
+    return entry
+end
+
+
+local function drawCached(spell, cx, cy, scale, options)
+    -- A fully drawn circle from its images: the still parts, the ticks and dots turned for now, then the sparks live
+    local byScale = cache[spell]
+    if byScale == nil then
+        byScale = {}
+        cache[spell] = byScale
+    end
+    local entry = byScale[scale]
+    if entry == nil or entry.params ~= spell:getParams() then
+        if entry ~= nil then
+            entry.canvas:release()
+            for i, ring in ipairs(entry.rings) do
+                ring.ticks:release()
+                ring.dots:release()
+            end
+        end
+        entry = build(spell, scale)
+        byScale[scale] = entry
+    end
+    local alpha = options.alpha or 1
+    local time = options.time or love.timer.getTime()
+    love.graphics.push("all")
+    love.graphics.setBlendMode("alpha", "premultiplied")    -- The images hold colors already multiplied by their alpha
+    love.graphics.setColor(alpha, alpha, alpha, alpha)
+    love.graphics.draw(entry.canvas, cx, cy, 0, 1, 1, entry.size / 2, entry.size / 2)
+    for i, ring in ipairs(entry.rings) do
+        local rotation = time * 0.35 * (ring.depth % 2 == 1 and 1 or -1)
+        love.graphics.draw(ring.ticks, cx + ring.x, cy + ring.y, rotation, 1, 1, ring.tickSize / 2, ring.tickSize / 2)
+        love.graphics.draw(ring.dots, cx + ring.x, cy + ring.y, -rotation * 1.6, 1, 1, ring.dotSize / 2, ring.dotSize / 2)
+    end
+    love.graphics.pop()
+
+    setStyle({alpha = alpha, time = time, drawIn = false})
+    love.graphics.push("all")
+    MagicCircle.layout(spell, cx, cy, scale, 1, {flow = worldDrawer.flow})
+    love.graphics.pop()
+end
+
+
+function MagicCircle.draw(spell, cx, cy, scale, options)
+    -- Draws the circle with love.graphics, every layer is on unless turned off in options
+    -- options.alpha(0-1), options.time(seconds, drives rotation and sparks), options.progress(0-1 draw-in)
+    -- options.timeline(MagicCircle.timeline) with options.clock(seconds into it) builds the circle part by part instead,
+    -- options.spiral adds the spiral arm that leads every ring in
+    -- options.cached draws a fully drawn circle from images made once(much faster, for circles that last like cast
+    -- circles), the parts that still move are turned or drawn live, so it looks the same
+    options = options or {}
+    if options.cached and options.timeline == nil and (options.progress or 1) >= 1 then
+        drawCached(spell, cx, cy, scale, options)
+        return
+    end
+    setStyle(options)
 
     love.graphics.push("all")
     love.graphics.setLineJoin("bevel")
