@@ -1,4 +1,6 @@
 -- Woodworking station: rods for wands and large rods for staves(see docs/game-design), and the first chest
+registerRecipe({output = "ScribesDesk", inputs = {{group = "Wood", count = 10}, {item = "PlantFiber", count = 4}},
+    station = "WoodworkingStation", tier = 1, category = "Stations"})
 registerRecipe({output = "WoodenChest", inputs = {{group = "Wood", count = 12}}, station = "WoodworkingStation", tier = 1, category = "Storage"})
 local WOODS = {"Oak", "Pine"}
 
@@ -16,3 +18,9 @@ registerRecipe({output = "WoodenTip", inputs = {{group = "Wood", count = 4}}, st
 
 -- The arcane table puts wands and staves together, it needs no stone(bare hands cant dig stone)
 registerRecipe({output = "ArcaneTable", inputs = {{group = "Wood", count = 15}}, station = "WoodworkingStation", tier = 1, category = "Stations"})
+
+-- The first Spell Turrets(see blocks/spellTurret), the metal ones are made at the Forge
+for _, kind in ipairs({"Arcane", "Rapid", "Attuned"}) do
+    registerRecipe({output = "Wood" .. kind .. "Turret", inputs = {{group = "Wood", count = 10}, {item = "PlantFiber", count = 4}},
+        station = "WoodworkingStation", tier = 1, category = "Turrets"})
+end

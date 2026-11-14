@@ -54,7 +54,7 @@ end
 ITEM_SHEET = artImage(ART_FOLDER .. "items.png")
 ITEM_TILES = {}
 for i, name in ipairs({"helmet", "chestplate", "leggings", "boots", "bar", "rod", "largeRod", "wand", "staff", "core", "cap", "tip",
-        "trinket", "focus"}) do
+        "trinket", "focus", "scroll"}) do
     ITEM_TILES[name] = love.graphics.newQuad((i - 1) * STEP, 0, TILE, TILE, ITEM_SHEET:getDimensions())
 end
 

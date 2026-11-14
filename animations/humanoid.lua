@@ -122,6 +122,9 @@ function Humanoid.build(width, height, skin)
 
     -- The skeleton is built pointing right, turned so it stands up(bone angle 0 then points down)
     anim.actor:GetTransformer():GetRoot().rotation = math.rad(90)
+    -- The bone poses it draws with are worked out by an update, so one is done now: a humanoid drawn before its first
+    -- update(made and drawn in the same frame, like a new world) would crash on a missing pose
+    anim.actor:Update(0)
     return anim, handLength
 end
 

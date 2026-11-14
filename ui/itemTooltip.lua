@@ -49,6 +49,10 @@ function ItemTooltip.lines(stack)
             table.insert(lines, {text = text, good = true})
         end
     end
+    -- Items that describe their own stack(a Bound Scroll shows the spell in it, see items/scrolls)
+    if lines == nil and item ~= nil and item.tooltipLines ~= nil then
+        lines = item.tooltipLines(stack)
+    end
     return lines or {}
 end
 

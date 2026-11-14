@@ -46,3 +46,12 @@ registerRecipe({output = "ChunkAnchor", inputs = {{item = "IronBar", count = 6},
     station = "Forge", tier = 4, category = "Mana"})
 registerRecipe({output = "ManaConduit", count = 2, inputs = {{item = "IronBar", count = 2}, {item = "Stone", count = 4}},
     station = "Forge", tier = 3, category = "Mana"})
+
+-- Spell Turrets, every kind of a tier costs the same(see blocks/spellTurret), the wooden ones are made at the Woodworking Station
+local TURRET_BARS = {{tier = "Copper", tierLevel = 2}, {tier = "Iron", tierLevel = 3}, {tier = "Gold", tierLevel = 4}, {tier = "Arcanite", tierLevel = 5}}
+for i, t in ipairs(TURRET_BARS) do
+    for _, kind in ipairs({"Arcane", "Rapid", "Attuned"}) do
+        registerRecipe({output = t.tier .. kind .. "Turret", inputs = {{item = t.tier .. "Bar", count = 6}, {item = "Stone", count = 6}},
+            station = "Forge", tier = t.tierLevel, category = "Turrets"})
+    end
+end

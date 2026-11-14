@@ -62,7 +62,7 @@ function Laser:castSegment(x1, y1, x2, y2, passed)
         return fraction     -- Only look for closer hits from now on
     end)
 
-    local block = map:castRay(x1, y1, x2, y2, function(block) return passed[block] end)
+    local block = map:castRay(x1, y1, x2, y2, function(block) return passed[block] or self:isCaster(block) end)
     if block ~= nil and (closest == nil or block.fraction < closest.fraction) then
         closest = {x = block.x, y = block.y, nx = block.nx, ny = block.ny, entity = block.block, fraction = block.fraction}
     end
@@ -179,7 +179,18 @@ function Laser:updateHeld(dt)
     -- Follows the caster aim every frame, pays and pushes once per interval, runs out with the mana
     local caster = self.player
     local cx, cy = caster.body:getWorldCenter()
-    local mx, my = mouseToLove()
+    -- Where it aims: a caster that aims on its own(a Spell Turret at its target, see blocks/spellTurret) says where,
+    -- and lets go when it has nothing to aim at, the player aims with the mouse
+    local mx, my
+    if caster.aimPoint ~= nil then
+        mx, my = caster:aimPoint()
+        if mx == nil then
+            self:release()
+            return
+        end
+    else
+        mx, my = mouseToLove()
+    end
     local ax, ay = mx - cx, my - cy
     local size = math.sqrt(ax * ax + ay * ay)
     if size < 0.001 then

@@ -84,7 +84,10 @@ end
 function Form:isCaster(entity)
     -- A spell never hits the one who cast it, everything else(the player, every enemy) it can
     -- A spell a mana block sent off passes through that block too, or it would set the block off again and again
-    return entity ~= nil and (entity == self.player or entity == self.fromBlock)
+    -- A caster allied with the player(a Spell Turret) doesnt hit the player either, nor the turret block it casts from
+    local caster = self.player
+    return entity ~= nil and (entity == caster or entity == self.fromBlock
+        or (caster ~= nil and caster.alliedWithPlayer == true and (entity == player or entity == caster.turret)))
 end
 
 

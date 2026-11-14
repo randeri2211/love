@@ -25,6 +25,8 @@ Every number below is for the 32 folder, the 16 folder is half of each.
 | `creatures/bow.png` | Cells of 24 x 22, 2 pixels apart: at rest, half drawn, fully drawn. Points right, held at pixel 18, 10 |
 | `machines/manaConduit.png` | 32 x 32, one tile. The crystal (12, 4 to 20, 16) stays dark, the game fills it with mana (`ManaConduit.CRYSTAL`, at the 16 pixel layout) |
 | `machines/chunkAnchor.png` | 32 x 32, one tile. The core (12, 8 to 20, 20) stays dark, the game fills it with mana while the anchor is paid for (`ChunkAnchor.CORE`, at the 16 pixel layout) |
+| `machines/scribesDesk.png` | 32 x 32, one tile |
+| `machines/spellTurret.png` | Cells of 32 x 32, 2 pixels apart. Columns are the tiers (wood, copper, iron, gold, arcanite), rows the kinds (arcane, rapid, attuned) |
 | `machines/manaBattery.png` | 64 x 64, the whole 2 x 2 battery. The glass window (12, 10 to 52, 54) stays dark, the game draws the mana in it (`ManaBattery.WINDOW` in `blocks/manaBattery.lua`, at the 16 pixel layout) |
 
 Slimes are drawn bigger than their art for the medium (1.5x) and big (2x) sizes, small slimes are their art size.

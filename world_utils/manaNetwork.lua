@@ -257,8 +257,18 @@ local function feeding()
 end
 
 
+local function turretNode(caster)
+    -- The node a Spell Turret's casts are paid through(see blocks/spellTurret), nil when none is in its reach
+    return ManaNetwork.nodeNear(caster.turret:center())
+end
+
+
 function ManaNetwork.available(caster)
-    -- Mana a caster can spend: its own, and for the player the batteries feeding it
+    -- Mana a caster can spend: its own, and for the player the batteries feeding it, a turret has its network's
+    if caster.turret ~= nil then
+        local node = turretNode(caster)
+        return node and ManaNetwork.stored(node) or 0
+    end
     local mana = caster.manaBar.currentMana
     if caster == player then
         for i, battery in ipairs(feeding()) do
@@ -270,7 +280,16 @@ end
 
 
 function ManaNetwork.pay(caster, amount)
-    -- Takes the mana of a cast, the player's from the batteries feeding it first(check available before)
+    -- Takes the mana of a cast, the player's from the batteries feeding it first(check available before),
+    -- a turret's from its network with a short beam to it
+    if caster.turret ~= nil then
+        local node = turretNode(caster)
+        if node ~= nil then
+            ManaNetwork.take(node, amount)
+            ManaNetwork.flow(node, caster.turret:center())
+        end
+        return
+    end
     if caster == player then
         for i, battery in ipairs(feeding()) do
             local take = math.min(battery.mana, amount)

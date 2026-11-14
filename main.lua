@@ -21,6 +21,7 @@ local MenuBackdrop = require "ui.menuBackdrop"
 local DevLink = require "devLink"
 local ManaNetwork = require "world_utils.manaNetwork"
 local Simulation = require "world_utils.simulation"
+local Scrolls = require "items.scrolls"
 local placeTimer = 0        -- Time until the held place button places the next block
 local worldCanvas = nil     -- The world is drawn here first so the light can be laid over it(see love.draw)
 local new_frame = false
@@ -36,6 +37,10 @@ function love.load(args)
     fpsTimer = love.timer.getTime()
 
     uihandler = UIHandler:new()
+
+    if BENCHMARK then
+        require("benchmark").start()    -- Runs the performance scenarios and quits(see benchmark.lua)
+    end
 end
 
 function love.update(dt)
@@ -68,7 +73,13 @@ function love.update(dt)
                 -- Holding the cast button builds a cast circle and casts when it is done, over and over(see magic/playerCasting)
                 -- (with a stack in the hand of the character screen the click throws it instead)
                 local spell = Spellbooks.selectedSpell(player.spellbook)
-                PlayerCasting.update(player, spell, love.mouse.isDown(CAST_BUTTON) and not overWindow and not holdingStack, dt)
+                local pressed = love.mouse.isDown(CAST_BUTTON) and not overWindow and not holdingStack
+                -- A Bound Scroll in the hotbar casts its spell with the place button instead(see items/scrolls)
+                local scroll = Scrolls.held(player)
+                if scroll ~= nil and love.mouse.isDown(PLACE_BUTTON) and not overWindow and not holdingStack then
+                    spell, pressed = scroll, true
+                end
+                PlayerCasting.update(player, spell, pressed, dt)
 
                 -- Holding the place button places the selected hotbar block under the mouse, a few a second
                 placeTimer = math.max(0, placeTimer - dt)

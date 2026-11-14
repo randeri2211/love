@@ -17,8 +17,11 @@ TILE_SIZE = 32
 -- compare. Every sheet is laid out the same in both, ART_UNIT times bigger, and drawn ART_SCREEN screen pixels a pixel
 ART_PIXELS = 32
 -- Started with --art16 or --art32(the Stream Deck launch key) the game uses that art without editing this
+-- Started with --bench it runs the performance benchmark and quits(see benchmark.lua)
+BENCHMARK = false
 for _, a in ipairs(arg or {}) do
     ART_PIXELS = tonumber(a:match("^%-%-art(%d+)$")) or ART_PIXELS
+    BENCHMARK = BENCHMARK or a == "--bench"
 end
 ART_FOLDER = "assets/art" .. ART_PIXELS .. "/"
 ART_UNIT = ART_PIXELS / 16          -- Art pixels for every pixel of the 16 pixel layout(cells, pivots, anchors)
@@ -385,6 +388,9 @@ MANA_CONDUIT_LIGHT = {0.08, 0.16, 0.35}
 CHUNK_ANCHOR_MANA = 0.5         -- Mana a second for every chunk an anchor keeps running around its own
 CHUNK_ANCHOR_MAX_RADIUS = 2     -- Chunks out from its own an anchor can reach(2 is 5 x 5 chunks)
 CHUNK_ANCHOR_HP = 10
+TURRET_RANGE = 20               -- Tiles a Spell Turret sees enemies from(it needs a clear line to them)
+TURRET_WISDOM_MANA = 0.01       -- Part of a turret's spell mana cost every point of its Wisdom saves
+TURRET_WISDOM_CAP = 0.5         -- The most Wisdom saves
 SIM_FREE_COLOR = {0.35, 0.75, 1, 0.9}       -- Minimap and world outline of chunks running for free(an anchor or a machine in them)
 SIM_ANCHOR_COLOR = {0.75, 0.5, 1, 0.9}      -- Chunks running around an anchor, paid with mana
 -- How bright the stars in the sky are

@@ -390,8 +390,55 @@ Mana powers the base the way it powers spells: a battery stores it, conduits car
   - **Spell mana blocks** (the Block form) in reach have their lifetime topped up from the network, so a base wall stays up.
     Damage they take is paid in network mana instead of HP, **unless the player dealt it**, which hurts the block as usual
     so the player can still take their own walls down.
-  - **Rune turret:** a block that casts a spell at enemies in range, paid from the network. The spell comes from a
-    **spell scroll** (a spell bound into a scroll item) placed in the turret. Details later.
+  - **Spell Turret:** a block that casts a spell at enemies in range, paid from the network. The spell comes from a
+    **Bound Scroll** placed in it (see Spell scrolls below), which stays in it for good: the network pays each cast.
+
+### Spell scrolls (Decided)
+A spell bound into an item, so a spell can be carried, given to a machine or kept without a spellbook slot.
+
+- **Blank Scroll:** a crafted item, the paper a spell is bound into. (Proposed: 2 Plant Fiber by hand.)
+- **Scribe's Desk:** a new station where spells are bound. Its screen lists the player's spells; with a Blank Scroll
+  in its slot, picking a spell binds it and gives a **Bound Scroll**. Binding costs nothing more than the blank scroll.
+  (Proposed: 10 wood and 4 Plant Fiber at the Woodworking Station. Later scroll features, like copying, can live here.)
+- **A Bound Scroll holds a snapshot** of the spell (its data in the stack, like a wand's parts): editing the spell in
+  the spellbook later doesnt change scrolls already bound. Its **tooltip shows the spell in it**: its name, form, runes,
+  mana cost and complexity.
+- **Casting one:** held in the hotbar, **right click** casts the scroll's spell, like the cast button with a spellbook
+  spell (wind-up, held to repeat), paid from the player's mana. (Proposed: the scroll is not used up.)
+- **Giving one to a turret:** the interact key opens the turret's screen next to the inventory, its **scroll slot** takes
+  a Bound Scroll and gives it back like any slot (the arcane table's way).
+- **Turret casts** are paid by the network, the spell's mana cost each cast.
+
+### Spell Turrets: tiers and kinds (Decided)
+Turrets are casters with stats, for progression and variety: a **tier** gives them a stat budget and a **kind** spreads
+it, the same way enemies get theirs (`Levels.setLevel` with a fixed build), so their spells get stronger through the
+same code that applies the player's stats.
+
+- **Tiers** follow the materials: **Wood, Copper, Iron, Gold, Arcanite**. (Proposed: the stat points of a level 1, 5,
+  10, 15 and 20 player.)
+- **Kinds** in every tier:
+  - **Arcane Turret** (Intelligence first): more spell damage, and more max complexity, so it can run stronger scrolls.
+  - **Rapid Turret** (Concentration first): faster casting and shorter cooldowns.
+  - **Attuned Turret** (Wisdom first): its spells cost the network less mana, for turrets that run all day.
+- What the stats do for a turret: Intelligence +5% spell damage and +2 max complexity a point, Concentration +3% cast
+  speed and 1% cooldown a point, Wisdom **1% less mana a cast a point** for turrets only (the network pays, so max mana
+  means nothing to them; proposed cap 50%) and 1% cooldown. Strength, Swiftness and Constitution do nothing for a turret,
+  kinds dont use them (a Sentinel with Constitution was dropped: enemies chase the player, not turrets).
+- **A scroll too complex for a turret doesnt fit**, the tooltip of the turret says how much it can take. Better turrets
+  run bigger spells.
+- **Seeing and aiming:** a turret sees enemies up to **20 tiles** away and needs a **clear line of sight** to one to cast
+  at it. What it aims at is a setting in its screen: the **nearest** enemy or the one with the **lowest hp**.
+- **Its screen** (interact key): the scroll slot, the aim setting, and its tier, kind and stats with the most complex
+  scroll it can take.
+- **Size:** 1 tile.
+- **Done (step 5)** (`items/scrolls`, `blocks/scribesDesk`, `blocks/spellTurret`, `ui/scribePanel`, `ui/turretPanel`,
+  `ui/slotWidget`): Blank Scrolls (2 Plant Fiber by hand), the Scribe's Desk (10 wood and 4 Plant Fiber at the
+  Woodworking Station), Bound Scrolls with the spell in their tooltip, cast with the place button and not used up.
+  15 turrets, `WoodArcaneTurret` to `ArcaniteAttunedTurret`: wooden ones for 10 wood and 4 Plant Fiber at the Woodworking
+  Station, metal ones for 6 bars and 6 stone at the Forge. A turret builds a cast circle at the enemy it aims at while
+  its network can pay and takes what the cast spent from it; its spells pass through the player and cant break blocks
+  (dig cap 0). A Laser scroll is held on the target while it stays in sight (the laser asks its caster where to aim, a turret answers with its target), paid every tick from the network. Self spells dont go in a turret. A turret holding a scroll doesnt break, so the scroll is never
+  lost. Turrets are not machines that run their chunk: they work near the player or in an anchor's chunks.
   - **Powered stations** (later): need a rethink of crafting first. Today crafting is a list in the inventory screen that
     only checks for a station nearby. Powered stations would need crafting that happens in the station (its own screen,
     inputs and time), which mana can then speed up or unlock.
@@ -442,7 +489,7 @@ Mana powers the base the way it powers spells: a battery stores it, conduits car
   line it touches or one within its reach, what the goggles are (a helmet, a trinket) and how they are made,
   how a scroll is made and bound.
 - **Build order:** 1) the mana shader with the pixel toggle and big blocks, 2) the battery (storage, fill, screen, player
-  overflow), 3) conduits and networks (linking, beams), 4) mana block upkeep and damage, 5) the rune turret,
+  overflow), 3) conduits and networks (linking, beams), 4) mana block upkeep and damage, 5) spell scrolls, the Scribe's Desk and the Spell Turret,
   6) ley lines from the seed and the Ley Goggles, 7) station crafting and powered stations.
 
 ---
