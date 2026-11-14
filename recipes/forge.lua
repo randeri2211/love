@@ -9,8 +9,10 @@ local SMELTING = {
     {ore = "DeepGoldOre", bar = "GoldBar", tier = 4},
     {ore = "ArcaniteOre", bar = "ArcaniteBar", tier = 5},
 }
+-- Smelting happens inside the Forge over time(see items/processing), arcanite only with a mana network powering it
 for i, s in ipairs(SMELTING) do
-    registerRecipe({output = s.bar, inputs = {{item = s.ore, count = ORE_PER_BAR}}, station = "Forge", tier = s.tier, category = "Bars"})
+    registerProcess({station = "Forge", input = {item = s.ore, count = ORE_PER_BAR}, output = {item = s.bar, count = 1},
+        time = SMELT_TIME, needsMana = s.ore == "ArcaniteOre"})
 end
 
 -- Bars per armor piece, the same for every metal(see items/armor)

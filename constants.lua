@@ -412,6 +412,11 @@ LEY_LINES = {                   -- The kinds of ley line: tiles across, mana a s
     {name = "wide", width = 4, rate = 10, chance = 0.1},
 }
 LEY_COLOR = {1, 0.75, 1}        -- Ley lines are the mana effect tinted toward violet, so they dont look like network beams
+STATION_MANA = 1.5              -- Mana a second a powered processing station uses while it works(see items/processing)
+STATION_POWERED_SPEED = 2       -- How much faster a powered station works
+WOOD_FUEL = 10                  -- Seconds of work a piece of wood burns for in an unpowered station
+SMELT_TIME = 5                  -- Seconds to smelt a bar in an unpowered forge
+STATION_CHEST_INTERVAL = 0.5    -- Seconds between a powered station taking from and putting into the chests next to it
 TURRET_RANGE = 20               -- Tiles a Spell Turret sees enemies from(it needs a clear line to them)
 TURRET_WISDOM_MANA = 0.01       -- Part of a turret's spell mana cost every point of its Wisdom saves
 TURRET_WISDOM_CAP = 0.5         -- The most Wisdom saves

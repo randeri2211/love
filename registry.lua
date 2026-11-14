@@ -4,6 +4,7 @@ RUNE_REGISTRY = {}
 BIOME_REGISTRY = {}
 ITEM_REGISTRY = {}
 RECIPE_REGISTRY = {}    -- A list, recipes show in the order they were registered within their tier and category
+PROCESS_REGISTRY = {}   -- A list, what processing stations turn into what over time(see items/processing)
 STRUCTURE_REGISTRY = {} -- A list, structures placed by world generation(see world_utils/structures)
 
 
@@ -53,6 +54,14 @@ function registerRecipe(recipe)
     recipe.count = recipe.count or 1
     recipe.id = #RECIPE_REGISTRY + 1
     table.insert(RECIPE_REGISTRY, recipe)
+end
+
+
+function registerProcess(process)
+    -- process = {station, input = {item, count}, output = {item, count}, time(seconds), needsMana(only on a mana network)}
+    -- Done inside the station over time instead of from the crafting list(see items/processing)
+    process.output.count = process.output.count or 1
+    table.insert(PROCESS_REGISTRY, process)
 end
 
 

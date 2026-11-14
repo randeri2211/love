@@ -453,9 +453,8 @@ same code that applies the player's stats.
   its network can pay and takes what the cast spent from it; its spells pass through the player and cant break blocks
   (dig cap 0). A Laser scroll is held on the target while it stays in sight (the laser asks its caster where to aim, a turret answers with its target), paid every tick from the network. Self spells dont go in a turret. A turret holding a scroll doesnt break, so the scroll is never
   lost. Turrets are not machines that run their chunk: they work near the player or in an anchor's chunks.
-  - **Powered stations** (later): need a rethink of crafting first. Today crafting is a list in the inventory screen that
-    only checks for a station nearby. Powered stations would need crafting that happens in the station (its own screen,
-    inputs and time), which mana can then speed up or unlock.
+  - **Powered stations** (done, step 7, see below): processing stations work over time, mana replaces their fuel,
+    doubles their speed, unlocks recipes and lets them use the chests next to them.
 - **The mana effect:** one shader (`manaShader`) drawn **smooth at screen resolution**, flowing over time, a deliberate
   contrast with the pixel art (a style snapped to 2 pixel blocks with banded colors was tried and dropped). It is reused
   for the battery fill, the beams, and later mana spell effects.
@@ -499,6 +498,13 @@ same code that applies the player's stats.
 - **Numbers (for now):** a battery holds **10,000 mana**, a point of damage to a mana block costs **1 mana**.
 - **Several batteries** in one network are one shared buffer: mana goes in and out through the nearest battery with room
   (or with mana), and the network has the sum of them all.
+- **Done (step 7): processing stations** (`items/processing`, `ui/processPanel`, `registerProcess`): *making* things
+  stays the instant crafting list, *processing* materials moves into the station and takes time. The Forge smelts: ore in
+  its input slot becomes bars in its output slot, 3 ore a bar, 5 s each. **Unpowered** it burns wood from its fuel slot
+  (a piece lasts 10 s, two bars). **Powered** (a network node in reach with mana) it uses 1.5 mana a second instead of
+  fuel, works twice as fast, can do the processes that need mana (**arcanite only smelts powered**), and takes ore from
+  the chests next to it and puts the bars in them, so in an anchor's chunks it runs while the player is away. Its slots
+  are saved, it doesnt break while anything is in it. Smelting left the crafting list.
 - **Done (step 6): ley lines** (`world_utils/leyLines`): regions of 200 tiles, most with a nexus, lines joining
   nexuses right, under and diagonally in gentle bends, about one line every 200 tiles, through rock and sky alike.
   Thin (60%, 1.5 tiles), medium (30%, 2.5 tiles) and wide (10%, 4 tiles) lines give **2, 5 and 10 mana a second**.
