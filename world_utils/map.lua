@@ -5,6 +5,11 @@ local Projectiles = require "world_utils.projectiles"
 local Structures = require "world_utils.structures"
 local Map = {}
 
+-- How each loaded chunk is drawn(see Map:draw), by chunk table: {batch, loose, dirty}
+-- batch is a SpriteBatch of the tilesheet with its plain tile blocks(see Block:addToBatch), made again only when a block
+-- in the chunk changes(Map:set marks it dirty), loose the blocks that draw themselves every frame(machines, mana blocks)
+local chunkDraws = setmetatable({}, {__mode = "k"})
+
 function Map:new(height, seed, settings)
     -- Infinite sideways map, a chunk is generated from the seed the first time it is visited,
     -- after that the whole chunk is saved and loaded as it is(generator changes only affect unvisited places)
@@ -415,6 +420,9 @@ function Map:set(x, y, block)
     end
     chunk[index] = block
     self:trackNode(block, true)
+    if chunkDraws[chunk] ~= nil then
+        chunkDraws[chunk].dirty = true      -- Its sprite batch is made again the next time it is drawn
+    end
     self.lightVersion = self.lightVersion + 1
 
     -- The block and its neighbors may have started or stopped touching air
@@ -602,6 +610,10 @@ function Map:unloadFarChunks(x, y)
                 self.chunkBodies[key]:destroy()
                 self.chunkBodies[key] = nil
             end
+            if chunkDraws[chunk] ~= nil then
+                chunkDraws[chunk].batch:release()
+                chunkDraws[chunk] = nil
+            end
             self.saved[key] = encodeChunk(chunk)
             self.chunks[key] = nil      -- Clearing a field while looping over the table is fine in Lua
         end
@@ -659,19 +671,49 @@ function Map:loadData(data)
 end
 
 
+local function chunkDraw(chunk)
+    -- The chunk's sprite batch and loose blocks, made again when it changed
+    local draw = chunkDraws[chunk]
+    if draw == nil then
+        draw = {batch = love.graphics.newSpriteBatch(TILESHEET, CHUNK_SIZE * CHUNK_SIZE * 2, "static"), loose = {}, dirty = true}
+        chunkDraws[chunk] = draw
+    end
+    if draw.dirty then
+        draw.batch:clear()
+        draw.loose = {}
+        for index, block in pairs(chunk) do
+            if not block:addToBatch(draw.batch) then
+                table.insert(draw.loose, block)
+            end
+        end
+        draw.dirty = false
+    end
+    return draw
+end
+
+
 function Map:draw()
-    -- Only draw blocks around the player to not waste time
-    local x_diff = math.floor(loveToWorldSingle(SCREEN_X / 2) + CAMERA_RENDER_OFFSET)
-    local y_diff = math.floor(loveToWorldSingle(SCREEN_Y / 2) + CAMERA_RENDER_OFFSET)
-    local p_x,p_y = loveToMap(player.body:getWorldCenter())
+    -- The chunks the camera sees: each one's sprite batch in one draw, then its blocks that draw themselves(only the ones
+    -- on the screen), the blocks that also shine after the light are kept for drawGlow
+    local camX, camY = game_cam:position()
+    local w, h = love.graphics.getDimensions()
+    local left, right = camX - w / 2 - TILE_SIZE, camX + w / 2 + TILE_SIZE
+    local top, bottom = camY - h / 2 - TILE_SIZE, camY + h / 2 + TILE_SIZE
+    local x1, y1 = loveToMap(left, bottom)      -- Map y goes up, the bottom of the screen is the lowest row
+    local x2, y2 = loveToMap(right, top)
+    local _, cx1, cy1 = chunkOf(x1, math.max(1, y1))
+    local _, cx2, cy2 = chunkOf(x2, math.min(self.height, y2))
     self.glowing = {}       -- Blocks with a part drawn after the light(see drawGlow)
-    for x = p_x - x_diff,p_x + x_diff do
-        for y = math.max(1, p_y - y_diff), math.min(self.height, p_y + y_diff) do
-            local block = self:get(x, y)
-            if block ~= nil then
-                block:draw()
-                if block.drawGlow ~= nil then
-                    table.insert(self.glowing, block)
+    for cx = cx1, cx2 do
+        for cy = cy1, cy2 do
+            local draw = chunkDraw(self:getChunk(cx .. "," .. cy, cx, cy))
+            love.graphics.draw(draw.batch)
+            for i, block in ipairs(draw.loose) do
+                if block.x < right and block.x + block.width * 2 > left and block.y < bottom and block.y + block.height * 2 > top then
+                    block:draw()
+                    if block.drawGlow ~= nil then
+                        table.insert(self.glowing, block)
+                    end
                 end
             end
         end

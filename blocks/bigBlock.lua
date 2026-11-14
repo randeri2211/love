@@ -128,6 +128,12 @@ function BlockPart:draw()
 end
 
 
+function BlockPart:addToBatch(batch)
+    -- Nothing to draw, nothing to draw every frame either
+    return true
+end
+
+
 function BlockPart:damage(dmg, power, source)
     local owner = self:owner()
     if owner == nil then

@@ -25,6 +25,8 @@ Every number below is for the 32 folder, the 16 folder is half of each.
 | `creatures/bow.png` | Cells of 24 x 22, 2 pixels apart: at rest, half drawn, fully drawn. Points right, held at pixel 18, 10 |
 | `machines/manaConduit.png` | 32 x 32, one tile. The crystal (12, 4 to 20, 16) stays dark, the game fills it with mana (`ManaConduit.CRYSTAL`, at the 16 pixel layout) |
 | `machines/chunkAnchor.png` | 32 x 32, one tile. The core (12, 8 to 20, 20) stays dark, the game fills it with mana while the anchor is paid for (`ChunkAnchor.CORE`, at the 16 pixel layout) |
+| `backgrounds/<biome>/sky.png` | The sky gradient, top to bottom, stretched over the screen (smoothly, any small size works). Day colors, the game tints it by the time of day |
+| `backgrounds/<biome>/<layer>.png` | A parallax layer (the placeholders are `far`, `middle`, `near`, 2048 wide): repeats sideways so its left and right edges must match, transparent above its hills, its bottom row is stretched down to the bottom of the screen. Day colors. The biome's `background.layers` lists its layers far to near with `parallax`, `rise` and `baseline` (the row where its hills meet their flat ground, at the 16 pixel layout), any number of layers |
 | `machines/scribesDesk.png` | 32 x 32, one tile |
 | `machines/spellTurret.png` | Cells of 32 x 32, 2 pixels apart. Columns are the tiers (wood, copper, iron, gold, arcanite), rows the kinds (arcane, rapid, attuned) |
 | `machines/manaBattery.png` | 64 x 64, the whole 2 x 2 battery. The glass window (12, 10 to 52, 54) stays dark, the game draws the mana in it (`ManaBattery.WINDOW` in `blocks/manaBattery.lua`, at the 16 pixel layout) |

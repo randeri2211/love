@@ -15,13 +15,15 @@ registerBiome("Plains", {
         {block = "CopperOre", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD},
         {block = "IronOre", minDepth = 28, threshold = 0.79},
     },
-    -- Sky and the far, mid and near silhouettes behind it(see world_utils/background), height scales the peaks
+    -- The sky and the hills behind it, far to near(see world_utils/background): images in
+    -- assets/art*/backgrounds/plains/ that repeat sideways, parallax is how much of the camera movement a layer follows,
+    -- rise lifts it on the screen and baseline is the row of its image where its hills meet their flat ground(16 pixel layout)
     background = {
-        skyTop = {0.33, 0.55, 0.9}, skyBottom = {0.72, 0.86, 1}, height = 1,
+        folder = "plains",
         layers = {
-            {color = {0.56, 0.66, 0.84}, rim = {0.7, 0.78, 0.92}},
-            {color = {0.38, 0.56, 0.55}, rim = {0.47, 0.66, 0.6}},
-            {color = {0.26, 0.47, 0.3}, rim = {0.36, 0.6, 0.33}},
+            {file = "far", parallax = 0.1, rise = 110, baseline = 105},
+            {file = "middle", parallax = 0.25, rise = 40, baseline = 64},
+            {file = "near", parallax = 0.45, rise = -10, baseline = 34},
         },
     },
     -- What can appear here, read by the spawner(see world_utils/spawner): entity, weight, where("surface" or "cave"), group size,

@@ -47,6 +47,19 @@ function OreBlock:draw()
 end
 
 
+function OreBlock:addToBatch(batch)
+    -- The stone and the nuggets, both from the tilesheet, so an ore still goes in its chunk's sprite batch
+    local stone, pattern = BLOCK_TILES[self.tile], BLOCK_TILES[self.pattern]
+    local _, _, qw, qh = stone:getViewport()
+    batch:add(stone, self.x, self.y, 0, self.width / qw, self.height / qh)
+    local c = self.ore.color
+    batch:setColor(c[1], c[2], c[3], c[4] or 1)
+    batch:add(pattern, self.x, self.y, 0, self.width / qw, self.height / qh)
+    batch:setColor(1, 1, 1, 1)
+    return true
+end
+
+
 -- One block class per ore, they only differ in their ore table
 for i, ore in ipairs(ORES) do
     local class = OreBlock:new()

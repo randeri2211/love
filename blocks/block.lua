@@ -65,6 +65,25 @@ function Block:draw()
 end
 
 
+function Block:addToBatch(batch)
+    -- A plain tile block goes in its chunk's sprite batch instead of being drawn on its own(see Map:draw), true when it did
+    -- Blocks that draw themselves(a mana block, machines) return false and are drawn every frame, block types whose
+    -- look is only tiles can add those tiles themselves(see OreBlock)
+    if self.draw ~= Block.draw or self.tile == nil then
+        return false
+    end
+    local quad = BLOCK_TILES[self.tile]
+    local _, _, qw, qh = quad:getViewport()
+    local c = self.tint
+    if c ~= nil then
+        batch:setColor(c[1], c[2], c[3], c[4] or 1)
+    end
+    batch:add(quad, self.x, self.y, 0, self.width / qw, self.height / qh)
+    batch:setColor(1, 1, 1, 1)
+    return true
+end
+
+
 function Block:damage(dmg, power, source)
     -- power is checked against the hardness(a spell passes its dig cap, see Form:digReach), dmg is what the block loses
     -- (spells only deal part of their damage to terrain, Dig runes raise it)

@@ -10,13 +10,15 @@ registerBiome("Desert", {
         {block = "CopperOre", minDepth = ORE_START_DEPTH, threshold = 0.77},
         {block = "GoldOre", minDepth = 30, threshold = 0.8},
     },
-    -- Sky and the far, mid and near silhouettes behind it(see world_utils/background), height scales the peaks
+    -- The sky and the hills behind it, far to near(see world_utils/background): images in
+    -- assets/art*/backgrounds/desert/ that repeat sideways, parallax is how much of the camera movement a layer follows,
+    -- rise lifts it on the screen and baseline is the row of its image where its hills meet their flat ground(16 pixel layout)
     background = {
-        skyTop = {0.42, 0.6, 0.9}, skyBottom = {1, 0.88, 0.7}, height = 0.6,
+        folder = "desert",
         layers = {
-            {color = {0.86, 0.72, 0.64}, rim = {0.95, 0.83, 0.74}},
-            {color = {0.88, 0.72, 0.5}, rim = {0.96, 0.83, 0.6}},
-            {color = {0.8, 0.62, 0.4}, rim = {0.92, 0.76, 0.5}},
+            {file = "far", parallax = 0.1, rise = 110, baseline = 65},
+            {file = "middle", parallax = 0.25, rise = 40, baseline = 40},
+            {file = "near", parallax = 0.45, rise = -10, baseline = 22},
         },
     },
     spawns = {

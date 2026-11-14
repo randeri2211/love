@@ -10,13 +10,15 @@ registerBiome("Snow", {
         {block = "IronOre", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD},
         {block = "CopperOre", minDepth = 25, threshold = 0.8},
     },
-    -- Sky and the far, mid and near silhouettes behind it(see world_utils/background), height scales the peaks
+    -- The sky and the hills behind it, far to near(see world_utils/background): images in
+    -- assets/art*/backgrounds/snow/ that repeat sideways, parallax is how much of the camera movement a layer follows,
+    -- rise lifts it on the screen and baseline is the row of its image where its hills meet their flat ground(16 pixel layout)
     background = {
-        skyTop = {0.48, 0.6, 0.84}, skyBottom = {0.86, 0.91, 0.98}, height = 1.5,
+        folder = "snow",
         layers = {
-            {color = {0.68, 0.74, 0.88}, rim = {0.97, 0.98, 1}},
-            {color = {0.54, 0.62, 0.76}, rim = {0.93, 0.95, 1}},
-            {color = {0.42, 0.5, 0.62}, rim = {0.88, 0.92, 0.98}},
+            {file = "far", parallax = 0.1, rise = 110, baseline = 155},
+            {file = "middle", parallax = 0.25, rise = 40, baseline = 94},
+            {file = "near", parallax = 0.45, rise = -10, baseline = 49},
         },
     },
     spawns = {

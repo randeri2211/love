@@ -2,102 +2,47 @@ local Biomes = require "world_utils.biomes"
 local Generator = require "world_utils.generator"
 local WorldClock = require "world_utils.worldClock"
 
--- What is behind the world: a sky with parallax silhouettes above ground, dark rock walls below it
--- Silhouette layers move slower than the camera the further away they are, colors come from the biome the camera is in
--- and blend across biome borders, deep down everything fades to the dark of the caves
+-- What is behind the world: a sky with parallax layers above ground, dark rock walls below it
+-- The sky and its layers are images of the biome the camera is in(its background, see biomes/plains):
+-- a sky gradient stretched over the screen, then layers far to near that repeat sideways and move slower than the camera
+-- the further away they are, their bottom row reaching down to the bottom of the screen. Paint them in their day colors,
+-- the time of day tints them(SKY_TINT, HILL_TINT). Near a biome border the two biomes' backgrounds crossfade,
+-- deep down everything fades to the dark of the caves
 local Background = {}
 
--- Silhouette layers, far to near: parallax is how much of the camera movement they follow,
--- height is how many pixels the peaks rise above the horizon(scaled by the biome), roughness how close the peaks are
-local LAYERS = {
-    {parallax = 0.1, height = 200, base = 110, roughness = 0.004, rim = 6, salt = 3.1},
-    {parallax = 0.25, height = 120, base = 40, roughness = 0.008, rim = 4, salt = 7.7},
-    {parallax = 0.45, height = 60, base = -10, roughness = 0.016, rim = 4, salt = 12.9},
-}
-local COLUMN = 4            -- Pixels per silhouette step, chunky like the pixel art tiles
-local STEP = 2              -- Peak heights snap to this many pixels
 local CAVE_COLOR = {0.05, 0.05, 0.07}
 local FADE_FROM = 6         -- Tiles under the surface where the sky starts fading to cave dark
 local FADE_TO = 26          -- Tiles under the surface where it is fully dark
 local WALL_SHADE = 0.35     -- How dark the rock walls behind caves are
-
 local STAR_PARALLAX = 0.02  -- Stars are the furthest thing, they barely move
 local STAR_FIELD = 2048     -- Pixels before the star pattern repeats sideways
 local STAR_TOP = 0.65       -- Part of the screen height stars appear in, from the top
 
-local layerMeshes = {}
-local skyMesh = nil
+local images = {}           -- Background images by path, loaded when first drawn
+local quads = {}            -- A quad for each layer image, moved every frame instead of made
+local canvases = {}         -- Two screen canvases for the crossfade at a biome border
 local wallBatch = nil
 local stars = nil           -- {x, y(0-1 of the field), size, phase, speed}, made once
 
 
-local function mix(a, b, t)
-    return {a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t}
-end
-
-
-local function palette(biome)
-    -- Worlds made before biomes use the plains look
+local function background(biome)
+    -- Worlds made before biomes and biomes without their own(underground ones) use the plains background
     return biome.background or BIOME_REGISTRY.Plains.background
 end
 
 
-local function timed(color, tint)
-    -- A palette color for now: a biome can give one per moment of the day, a single color is its day look tinted by the time
-    if type(color) == "table" and color.day ~= nil then
-        return WorldClock.blend(color)
+local function image(folder, file)
+    -- A background image that repeats sideways and stretches its bottom row down
+    local path = ART_FOLDER .. "backgrounds/" .. folder .. "/" .. file .. ".png"
+    if images[path] == nil then
+        local loaded = artImage(path)
+        loaded:setWrap("repeat", "clamp")
+        if file == "sky" then
+            loaded:setFilter("linear", "linear")    -- A smooth gradient, not bands
+        end
+        images[path] = loaded
     end
-    local t = WorldClock.blend(tint)
-    return {color[1] * t[1], color[2] * t[2], color[3] * t[3]}
-end
-
-
-local function blended(tx)
-    -- Background of the biome at a column for the time of day, mixed with its neighbor near a border like the terrain
-    local biome, neighbor, share = Biomes.surface(tx, map.seed, map.settings)
-    local a, b = palette(biome), palette(neighbor)
-    local result = {
-        skyTop = mix(timed(b.skyTop, SKY_TINT), timed(a.skyTop, SKY_TINT), share),
-        skyBottom = mix(timed(b.skyBottom, SKY_TINT), timed(a.skyBottom, SKY_TINT), share),
-        height = b.height + (a.height - b.height) * share,
-        layers = {},
-    }
-    for i = 1, #LAYERS do
-        local la, lb = a.layers[i], b.layers[i]
-        result.layers[i] = {
-            color = mix(timed(lb.color, HILL_TINT), timed(la.color, HILL_TINT), share),
-            rim = mix(timed(lb.rim, HILL_TINT), timed(la.rim, HILL_TINT), share),
-        }
-    end
-    return result
-end
-
-
-local function quad(vertices, x1, y1, x2, y2, color)
-    -- Two triangles of a rectangle for a triangles mesh
-    local r, g, b = color[1], color[2], color[3]
-    table.insert(vertices, {x1, y1, 0, 0, r, g, b, 1})
-    table.insert(vertices, {x2, y1, 0, 0, r, g, b, 1})
-    table.insert(vertices, {x2, y2, 0, 0, r, g, b, 1})
-    table.insert(vertices, {x1, y1, 0, 0, r, g, b, 1})
-    table.insert(vertices, {x2, y2, 0, 0, r, g, b, 1})
-    table.insert(vertices, {x1, y2, 0, 0, r, g, b, 1})
-end
-
-
-local function drawMesh(index, vertices)
-    -- One mesh per layer, made bigger when the screen needs more columns
-    if #vertices == 0 then
-        return
-    end
-    local mesh = layerMeshes[index]
-    if mesh == nil or mesh:getVertexCount() < #vertices then
-        mesh = love.graphics.newMesh(#vertices, "triangles", "stream")
-        layerMeshes[index] = mesh
-    end
-    mesh:setVertices(vertices)
-    mesh:setDrawRange(1, #vertices)
-    love.graphics.draw(mesh)
+    return images[path]
 end
 
 
@@ -130,59 +75,84 @@ local function drawStars(camX, w, h, alpha)
 end
 
 
+local function drawStack(bg, camX, camY, w, h)
+    -- One biome's background: its sky, the stars, then its layers far to near
+    local sky = image(bg.folder, "sky")
+    local tint = WorldClock.blend(SKY_TINT)
+    love.graphics.setColor(tint[1], tint[2], tint[3], 1)
+    love.graphics.draw(sky, 0, 0, 0, w / sky:getWidth(), h / sky:getHeight())
+
+    local starAlpha = WorldClock.blend(STAR_ALPHA)
+    if starAlpha > 0.01 then
+        drawStars(camX, w, h, starAlpha)
+    end
+
+    -- The horizon sits at the plain ground level, each layer moves up and down slower than the camera too
+    local hill = WorldClock.blend(HILL_TINT)
+    love.graphics.setColor(hill[1], hill[2], hill[3], 1)
+    local horizon = SURFACE_ROW * TILE_SIZE
+    for i, layer in ipairs(bg.layers) do
+        local layerImage = image(bg.folder, layer.file)
+        local baseY = h / 2 + (horizon - camY) * layer.parallax - layer.rise
+        local y = math.floor(baseY - layer.baseline * ART_UNIT * ART_SCREEN)
+        if y < h then
+            local iw, ih = layerImage:getDimensions()
+            local quad = quads[layerImage]
+            if quad == nil then
+                quad = love.graphics.newQuad(0, 0, 1, 1, iw, ih)
+                quads[layerImage] = quad
+            end
+            -- Whole art pixels of scroll, so the layer never sits between pixels
+            local scroll = math.floor(camX * layer.parallax / ART_SCREEN) % iw
+            quad:setViewport(scroll, 0, math.ceil(w / ART_SCREEN) + 1, math.ceil((h - y) / ART_SCREEN) + 1, iw, ih)
+            love.graphics.draw(layerImage, quad, 0, y, 0, ART_SCREEN, ART_SCREEN)
+        end
+    end
+end
+
+
+local function canvas(i, w, h)
+    if canvases[i] == nil or canvases[i]:getWidth() ~= w or canvases[i]:getHeight() ~= h then
+        canvases[i] = love.graphics.newCanvas(w, h)
+    end
+    return canvases[i]
+end
+
+
 function Background.drawSky(camX, camY)
-    -- Screen space, before the camera: sky gradient and the silhouette layers, faded to dark underground
+    -- Screen space, before the camera: the background of the biome the camera is in, faded to dark underground
     local w, h = love.graphics.getDimensions()
     local tx = math.floor(camX / TILE_SIZE)
-    local look = blended(tx)
+    local biome, neighbor, share = Biomes.surface(tx, map.seed, map.settings)
     local surfaceY = Generator.surfaceRow(tx, map.seed, map.settings) * TILE_SIZE
     local depth = (camY - surfaceY) / TILE_SIZE
     local dark = math.max(0, math.min(1, (depth - FADE_FROM) / (FADE_TO - FADE_FROM)))
 
     love.graphics.push("all")
     love.graphics.origin()
-
-    -- Sky, a gradient from the top of the screen to the horizon
-    local top, bottom = mix(look.skyTop, CAVE_COLOR, dark), mix(look.skyBottom, CAVE_COLOR, dark)
-    if skyMesh == nil then
-        skyMesh = love.graphics.newMesh(4, "fan", "stream")
-    end
-    skyMesh:setVertices({
-        {0, 0, 0, 0, top[1], top[2], top[3], 1},
-        {w, 0, 0, 0, top[1], top[2], top[3], 1},
-        {w, h, 0, 0, bottom[1], bottom[2], bottom[3], 1},
-        {0, h, 0, 0, bottom[1], bottom[2], bottom[3], 1},
-    })
-    love.graphics.draw(skyMesh)
-
     if dark < 1 then
-        local starAlpha = WorldClock.blend(STAR_ALPHA) * (1 - dark)
-        if starAlpha > 0.01 then
-            drawStars(camX, w, h, starAlpha)
-        end
-
-        -- The horizon sits at the plain ground level, each layer moves up and down slower than the camera too
-        local horizon = SURFACE_ROW * TILE_SIZE
-        for i, layer in ipairs(LAYERS) do
-            local colors = look.layers[i]
-            local fill = mix(colors.color, CAVE_COLOR, dark)
-            local rim = mix(colors.rim, CAVE_COLOR, dark)
-            local baseY = h / 2 + (horizon - camY) * layer.parallax - layer.base
-            local offset = camX * layer.parallax
-            local vertices = {}
-            for x = 0, w + COLUMN, COLUMN do
-                -- The same spot of the layer always has the same peak, it scrolls by its parallax
-                local lx = math.floor((x + offset) / COLUMN) * COLUMN
-                local n = love.math.noise(lx * layer.roughness, layer.salt) * 0.75 + love.math.noise(lx * layer.roughness * 3, layer.salt + 5) * 0.25
-                local peak = math.floor((baseY - n * layer.height * look.height) / STEP) * STEP
-                local sx = x - (x + offset) % COLUMN
-                if peak < h then
-                    quad(vertices, sx, peak + layer.rim, sx + COLUMN, h, fill)
-                    quad(vertices, sx, peak, sx + COLUMN, peak + layer.rim, rim)
-                end
+        local own, other = background(biome), background(neighbor)
+        if share >= 1 or own == other then
+            drawStack(own, camX, camY, w, h)
+        else
+            -- Near a border: both backgrounds whole, then the camera's biome over its neighbor's by how far in it is
+            local target = love.graphics.getCanvas()
+            for i, bg in ipairs({other, own}) do
+                love.graphics.setCanvas(canvas(i, w, h))
+                love.graphics.clear(0, 0, 0, 1)
+                drawStack(bg, camX, camY, w, h)
             end
-            drawMesh(i, vertices)
+            love.graphics.setCanvas(target)
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.draw(canvases[1])
+            love.graphics.setColor(1, 1, 1, share)
+            love.graphics.draw(canvases[2])
         end
+    end
+    -- Underground the sky fades to the dark of the caves
+    if dark > 0 then
+        love.graphics.setColor(CAVE_COLOR[1], CAVE_COLOR[2], CAVE_COLOR[3], dark)
+        love.graphics.rectangle("fill", 0, 0, w, h)
     end
     love.graphics.pop()
 end
