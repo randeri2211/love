@@ -65,6 +65,10 @@ function BatteryPanel:update(x, y, w, h, battery)
         Slab.NewLine()
         Slab.Text(string.format("Your network: %d %s", count, count == 1 and "battery" or "batteries"))
         Slab.Text(string.format("%d / %d", math.floor(total), count * MANA_BATTERY_CAPACITY), {Color = MANA_TEXT})
+        local ley = ManaNetwork.leyRate(battery)
+        if ley > 0 then
+            Slab.Text(string.format("Ley lines: +%g mana/s", ley), {Color = MANA_TEXT})
+        end
 
         Slab.NewLine()
         if Slab.CheckBox(battery.feedPlayer, "Feed the player") then

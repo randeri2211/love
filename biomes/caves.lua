@@ -3,7 +3,9 @@ registerBiome("Caves", {
     kind = "underground",
     fromDepth = UNDERGROUND_DEPTH,      -- Tiles under the surface where this layer starts
     blocks = {stone = "Stone"},
-    caves = {startDepth = 0, tunnel = 0.05, network = 0.045, scale = 0.5, cavern = 0.85},
+    -- Caves(see world_utils/caveNetwork): hubs, the tunnels and tendrils between them, entrances and small pockets
+    -- tunnel, network, scale and cavern are the noise caves of worlds made before the network
+    caves = {startDepth = 0, tunnel = 0.05, network = 0.045, scale = 0.5, cavern = 0.85, hubChance = 0.7, hubSize = {9, 16}, tunnelWidth = {2.5, 4.5}, tendrils = 3, entranceChance = 0, pockets = 0.8},
     ores = {
         {block = "CopperOre", minDepth = 0, threshold = 0.74},
         {block = "IronOre", minDepth = 0, threshold = 0.77},

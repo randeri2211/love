@@ -1,5 +1,6 @@
 local Biomes = require "world_utils.biomes"
 local Flora = require "world_utils.flora"
+local CaveNetwork = require "world_utils.caveNetwork"
 
 -- Picks the block for every tile from the world seed and settings, the same seed always gives the same world
 -- Tile coordinates: tx is the column, ty the row(rows grow downward like love coordinates)
@@ -31,7 +32,41 @@ function Generator.surfaceRow(tx, seed, settings)
 end
 
 
+local function biomeAt(tx, ty, seed, settings, surface)
+    -- The biome whose blocks a tile has: an underground layer deep down, the surface biome above it
+    -- Returns the biome and whether it is a surface biome
+    local depth = ty - surface
+    -- Deep down the underground layers decide, the border wobbles so it isnt a straight line
+    local wobble = math.floor(love.math.noise(tx * 0.08, offset(seed, 91.3)) * UNDERGROUND_WOBBLE)
+    local biome = Biomes.underground(depth - wobble, settings)
+    if biome ~= nil then
+        return biome, false
+    end
+    -- Blocks switch biome a few tiles left or right of the border on every row, so biomes dont meet in a straight wall
+    local shift = math.floor((love.math.noise(ty * 0.15, offset(seed, 43.9)) * 2 - 1) * BIOME_BLOCK_WOBBLE + 0.5)
+    return Biomes.surface(tx + shift, seed, settings), true
+end
+
+
+local worlds = {}   -- What the cave network asks about a world, by settings table(see CaveNetwork.isCave)
+
+local function networkWorld(seed, settings)
+    local world = worlds[settings]
+    if world == nil or world.seed ~= seed then
+        world = {seed = seed}
+        world.surface = function(tx) return Generator.surfaceRow(tx, seed, settings) end
+        world.caves = function(tx, ty)
+            local biome = biomeAt(tx, ty, seed, settings, world.surface(tx))
+            return biome.caves
+        end
+        worlds[settings] = world
+    end
+    return world
+end
+
+
 function Generator.isCave(tx, ty, depth, seed, caves)
+    -- The caves of worlds made before the cave network(no caves setting, see CaveNetwork for the new ones)
     -- Open space underground: long tunnels where a noise layer crosses its middle, and rounder caverns
     -- caves comes from the biome: {startDepth, tunnel width, cavern threshold, and optionally scale and network}
     -- scale stretches the tunnels(below 1 is wider tunnels further apart), network adds a second set of tunnels
@@ -82,18 +117,16 @@ function Generator.tile(tx, ty, seed, bottomRow, settings)
         return nil
     end
     local depth = ty - surface
+    local biome, surfaceBiome = biomeAt(tx, ty, seed, settings, surface)
 
-    -- Deep down the underground layers decide, the border wobbles so it isnt a straight line
-    local wobble = math.floor(love.math.noise(tx * 0.08, offset(seed, 91.3)) * UNDERGROUND_WOBBLE)
-    local biome = Biomes.underground(depth - wobble, settings)
-    local surfaceBiome = biome == nil
-    if surfaceBiome then
-        -- Blocks switch biome a few tiles left or right of the border on every row, so biomes dont meet in a straight wall
-        local shift = math.floor((love.math.noise(ty * 0.15, offset(seed, 43.9)) * 2 - 1) * BIOME_BLOCK_WOBBLE + 0.5)
-        biome = Biomes.surface(tx + shift, seed, settings)
+    -- Worlds made before the cave network keep their noise caves, so their unvisited chunks match the saved ones
+    local open
+    if settings ~= nil and settings.caves ~= nil then
+        open = CaveNetwork.isCave(tx, ty, depth, seed, biome.caves, networkWorld(seed, settings))
+    else
+        open = Generator.isCave(tx, ty, depth, seed, biome.caves)
     end
-
-    if Generator.isCave(tx, ty, depth, seed, biome.caves) then
+    if open then
         return nil
     end
     if surfaceBiome then

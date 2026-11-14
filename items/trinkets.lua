@@ -10,6 +10,9 @@ local TRINKETS = {
         effect = {spells = {{param = "count", add = 1, when = "count", above = 1}}, text = {"Split spells fan one more"}}},
     {name = "Feather", displayName = "Feather Charm", tint = {0.95, 0.95, 0.9, 1},
         effect = {spells = {{form = "Bullet", param = "speed", mult = 1.3}}, text = {"Bullets fly 30% faster"}}},
+    -- Shows the ley lines(see world_utils/leyLines), for finding where a mana network can tap one
+    {name = "LeyGoggles", displayName = "Ley Goggles", tint = {0.85, 0.6, 1, 1},
+        effect = {leySight = true, text = {"Shows ley lines", "and the mana they give"}}},
 }
 
 local FOCUSES = {

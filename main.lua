@@ -22,6 +22,7 @@ local DevLink = require "devLink"
 local ManaNetwork = require "world_utils.manaNetwork"
 local Simulation = require "world_utils.simulation"
 local Scrolls = require "items.scrolls"
+local LeyLines = require "world_utils.leyLines"
 local placeTimer = 0        -- Time until the held place button places the next block
 local worldCanvas = nil     -- The world is drawn here first so the light can be laid over it(see love.draw)
 local new_frame = false
@@ -166,6 +167,7 @@ function love.draw()
         -- Spells over the light, so magic glows at night, then where the selected block would go
         game_cam:attach()
             map:drawGlow()      -- Mana in batteries and the like shines like the spells
+            LeyLines.draw(camX, camY)  -- Only while the Ley Goggles are worn(see world_utils/leyLines)
             ManaNetwork.draw()
             if uihandler.showMap and uihandler.minimap ~= nil and uihandler.minimap.showAnchors then
                 Simulation.drawOutlines()   -- The chunks the anchors keep running, while the minimap shows them

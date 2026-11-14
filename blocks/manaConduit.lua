@@ -87,7 +87,16 @@ end
 
 
 function ManaConduit:tooltip()
-    return "Mana Conduit\n" .. INTERACT_KEY:upper() .. " to pick up"
+    -- With the Ley Goggles on, what ley line it stands on and what its network gets from ley lines
+    local text = "Mana Conduit\n" .. INTERACT_KEY:upper() .. " to pick up"
+    local LeyLines = require "world_utils.leyLines"
+    if LeyLines.seen() then
+        local ManaNetwork = require "world_utils.manaNetwork"
+        local line = ManaNetwork.leyLineAt(self)
+        text = text .. "\n" .. (line and string.format("On a %s ley line (+%g/s)", line.kind, line.rate) or "Not on a ley line")
+        text = text .. string.format("\nIts network: +%g mana/s", ManaNetwork.leyRate(self))
+    end
+    return text
 end
 
 

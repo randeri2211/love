@@ -3,7 +3,9 @@ registerBiome("Deep", {
     kind = "underground",
     fromDepth = DEEP_DEPTH,
     blocks = {stone = "Deepstone"},
-    caves = {startDepth = 0, tunnel = 0.055, network = 0.05, scale = 0.5, cavern = 0.8},
+    -- Caves(see world_utils/caveNetwork): hubs, the tunnels and tendrils between them, entrances and small pockets
+    -- tunnel, network, scale and cavern are the noise caves of worlds made before the network
+    caves = {startDepth = 0, tunnel = 0.055, network = 0.05, scale = 0.5, cavern = 0.8, hubChance = 0.75, hubSize = {12, 21}, tunnelWidth = {3, 5}, tendrils = 3, entranceChance = 0, pockets = 0.78},
     ores = {
         {block = "DeepGoldOre", minDepth = 0, threshold = 0.75},
         {block = "ArcaniteOre", minDepth = 0, threshold = 0.8},

@@ -38,7 +38,7 @@ local function freshWorld()
         p_world:destroy()
     end
     initVars({biomeWidth = BIOME_SIZES[DEFAULT_BIOME_SIZE][2], dayLength = DAY_LENGTH, flora = FLORA_VERSION,
-        structures = STRUCTURES_VERSION})
+        structures = STRUCTURES_VERSION, caves = CAVES_VERSION})
     map.seed = Benchmark.SEED
     map.time = 0.5 * DAY_LENGTH
     game_state = IN_WORLD_STATE

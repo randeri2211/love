@@ -389,6 +389,29 @@ MANA_CONDUIT_LIGHT = {0.08, 0.16, 0.35}
 CHUNK_ANCHOR_MANA = 0.5         -- Mana a second for every chunk an anchor keeps running around its own
 CHUNK_ANCHOR_MAX_RADIUS = 2     -- Chunks out from its own an anchor can reach(2 is 5 x 5 chunks)
 CHUNK_ANCHOR_HP = 10
+-- How caves change with depth under the surface(see world_utils/caveNetwork), between the bands it blends:
+-- density multiplies the chance of a hub, size the size of hubs
+CAVE_BANDS = {
+    {depth = 0, density = 0.7, size = 0.85},
+    {depth = 200, density = 1.1, size = 1},
+    {depth = 1200, density = 0.8, size = 1.3},
+    {depth = 2500, density = 0.5, size = 1.7},
+}
+CAVE_ZONE_SIZE = 700            -- Tiles across a cave zone: areas of dense caves, of near solid rock, of big or small hubs
+-- Ley line layers(see world_utils/leyLines): tiles a region is across(most have a nexus the lines run between), how
+-- often a region has a nexus, how often nexuses join right or down and diagonally, the most a line bends off straight,
+-- and the rows its nexuses stay between(nil for the whole world)
+LEY_LAYERS = {
+    {region = 200, nexusChance = 0.85, connectChance = 0.6, diagonalChance = 0.2, wander = 30},
+    -- Denser around the surface, where bases are: from high in the sky(row -150) to 250 rows under the ground level
+    {region = 110, nexusChance = 0.9, connectChance = 0.7, diagonalChance = 0.25, wander = 18, top = -150, bottom = 250},
+}
+LEY_LINES = {                   -- The kinds of ley line: tiles across, mana a second a network tapping it gets, how often
+    {name = "thin", width = 1.5, rate = 2, chance = 0.6},
+    {name = "medium", width = 2.5, rate = 5, chance = 0.3},
+    {name = "wide", width = 4, rate = 10, chance = 0.1},
+}
+LEY_COLOR = {1, 0.75, 1}        -- Ley lines are the mana effect tinted toward violet, so they dont look like network beams
 TURRET_RANGE = 20               -- Tiles a Spell Turret sees enemies from(it needs a clear line to them)
 TURRET_WISDOM_MANA = 0.01       -- Part of a turret's spell mana cost every point of its Wisdom saves
 TURRET_WISDOM_CAP = 0.5         -- The most Wisdom saves
@@ -428,6 +451,7 @@ CRAFT_TIERS = {"Basic", "Copper", "Iron", "Gold", "Arcanite"}  -- Recipe tiers i
 -- Trees and plants(see world_utils/flora)
 FLORA_VERSION = 1       -- Saved with new worlds, worlds without it grow no trees or plants so their saved chunks still match
 STRUCTURES_VERSION = 1  -- The same for structures(see world_utils/structures)
+CAVES_VERSION = 1       -- The same for the cave network(see world_utils/caveNetwork), older worlds keep their noise caves
 STRUCTURE_SPAWN_CLEAR = 60      -- Tiles around where the world starts that never have a structure
 STRUCTURE_XP = 20               -- XP for clearing a structure, times its level
 CAMPFIRE_LIGHT = {0.95, 0.6, 0.3}

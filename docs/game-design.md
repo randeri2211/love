@@ -356,6 +356,20 @@ Chests (`blocks/chestBlock`, `ui/chestPanel`), opened with the interact key next
   that already holds that item and has room.
 - **Locked slots:** Ctrl+click locks an inventory slot (saved with the inventory). Storing to chests leaves locked slots and the hotbar alone.
 
+### Caves (Done)
+Caves are a network (`world_utils/caveNetwork`), not noise streaks: **hubs** (big lumpy chambers, wider than tall)
+joined by winding **tunnels**, **tendrils** curling off the hubs, **entrances** climbing from hubs near the surface up to
+it, and small air pockets in the rock.
+
+- The world is cut into regions of 96 tiles. A region's hub comes from the seed and its position only, so neighbors agree
+  on the tunnels between them (a tunnel to the right, below or down-right belongs to the region it starts in).
+- Each region is carved once into a grid of open cells (its features and its neighbors'), so generating a tile is a lookup.
+- Biomes set it in `caves`: `startDepth`, `hubChance`, `hubSize`, `tunnelWidth`, `tendrils`, `entranceChance`, `pockets`.
+  Surface biomes have hubs of 7.5 to 13 tiles (desert 6 to 10.5) and entrances (plains and snow 45%, desert 30% of the hubs
+  within 80 tiles of the surface), the underground layer 9 to 16, the deep layer 12 to 21.
+- Worlds made before the network (no `caves` setting, `CAVES_VERSION`) keep their noise caves, so explored and unexplored
+  land still meet cleanly.
+
 ### Death (Decided)
 For now **no punishment**: the player respawns after a respawn timer.
 
@@ -485,9 +499,14 @@ same code that applies the player's stats.
 - **Numbers (for now):** a battery holds **10,000 mana**, a point of damage to a mana block costs **1 mana**.
 - **Several batteries** in one network are one shared buffer: mana goes in and out through the nearest battery with room
   (or with mana), and the network has the sum of them all.
-- **Open:** the mana a second for thin and wide ley lines, how many lines there are and how long, whether a node taps a
-  line it touches or one within its reach, what the goggles are (a helmet, a trinket) and how they are made,
-  how a scroll is made and bound.
+- **Done (step 6): ley lines** (`world_utils/leyLines`): regions of 200 tiles, most with a nexus, lines joining
+  nexuses right, under and diagonally in gentle bends, about one line every 200 tiles, through rock and sky alike.
+  Thin (60%, 1.5 tiles), medium (30%, 2.5 tiles) and wide (10%, 4 tiles) lines give **2, 5 and 10 mana a second**.
+  A network node standing on a line (any tile of it) taps it: the network's batteries fill at the line's rate, **each
+  line counted once per network** however many nodes are on it, different lines add up. Tapping is bookkeeping, it
+  works wherever the network is loaded. **Ley Goggles** (a trinket, 4 copper bars and 2 plant fiber at the Forge) show the
+  lines in the mana effect tinted violet, and conduit tooltips say what line they stand on and what the network gets;
+  the battery screen shows the network's ley line mana a second.
 - **Build order:** 1) the mana shader with the pixel toggle and big blocks, 2) the battery (storage, fill, screen, player
   overflow), 3) conduits and networks (linking, beams), 4) mana block upkeep and damage, 5) spell scrolls, the Scribe's Desk and the Spell Turret,
   6) ley lines from the seed and the Ley Goggles, 7) station crafting and powered stations.

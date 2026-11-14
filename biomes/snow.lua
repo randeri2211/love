@@ -4,7 +4,9 @@ registerBiome("Snow", {
     weight = 3,
     terrain = {baseRow = -6, hillHeight = 26, roughness = 1.5},
     blocks = {top = "Snow", filler = "Dirt", fillerDepth = DIRT_DEPTH, stone = "Stone"},
-    caves = {startDepth = CAVE_START_DEPTH, tunnel = 0.045, network = 0.04, scale = 0.5, cavern = 0.88},
+    -- Caves(see world_utils/caveNetwork): hubs, the tunnels and tendrils between them, entrances and small pockets
+    -- tunnel, network, scale and cavern are the noise caves of worlds made before the network
+    caves = {startDepth = CAVE_START_DEPTH, tunnel = 0.045, network = 0.04, scale = 0.5, cavern = 0.88, hubChance = 0.55, hubSize = {7.5, 13}, tunnelWidth = {2, 4}, tendrils = 2, entranceChance = 0.45, pockets = 0.82},
     flora = {tree = "Pine", treeChance = 0.6},
     ores = {
         {block = "IronOre", minDepth = ORE_START_DEPTH, threshold = ORE_THRESHOLD},

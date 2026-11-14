@@ -1,4 +1,5 @@
 local ManaShader = require "world_utils.manaShader"
+local LeyLines = require "world_utils.leyLines"
 
 -- The mana network(see docs/game-design: Mana network)
 -- Nodes are blocks with manaNode(batteries and conduits), two nodes link when their edges are within MANA_NETWORK_REACH tiles,
@@ -20,6 +21,7 @@ local batteries = {}    -- Batteries in the player's network, nearest to the pla
 local attached = nil    -- The node the player is joined through, nil when none is in reach
 local playerBeam = nil  -- {time left, true when the mana flows to the player}
 local flows = {}        -- Short beams from a node to a point where mana was just used: {node, x, y, time left}
+local taps = {}         -- Network(its root node) -> {rate = mana a second from ley lines, batteries = its batteries}
 
 
 local function boxDistance(px, py, node)
@@ -43,6 +45,63 @@ end
 
 local function stillThere(node)
     return map:get(node.mx, node.my) == node
+end
+
+
+local function nodeTiles(node)
+    -- The tiles a node stands on(a battery four, a conduit one), as generator tile columns and rows
+    local cells = node.cells ~= nil and node:cells() or {{node.mx, node.my}}
+    local tiles = {}
+    for i, cell in ipairs(cells) do
+        local tx, ty = map:mapToTile(cell[1], cell[2])
+        table.insert(tiles, {tx, ty})
+    end
+    return tiles
+end
+
+
+local function tapLeyLines()
+    -- Every network gets the ley lines its nodes stand on, each line once however many of its nodes are on it
+    taps = {}
+    local found = {}    -- Network -> {line id -> rate}
+    for i, node in ipairs(nodes) do
+        local root = networkOf[node]
+        taps[root] = taps[root] or {rate = 0, batteries = {}}
+        if node.mana ~= nil then
+            table.insert(taps[root].batteries, node)
+        end
+        for k, tile in ipairs(nodeTiles(node)) do
+            local line = LeyLines.at(tile[1], tile[2], map.seed)
+            if line ~= nil then
+                found[root] = found[root] or {}
+                found[root][line.id] = line.rate
+            end
+        end
+    end
+    for root, lineRates in pairs(found) do
+        for id, rate in pairs(lineRates) do
+            taps[root].rate = taps[root].rate + rate
+        end
+    end
+end
+
+
+function ManaNetwork.leyRate(node)
+    -- Mana a second a node's network gets from ley lines
+    local tap = networkOf[node] and taps[networkOf[node]]
+    return tap and tap.rate or 0
+end
+
+
+function ManaNetwork.leyLineAt(node)
+    -- The ley line a node stands on, nil for none
+    for i, tile in ipairs(nodeTiles(node)) do
+        local line = LeyLines.at(tile[1], tile[2], map.seed)
+        if line ~= nil then
+            return line
+        end
+    end
+    return nil
 end
 
 
@@ -83,6 +142,7 @@ local function link()
     for i, node in ipairs(nodes) do
         networkOf[node] = find(node)
     end
+    tapLeyLines()
 end
 
 
@@ -152,6 +212,22 @@ function ManaNetwork.update(dt)
     if scanned == nil or scanned.map ~= map or scanned.version ~= map.nodesVersion then
         link()
         scanned = {map = map, version = map.nodesVersion}
+    end
+    -- Ley lines fill the batteries of the networks on them, wherever they are
+    for root, tap in pairs(taps) do
+        if tap.rate > 0 then
+            local amount = tap.rate * dt
+            for i, battery in ipairs(tap.batteries) do
+                if amount <= 0 then
+                    break
+                end
+                if stillThere(battery) then
+                    local take = math.min(MANA_BATTERY_CAPACITY - battery.mana, amount)
+                    battery.mana = battery.mana + take
+                    amount = amount - take
+                end
+            end
+        end
     end
     if player == nil or player:isDead() then
         attached, batteries = nil, {}

@@ -7,3 +7,6 @@ saves/*
 # LibreSprite/Aseprite project files, the game reads the exported png
 *.ase
 *.aseprite
+
+# Map previews rendered while tuning world generation
+previews/

@@ -4,7 +4,9 @@ registerBiome("Desert", {
     weight = 3,
     terrain = {baseRow = 3, hillHeight = 6, roughness = 0.7},
     blocks = {top = "Sand", filler = "Sand", fillerDepth = 7, stone = "Sandstone"},
-    caves = {startDepth = 14, tunnel = 0.035, network = 0.03, scale = 0.5, cavern = 0.9},
+    -- Caves(see world_utils/caveNetwork): hubs, the tunnels and tendrils between them, entrances and small pockets
+    -- tunnel, network, scale and cavern are the noise caves of worlds made before the network
+    caves = {startDepth = 14, tunnel = 0.035, network = 0.03, scale = 0.5, cavern = 0.9, hubChance = 0.4, hubSize = {6, 10.5}, tunnelWidth = {2, 3.5}, tendrils = 2, entranceChance = 0.3, pockets = 0.85},
     flora = {tree = "Cactus", treeChance = 0.4},
     ores = {
         {block = "CopperOre", minDepth = ORE_START_DEPTH, threshold = 0.77},
