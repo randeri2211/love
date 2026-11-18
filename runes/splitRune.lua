@@ -15,7 +15,7 @@ SplitRune.glyph = {
 }
 
 -- Marks: arrows drawn around the rune set the projectile count, and how wide they fan out sets the spread
--- Both scale with how well the rune is drawn(see Rune.WHOLE_PARAMS)
+-- Both scale with how well the rune is drawn(see Rune.LINEAR_PARAMS)
 local MAX_COUNT = 8                 -- Most projectiles one Split can make
 local MIN_SPREAD = math.rad(5)      -- Arrows drawn on top of each other still fan out a little
 local EXTRA_COMPLEXITY = 4          -- Cost of each projectile past the 2 a plain Split makes

@@ -19,6 +19,81 @@ function Spell:new(core, slots)
 end
 
 
+-- Ink: every rune is written with its own ink(drawing.ink, see items/inks), what multiplies its strength
+-- A rune placed in the editor is pending(drawing.pending) until the spell is written with an ink, then it gets that ink
+-- Runes without ink, and runes that werent drawn, count as DEFAULT_INK
+function Spell.inkPower(drawing)
+    local item = ITEM_REGISTRY[drawing and drawing.ink or DEFAULT_INK]
+    return item and item.ink or 1
+end
+
+
+function Spell:drawings()
+    -- Every drawing of the spell, its form's and its runes', child circles too
+    local list = {}
+    if self.coreDrawing ~= nil then
+        table.insert(list, self.coreDrawing)
+    end
+    for i, slot in ipairs(self.slots) do
+        local runeName, child, drawing = self:readSlot(slot)
+        if drawing ~= nil then
+            table.insert(list, drawing)
+        end
+        if child ~= nil then
+            for j, d in ipairs(child:drawings()) do
+                table.insert(list, d)
+            end
+        end
+    end
+    return list
+end
+
+
+function Spell:writeInk(ink)
+    -- The pending runes get the ink, the ones written before keep theirs. Returns how many got it
+    local written = 0
+    for i, drawing in ipairs(self:drawings()) do
+        if drawing.pending then
+            drawing.ink, drawing.pending = ink, nil
+            written = written + 1
+        end
+    end
+    self:markDirty()
+    return written
+end
+
+
+function Spell:clearInk()
+    -- Every rune back to no ink(a copy of a spell, ink isnt copied for free)
+    for i, drawing in ipairs(self:drawings()) do
+        drawing.ink = nil
+    end
+    self:markDirty()
+end
+
+
+function Spell:hasPending()
+    for i, drawing in ipairs(self:drawings()) do
+        if drawing.pending then
+            return true
+        end
+    end
+    return false
+end
+
+
+function Spell:markDirty()
+    -- Recompile it and every child circle
+    self.dirty = true
+    for i, slot in ipairs(self.slots) do
+        local runeName, child = self:readSlot(slot)
+        if child ~= nil then
+            child:markDirty()
+        end
+    end
+end
+
+
 function Spell.isBlocked(formName, runeName)
     -- True when the rune has no effect for this form(see Rune:worksWith)
     -- A form with an allows list only takes the modifiers on it(a Block), triggers always work
@@ -71,7 +146,7 @@ local function drawingToData(drawing)
         end
         table.insert(strokes, flat)
     end
-    return {quality = drawing.quality, marks = drawing.marks, strokes = strokes}
+    return {quality = drawing.quality, marks = drawing.marks, strokes = strokes, ink = drawing.ink}     -- Pending isnt saved
 end
 
 
@@ -95,7 +170,9 @@ local function drawingFromData(data, rune)
     if rune.checkMarks ~= nil and type(data.marks) == "table" then
         marks = rune:checkMarks(data.marks)
     end
-    return {quality = math.max(0, math.min(1, data.quality)), marks = marks, strokes = strokes}
+    -- An ink that isnt an ink item anymore counts as no ink
+    local ink = type(data.ink) == "string" and ITEM_REGISTRY[data.ink] ~= nil and ITEM_REGISTRY[data.ink].ink ~= nil and data.ink or nil
+    return {quality = math.max(0, math.min(1, data.quality)), marks = marks, strokes = strokes, ink = ink}
 end
 
 
@@ -112,8 +189,8 @@ function Spell:compile(depth)
         params[key] = value
     end
     params.form = formRune.form
-    -- A well drawn form hits harder(see Rune.strength)
-    params.damage = params.damage * Rune.strength(self.coreDrawing and self.coreDrawing.quality)
+    -- A well drawn form hits harder(see Rune.strength), its ink makes it stronger or weaker
+    params.damage = params.damage * Rune.strength(self.coreDrawing and self.coreDrawing.quality) * Spell.inkPower(self.coreDrawing)
     params.complexity = formRune.complexity
     params.manaCost = formRune.manaCost
     -- Marks drawn around the form(the aim arrow), before the modifiers so they build on them
@@ -146,7 +223,7 @@ function Spell:compile(depth)
         local runeName, _, drawing = self:readSlot(slot)
         local rune = settings[i] and RUNE_REGISTRY[runeName]
         if rune and rune.affects ~= nil then
-            local strength = Rune.strength(drawing and drawing.quality)
+            local strength = Rune.strength(drawing and drawing.quality) * Spell.inkPower(drawing)
             for j = i + 1, #self.slots do
                 local target = settings[j] and RUNE_REGISTRY[self:readSlot(self.slots[j])]
                 -- An "element" entry changes every element rune(Damage before Fire burns hotter)
@@ -165,7 +242,7 @@ function Spell:compile(depth)
         if settings[i] then
             -- Runes that acted on other runes still apply to the spell too
             if rune.kind == "modifier" then
-                rune:apply(params, self.core, drawing and drawing.quality, settings[i])
+                rune:apply(params, self.core, drawing and drawing.quality, settings[i], Spell.inkPower(drawing))
             elseif rune.kind == "trigger" and childSpell ~= nil then
                 if depth < MAX_SPELL_DEPTH then
                     -- Child complexity counts toward this spell, the child mana is paid when the trigger happens
@@ -485,6 +562,19 @@ end
 
 function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
     -- Spawns every projectile of one cast
+    -- The count can be decimal(a weak Split, see Rune.LINEAR_PARAMS): the whole part always fires, the rest is the chance
+    -- of one more, rolled again for every volley(Repeat)
+    -- A held laser lasts, a roll at the start would decide the whole hold, so it gets the extra beam every time instead,
+    -- as strong and wide as the rest(1.56 is a full beam and one at 56%)
+    castParams.baseCount = castParams.baseCount or castParams.count
+    local base = castParams.baseCount
+    local whole = math.floor(base)
+    local partial = 1
+    if castParams.channel and base > whole then
+        castParams.count, partial = whole + 1, base - whole
+    else
+        castParams.count = whole + ((love.math.random() < base - whole) and 1 or 0)
+    end
     for i = 1, castParams.count do
         -- Spread is the total fan width, projectiles are spaced evenly from one edge to the other
         local angle = 0
@@ -499,6 +589,11 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
         local instance = castParams.form:new(caster, castParams, x, y, dx, dy)
         if instance ~= nil then
             instance.spell = self   -- So triggers can find their child spells
+            if i == castParams.count and partial < 1 then
+                -- The partial beam of a held laser
+                instance.damage = instance.damage * partial
+                instance.width = instance.width * math.max(0.35, partial)
+            end
             instance.knockback = castParams.knockback   -- How hard its hits shove(see Form:hit)
             instance.digCap = caster.combatStats and caster.combatStats.digCap    -- Hardest block it can damage(see Form:digReach)
             -- The caster crit chance, every hit rolls(see magic/crit)

@@ -126,8 +126,9 @@ end
 -- The gravity direction is a direction, blending it would also weaken it
 Rune.FULL_PARAMS = {manaScale = true, complexityScale = true, cooldownScale = true, bounces = true, repeats = true, pierce = true,
     gravityX = true, gravityY = true, recoilDirX = true, recoilDirY = true}
--- Params that scale with quality but have to stay whole numbers(a Split drawn at 70% makes fewer projectiles)
-Rune.WHOLE_PARAMS = {count = true}
+-- Params a rune raises by a part of its gain, in a straight line(a Split at 56% strength makes 1.56 projectiles), they
+-- stay decimal: the projectile count fires its whole part and the rest is a chance of one more(see Spell:spawnVolley)
+Rune.LINEAR_PARAMS = {count = true}
 
 
 function Rune.strength(quality)
@@ -158,9 +159,10 @@ local function blend(before, after, strength)
 end
 
 
-function Rune:apply(params, formName, quality, settings)
+function Rune:apply(params, formName, quality, settings, ink)
     -- Runs the effect for this form, falling back to the default effect(multiply values so modifiers stack)
-    -- A drawn rune effect is scaled by how well it was drawn, settings come from its marks and the runes before it
+    -- A drawn rune effect is scaled by how well it was drawn times the power of the ink it was written with(ink, 1 for
+    -- none), settings come from its marks and the runes before it. Above 1(a strong ink) the effect goes past its full
     if self.effects == nil then
         return
     end
@@ -172,8 +174,8 @@ function Rune:apply(params, formName, quality, settings)
     if effect == nil then
         return
     end
-    local strength = Rune.strength(quality)
-    if strength >= 1 then
+    local strength = Rune.strength(quality) * (ink or 1)
+    if strength == 1 then
         effect(params, settings)
         return
     end
@@ -187,8 +189,8 @@ function Rune:apply(params, formName, quality, settings)
     for key, value in pairs(changed) do
         if Rune.FULL_PARAMS[key] or params[key] == nil then
             params[key] = value
-        elseif Rune.WHOLE_PARAMS[key] then
-            params[key] = math.floor(blend(params[key], value, strength) + 0.5)
+        elseif Rune.LINEAR_PARAMS[key] and type(value) == "number" and type(params[key]) == "number" and value > params[key] then
+            params[key] = params[key] + (value - params[key]) * strength
         else
             params[key] = blend(params[key], value, strength)
         end

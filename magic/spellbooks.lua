@@ -52,7 +52,10 @@ function Spellbooks.duplicate(book, id)
     if entry == nil then
         return nil
     end
-    return Spellbooks.add(book, entry.name .. " copy", Spell.fromData(entry.spell:toData()))
+    -- The copy has no ink, it counts as the plainest ink until it is written(an ink isnt copied for free)
+    local copy = Spell.fromData(entry.spell:toData())
+    copy:clearInk()
+    return Spellbooks.add(book, entry.name .. " copy", copy)
 end
 
 

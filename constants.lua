@@ -447,6 +447,7 @@ RUNE_RENAMES = {Slow = "Decelerate"}
 -- Rune knowledge(see magic/knowledge): unknown runes cant be drawn, discovered ones are drawn from memory,
 -- templated ones have a trace guide and a quality floor
 ALL_RUNES_TEMPLATED = true      -- Every rune starts templated, for testing, until glyph walls and bosses are in the world
+DEFAULT_INK = "SlimeInk"        -- What spells written without ink count as(see items/inks)
 TESTING_SPELLBOOK = true        -- New characters start with a full book of spells to test with, off for the real start:
                                 -- a Bullet with Dig and a Bullet with Damage(see Spellbooks.default)
 STARTING_RUNES = {"Bullet", "Damage", "Dig"}    -- What a new character knows(templated) once that is off

@@ -20,6 +20,8 @@ end
 local MagicCircle = require "magic.magicCircle"
 local Spellbooks = require "magic.spellbooks"
 local Strokes = require "magic.strokes"
+local Inventories = require "items.inventories"
+local Items = require "items.items"
 
 local SpellEditor = {}
 
@@ -95,13 +97,16 @@ end
 
 function SpellEditor:openSpell(entry)
     -- Edits this spellbook entry, it also becomes the spell the shoot key casts
+    -- The editor works on a draft, the spell in the spellbook only changes when the draft is written with an ink
+    -- (see scribe), switching spells or closing the editor drops a draft that wasnt written
     self.entry = entry
-    self.spell = entry.spell        -- Root spell being edited
-    self.inspected = entry.spell    -- Circle the stats panel shows, picked by clicking inside a circle
+    self.spell = Spell.fromData(entry.spell:toData())      -- Root spell being edited, the draft
+    self.changed = false            -- True once the draft differs from the spell in the spellbook
+    self.inspected = self.spell     -- Circle the stats panel shows, picked by clicking inside a circle
     self.bindingKey = false
     self.openTime = love.timer.getTime()    -- The circle draws itself in from this moment
     Spellbooks.select(self.book, entry.id)
-    self:fillSlots(entry.spell)
+    self:fillSlots(self.spell)
     self.target = nil               -- Slot the drawing pad draws into, {spell, slot, depth}, picked by clicking a slot
     self.guide = nil                -- Rune shown faintly on the pad to trace over, picked in the reference
     self:clearDrawing()
@@ -200,13 +205,42 @@ function SpellEditor:spellList(x, y)
         elseif Slab.Button("Bind key") then
             self.bindingKey = true
         end
+
+        -- Writing the draft into the spellbook, one ink item, the ink sets how strong its runes are
+        Slab.NewLine()
+        Slab.Separator()
+        if self.changed then
+            Slab.Text("Changes not written yet", {Color = HOVER_COLOR})
+            local inks = self:inks()
+            if not self.spell:hasPending() then
+                -- Only runes taken out, nothing to ink
+                inks = {}
+                if Slab.Button("Write changes", {W = SPELLS_W - 20}) then
+                    self:scribe(nil)
+                end
+            else
+                Slab.Text("New runes get the ink you write with", {Color = HINT_COLOR})
+            end
+            for i, ink in ipairs(inks) do
+                Slab.PushID("Scribe" .. ink.name)
+                if Slab.Button(string.format("Write with %s (%d)", Items.displayName(ink.name), ink.count), {W = SPELLS_W - 20}) then
+                    self:scribe(ink.name)
+                end
+                Slab.PopID()
+            end
+            if #inks == 0 and self.spell:hasPending() then
+                Slab.Text("Needs ink to write it", {Color = HINT_COLOR})
+                Slab.Text("(2 slime gel make Slime Ink)", {Color = HINT_COLOR})
+            end
+        end
     Slab.EndWindow()
 end
 
 
 -- Drawing Pad Window
 function SpellEditor:drawPad(x, y)
-    -- Draw a rune in the middle and its marks around it, then inscribe it into the picked slot
+    -- Draw a rune in the middle and its marks around it, then place it into the picked slot of the draft(written
+    -- into the spellbook with an ink, see scribe)
     Slab.BeginWindow("SpellDraw", windowOptions("Draw a rune", x, y, DRAW_W, EDITOR_H))
         -- The picked slot can disappear(its trigger cleared), then there is nothing to draw into
         if self.target ~= nil and self:circlePath(self.spell, self.target.spell, "") == nil then
@@ -244,8 +278,8 @@ function SpellEditor:drawPad(x, y)
         Slab.NewLine()
 
         local buttonW = (DRAW_W - 30) / 3
-        local canInscribe = self.target ~= nil and result ~= nil and result.name ~= nil and result.problem == nil
-        if Slab.Button("Inscribe", {W = buttonW, Disabled = not canInscribe}) then
+        local canPlace = self.target ~= nil and result ~= nil and result.name ~= nil and result.problem == nil
+        if Slab.Button("Place", {W = buttonW, Disabled = not canPlace}) then
             self:place(self.target, result.name, {quality = result.quality, marks = result.reading, strokes = self.strokes})
             self:clearDrawing()
         end
@@ -528,7 +562,9 @@ end
 
 -- Circle Window
 function SpellEditor:canvas(x, y)
-    Slab.BeginWindow("SpellCircle", windowOptions("Magic Circle", x, y, CANVAS_W, EDITOR_H))
+    -- The title says when the circle is a draft that isnt in the spellbook yet
+    local title = self.changed and "Magic Circle (draft, not written yet)" or "Magic Circle"
+    Slab.BeginWindow("SpellCircle", windowOptions(title, x, y, CANVAS_W, EDITOR_H))
         -- Window content area in screen coordinates
         local ox, oy = Slab.GetCursorPos({Absolute = true})
         local cw, ch = Slab.GetWindowActiveSize()
@@ -725,6 +761,7 @@ function SpellEditor:place(target, runeName, drawing)
     local rune = RUNE_REGISTRY[runeName]
     local spell = target.spell
 
+    drawing.pending = true     -- Gets its ink when the spell is written(see scribe)
     if target.slot == "core" then
         -- Changing the form keeps every rune, the ones the new form blocks turn inactive
         spell.core = rune.name
@@ -743,6 +780,35 @@ function SpellEditor:place(target, runeName, drawing)
 
     -- Recompiling the root also recompiles every child
     self.spell.dirty = true
+    self.changed = true
+end
+
+
+function SpellEditor:inks()
+    -- The inks the player carries, best first: {name, count, power}
+    local found = {}
+    for name, item in pairs(ITEM_REGISTRY) do
+        if item.ink ~= nil then
+            local count = Inventories.count(player.inventory, name)
+            if count > 0 then
+                table.insert(found, {name = name, count = count, power = item.ink})
+            end
+        end
+    end
+    table.sort(found, function(a, b) return a.power > b.power end)
+    return found
+end
+
+
+function SpellEditor:scribe(ink)
+    -- Writes the draft into the spellbook: its new runes get the ink, which uses one of it
+    -- A draft with no new runes(only runes taken out) is written for free, ink is nil then
+    if ink ~= nil and Inventories.remove(player.inventory, ink, 1) < 1 then
+        return
+    end
+    self.spell:writeInk(ink)
+    self.entry.spell = Spell.fromData(self.spell:toData())
+    self.changed = false
 end
 
 
@@ -750,6 +816,7 @@ function SpellEditor:clear(target)
     if target.slot ~= "core" then
         target.spell.slots[target.slot] = false
         self.spell.dirty = true
+        self.changed = true
     end
 end
 
@@ -796,6 +863,22 @@ function SpellEditor:info(x, y)
             Slab.Text("Complexity: " .. params.complexity .. " (part of main)")
             Slab.Text("Triggered, no cooldown")
         end
+
+        -- Every rune of the circle: how well it was drawn and its ink(see Spell.inkPower), new ones until written
+        Slab.Separator()
+        local function inkLine(name, drawing)
+            local quality = drawing and string.format("%.0f%%", drawing.quality * 100) or "full"
+            local ink = drawing and drawing.pending and "not written" or Items.displayName(drawing and drawing.ink or DEFAULT_INK)
+            local rune = RUNE_REGISTRY[name]
+            Slab.Text(string.format("%s  %s, %s", name, quality, ink), {Color = rune and rune.color or HINT_COLOR})
+        end
+        inkLine(inspected.core, inspected.coreDrawing)
+        for i, slot in ipairs(inspected.slots) do
+            local runeName, child, drawing = inspected:readSlot(slot)
+            if runeName then
+                inkLine(runeName, drawing)
+            end
+        end
         Slab.NewLine()
 
         -- Stats every form has, unless the form hides them(a Block deals no damage) or shows them itself(a Self duration)
@@ -814,7 +897,13 @@ function SpellEditor:info(x, y)
             Slab.Text(string.format("Terrain damage: %.1f (%.0f%%)", damage * params.terrainDamage, params.terrainDamage * 100))
         end
         if not hidden.count then
-            Slab.Text("Count: " .. params.count)
+            -- A decimal count fires its whole part and has a chance at one more
+            local whole = math.floor(params.count)
+            if params.count > whole + 0.005 then
+                Slab.Text(string.format("Count: %.2f (%d, %.0f%% chance of %d)", params.count, whole, (params.count - whole) * 100, whole + 1))
+            else
+                Slab.Text("Count: " .. whole)
+            end
         end
         if params.repeats > 1 then
             Slab.Text("Repeats: " .. params.repeats)
@@ -888,6 +977,7 @@ function SpellEditor:info(x, y)
             self.spell.slots = {}
             self:fillSlots(self.spell)
             self.spell.dirty = true
+            self.changed = true
             self.inspected = self.spell
             self.target = nil
         end

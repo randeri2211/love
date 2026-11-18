@@ -546,7 +546,17 @@ Gaps found, and what was decided:
 | 6 | No guidance for the first steps | Open |
 | 7 | Long wood grind before the first wand | Tuning, open |
 
-**Ink (Decided):** runes are inscribed with ink. A rune's strength is its drawing quality times the ink's power
+**Ink (Done)** (`items/inks`, `Spell.inkPower`, `Spell:writeInk`, the spell editor): **every rune has its own ink**
+(its drawing's `ink`, the form's too). The editor works on a draft: a rune placed is pending, "Write with ..." gives every
+pending rune that ink and uses one ink item, the runes written before keep theirs, so a spell can mix inks. A draft with
+only runes taken out is written for free, an unwritten draft is dropped. The info panel lists each rune's quality and
+ink. Slime Ink (power 0.8, 2 slime gel by hand) and Bone Ink (power 1.0, 2 bones and 1 gel by hand, a placeholder for
+the better inks). Inks are saved with the runes, a copy has none, a Bound Scroll keeps them. Ink changes no costs.
+**Split counts are decimal:** a Split adds its gain times its strength (quality x ink), one Split at 70% in Slime Ink
+makes 1.56 projectiles, two make 2.43. A cast fires the whole part and the rest is the chance of one more, rolled every
+volley. A held laser gets the extra beam every time instead, at that part of the damage and thinner (1.56 is a full beam
+and one at 56%), so a hold isnt decided by one roll.
+Runes are inscribed with ink. A rune's strength is its drawing quality times the ink's power
 (`Rune.strength`), so a 100% rune in slime ink is weaker than a 100% rune in a better ink.
 - **Used when inscribing:** saving a spell in the editor costs ink for every rune; the spell keeps the ink it was
   written with until it is rewritten with another.
