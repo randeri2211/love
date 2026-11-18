@@ -84,6 +84,12 @@ local function addParts(effect, stack, share)
         if part.digCap ~= nil then
             effect.digCap = math.max(effect.digCap, part.digCap)
         end
+        -- Spell modifiers of a part(the Slime Core's Gravity) come from the main hand only, an off hand doesnt cast
+        if share >= 1 then
+            for j, mod in ipairs(part.spells or {}) do
+                table.insert(effect.spells, mod)
+            end
+        end
         for key, value in pairs(part.bonus or {}) do
             if MULTIPLIED[key] then
                 effect[key] = effect[key] * (1 + (value - 1) * share)
@@ -97,7 +103,8 @@ end
 
 local function single(tool)
     -- What one tool does on its own in the main hand: its kind(wands faster and weaker) and all of its parts
-    local effect = {digCap = BARE_HANDS_DIG_CAP, damage = 1, cooldown = 1, manaCost = 1, knockback = 0, complexity = 0, manaRegen = 0}
+    local effect = {digCap = BARE_HANDS_DIG_CAP, damage = 1, cooldown = 1, manaCost = 1, knockback = 0, complexity = 0, manaRegen = 0,
+        spells = {}}
     local kind = TOOL_KINDS[ITEM_REGISTRY[tool.item].tool]
     effect.damage = effect.damage * kind.damage
     effect.cooldown = effect.cooldown * kind.cooldown
@@ -113,7 +120,8 @@ function Tools.effect(equipment)
     -- (-20% damage on its own is -10% more on top of the main wand), empty hands cast with BARE_HANDS_DIG_CAP
     local main = equipment and equipment.mainHand
     if not Tools.isValid(main) then
-        return {digCap = BARE_HANDS_DIG_CAP, damage = 1, cooldown = 1, manaCost = 1, knockback = 0, complexity = 0, manaRegen = 0}
+        return {digCap = BARE_HANDS_DIG_CAP, damage = 1, cooldown = 1, manaCost = 1, knockback = 0, complexity = 0, manaRegen = 0,
+            spells = {}}
     end
     local effect = single(main)
     local off = equipment.offHand
@@ -210,6 +218,9 @@ function Tools.describe(stack)
         local lines = {{text = PART_KINDS[part.kind]}}
         if part.digCap ~= nil then
             table.insert(lines, {text = string.format("Dig cap  %d", part.digCap), good = true})
+        end
+        for i, text in ipairs(part.text or {}) do
+            table.insert(lines, {text = text, good = true})     -- What its spell modifiers do(the Slime Core)
         end
         for i, line in ipairs(Tools.bonusLines(part.bonus or {})) do
             table.insert(lines, line)

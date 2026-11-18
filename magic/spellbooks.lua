@@ -166,7 +166,19 @@ end
 
 function Spellbooks.default()
     -- What a new player starts with, bound to keys 1-9
+    -- A real start is two spells from the starting runes(STARTING_RUNES), TESTING_SPELLBOOK gives a full book to try things
     local book = Spellbook()
+    if not TESTING_SPELLBOOK then
+        local starting = {
+            {"Digging bullet", Spell:new("Bullet", {"Dig"})},
+            {"Damage bullet", Spell:new("Bullet", {"Damage"})},
+        }
+        for i, default in ipairs(starting) do
+            local entry = Spellbooks.add(book, default[1], default[2])
+            book.bindings[tostring(i)] = entry.id
+        end
+        return book
+    end
     -- Bullet with a Pierce rune(2 pierces) that explodes on every hit, shows where each pierce hits
     local piercing = Spell:new("Bullet", {
         {"Pierce", nil, drawing = {quality = 1, marks = {pierce = 2}, strokes = {}}},

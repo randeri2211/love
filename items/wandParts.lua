@@ -27,6 +27,17 @@ for i, core in ipairs(CORES) do
         part = {kind = "core", digCap = core.digCap, bonus = {complexity = core.complexity}}})
 end
 
+-- The Slime Core, a rare slime drop(see entities/slime) between copper and iron: the spells of the main circle fall
+-- in an arc and bounce once more, like a slime(the spells they trigger dont)
+registerItem("SlimeCore", {displayName = "Slime Core", icon = "core", tint = {0.45, 0.9, 0.45, 1},
+    part = {kind = "core", digCap = 23, bonus = {complexity = 7},
+        spells = {
+            {form = "Bullet", param = "gravityScale", add = 1, main = true},
+            {form = "Bullet", param = "bounces", add = 1, main = true},
+            {form = "Laser", param = "bend", add = 1, main = true},
+        },
+        text = {"Main circle spells arc with gravity", "Bullets bounce once more"}}})
+
 -- End caps for wands and tips for staves, one per metal, a tip does twice what the cap of its metal does
 local ENDS = {
     {name = "Wooden", tint = {0.78, 0.58, 0.38, 1}, cap = {}, tip = {}},

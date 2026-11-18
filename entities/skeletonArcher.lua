@@ -11,7 +11,7 @@ registerEntity("SkeletonArcher", SkeletonArcher)
 SkeletonArcher.entityName = "SkeletonArcher"
 SkeletonArcher.skin = "skeleton"
 SkeletonArcher.hp = SKELETON_HP
-SkeletonArcher.loot = {}
+SkeletonArcher.loot = {{item = "Bone", min = 1, max = 2, chance = 0.8}}
 SkeletonArcher.xpReward = SKELETON_XP
 -- Where its level's stat points go: arrows hit harder(Strength), then tougher, a little faster
 SkeletonArcher.build = {strength = 5, constitution = 3, swiftness = 2}

@@ -519,6 +519,57 @@ same code that applies the player's stats.
 
 ---
 
+## Early game review (up to the first boss)
+
+A new player's first hours, walked through the code as it is (with the testing switches off):
+
+1. **Spawn:** 100 hp, 100 mana, an empty inventory, Bullet, Damage and Dig known. Bare hands dig cap 10: dirt, sand,
+   snow, sandstone, not stone.
+2. **Wood:** trees for wood, 10 makes a Woodworking Station by hand, torches from wood.
+3. **First wand:** rod, Wooden Core, Wooden Cap and the Arcane Table, about 37 wood. Dig cap 15 opens stone and copper.
+4. **Night 1:** zombies, slimes, skeleton archers. Kills give only XP, death sends the player back to world spawn.
+5. **Day 2:** 20 stone and 4 wood make a Forge, copper from 20 deep, smelted with wood. Copper armor, a Copper Core
+   (cap 21) opens deepstone and iron.
+6. **Day 3+:** iron armor, the Iron Core (gold), and the whole mana network unlocks (the battery is 8 iron).
+7. **Then gold**, the Gold Core opens deep gold, and **arcanite needs cap 36 from a boss drop core: the first boss is
+   the wall at the end of the early game.**
+
+Gaps found, and what was decided:
+
+| # | Gap | Decision |
+|---|---|---|
+| 1 | No first boss: arcanite and everything after are blocked | To design |
+| 2 | Rune learning is slow (mage tower glyph walls only) | Glyphs go in **boss arenas**, wait for bosses. Some runes are **boss only** (Laser) |
+| 3 | Enemies drop nothing | Slimes: **slime gel** (torches, early ink) and rarely a **slime core**. Skeletons: **bones**. Zombies: **rotten flesh** (regeneration potions later) |
+| 4 | The starting spellbook has spells using runes a new player doesnt know | **Done:** a flag (`TESTING_SPELLBOOK`): the full testing book while on, Bullet + Dig and Bullet + Damage when off |
+| 5 | No bed or spawn point, death has no weight | Open |
+| 6 | No guidance for the first steps | Open |
+| 7 | Long wood grind before the first wand | Tuning, open |
+
+**Ink (Decided):** runes are inscribed with ink. A rune's strength is its drawing quality times the ink's power
+(`Rune.strength`), so a 100% rune in slime ink is weaker than a 100% rune in a better ink.
+- **Used when inscribing:** saving a spell in the editor costs ink for every rune; the spell keeps the ink it was
+  written with until it is rewritten with another.
+- **Spells without ink** (existing saves, the starting spells) count as slime ink.
+- **Proposed tiers:** Slime Ink (power 0.8, slime gel), a middle ink (1.0, from bone ash), a late mana or arcanite ink
+  (about 1.2, from a powered station).
+
+**Drops (Done):** slimes drop 1 gel (small 60%), medium 1-2, big 2-3; skeletons 1-2 bones (80%); zombies and their
+variants rotten flesh (60%). Wood and gel make 8 torches. The Slime Core: dig cap 23, +7 complexity, Gravity and one
+more bounce on main circle Bullets, a curve on main circle Lasers (`main` spell modifiers, see `Spell.applyMods`).
+- **Slimes:** slime gel. Proposed: wood and gel make 8 torches (wood alone still makes 4), and gel makes Slime Ink.
+  Rarely a **Slime Core**: a wand core between copper and iron (dig cap about 23, complexity between), that adds
+  **Gravity** to every spell of the main circle (arcing, bouncing shots). Drops from **2% of medium slimes and 1% of
+  big ones** (a big slime splits into two medium ones, so it gets more chances that way).
+- **Skeletons:** bones. Proposed uses: bone ash for the middle ink, a bone cap or tip with crit chance, light bone armor
+  before copper.
+- **Zombies:** rotten flesh, for regeneration potions once alchemy exists.
+
+**Rune pacing (proposed):** until bosses exist, mage tower glyph walls keep teaching the common runes, the strong ones
+(Laser, and probably Repeat, Trap and the triggers) are boss only.
+
+---
+
 ## Build order (proposed)
 
 1. Trees, plants and enemy drops (materials) **Done**

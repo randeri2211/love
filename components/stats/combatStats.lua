@@ -115,6 +115,9 @@ local function combatStats(entity)
     -- Trinkets, the focus and set bonuses change casting too(see Equipments.casting)
     local casting = entity.equipment and Equipments.casting(entity.equipment) or {manaCost = 1, cooldown = 1, complexity = 0, manaRegen = 0, spells = {}}
     combatStats.spellMods = casting.spells      -- Changes to the spells cast, by form(see Spell:shoot)
+    for i, mod in ipairs(combatStats.tool.spells or {}) do
+        table.insert(combatStats.spellMods, mod)    -- And the ones of the wand or staff's parts(a Slime Core)
+    end
     combatStats.maxComplexity = combatStats.maxComplexity + casting.complexity
     entity.manaBar.manaRegen = entity.manaBar.manaRegen + casting.manaRegen
     combatStats.spellDamage = combatStats.magicDamage * combatStats.tool.damage

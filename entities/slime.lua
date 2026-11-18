@@ -8,7 +8,15 @@ local Levels = require "components.stats.levels"
 -- they die, medium into two small ones(SLIME_SIZES), so a group of them is what Area spells and Split shots are for
 -- Their color comes from the biome they appear in(green, sand in the desert, pale in the snow)
 local Slime = Enemy:new()
-Slime.loot = {}
+Slime.loot = {}         -- By size below(see Slime.LOOT)
+
+-- What each size drops: gel, and rarely a Slime Core(see items/wandParts), a big slime splits into two medium ones
+-- that each roll their own
+Slime.LOOT = {
+    small = {{item = "SlimeGel", chance = 0.6}},
+    medium = {{item = "SlimeGel", min = 1, max = 2}, {item = "SlimeCore", chance = 0.02}},
+    big = {{item = "SlimeGel", min = 2, max = 3}, {item = "SlimeCore", chance = 0.01}},
+}
 Slime.size = "medium"
 -- Where its level's stat points go: tougher first, then a harder touch, a little faster
 Slime.build = {constitution = 5, strength = 4, swiftness = 1}
@@ -217,6 +225,7 @@ for size, name in pairs(Slime.NAMES) do
     local class = Slime:new()
     class.size = size
     class.entityName = name
+    class.loot = Slime.LOOT[size]
     registerEntity(name, class)
 end
 

@@ -469,9 +469,10 @@ function Spell.applyMods(castParams, form, caster)
     -- What the caster wears changes the cast(trinkets, a focus, set bonuses, see Equipments.casting):
     -- every modifier for this form(or any form) multiplies and adds to one param, when names a param it needs above
     -- a value first(above, 0 by default), so a Fire focus only changes spells with Fire
+    -- A modifier with main changes only the main circle, not the spells it triggers(a Slime Core)
     local mods = caster.combatStats and caster.combatStats.spellMods
     for i, mod in ipairs(mods or {}) do
-        if mod.form == nil or mod.form == form then
+        if (mod.form == nil or mod.form == form) and not (mod.main and castParams.triggered) then
             local need = mod.when == nil or (castParams[mod.when] or 0) > (mod.above or 0)
             local value = castParams[mod.param]
             if need and type(value) == "number" then

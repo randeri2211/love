@@ -10,7 +10,7 @@ local Levels = require "components.stats.levels"
 -- A slow humanoid that shambles toward the player with its arms out, the same body as the player
 local Zombie = Enemy:new()
 registerEntity("Zombie", Zombie)
-Zombie.loot = {}        -- Nothing yet(see Enemy.loot), drops come with more enemies
+Zombie.loot = {{item = "RottenFlesh", chance = 0.6}}     -- Every variant drops it too(see Enemy.loot)
 Zombie.skin = ZOMBIE_SKIN
 Zombie.hp = ZOMBIE_HP
 Zombie.xpReward = ZOMBIE_XP     -- Times its level, to the player when it dies
