@@ -10,6 +10,9 @@ local TRINKETS = {
         effect = {spells = {{param = "count", add = 1, when = "count", above = 1}}, text = {"Split spells fan one more"}}},
     {name = "Feather", displayName = "Feather Charm", tint = {0.95, 0.95, 0.9, 1},
         effect = {spells = {{form = "Bullet", param = "speed", mult = 1.3}}, text = {"Bullets fly 30% faster"}}},
+    -- One more cast at once(see magic/playerCasting), a placeholder until where it comes from is decided
+    {name = "TwinSigil", displayName = "Twin Sigil", tint = {1, 0.75, 0.4, 1},
+        effect = {castSlots = 1, text = {"Cast one more spell at once"}}},
     -- Shows the ley lines(see world_utils/leyLines), for finding where a mana network can tap one
     {name = "LeyGoggles", displayName = "Ley Goggles", tint = {0.85, 0.6, 1, 1},
         effect = {leySight = true, text = {"Shows ley lines", "and the mana they give"}}},

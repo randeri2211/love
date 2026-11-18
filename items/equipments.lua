@@ -117,12 +117,13 @@ end
 function Equipments.casting(equipment)
     -- What the effects do to casting: mana cost and cooldown multipliers, complexity and mana regen added,
     -- and every spell modifier(see Spell:shoot)
-    local casting = {manaCost = 1, cooldown = 1, complexity = 0, manaRegen = 0, spells = {}}
+    local casting = {manaCost = 1, cooldown = 1, complexity = 0, manaRegen = 0, castSlots = 0, spells = {}}
     for i, effect in ipairs(Equipments.effects(equipment)) do
         casting.manaCost = casting.manaCost * (effect.manaCost or 1)
         casting.cooldown = casting.cooldown * (effect.cooldown or 1)
         casting.complexity = casting.complexity + (effect.complexity or 0)
         casting.manaRegen = casting.manaRegen + (effect.manaRegen or 0)
+        casting.castSlots = casting.castSlots + (effect.castSlots or 0)     -- More casts at once(see magic/playerCasting)
         for j, mod in ipairs(effect.spells or {}) do
             table.insert(casting.spells, mod)
         end

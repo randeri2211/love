@@ -63,7 +63,7 @@ function love.update(dt)
             end
             -- A dead player waits for the respawn, it cant cast or build
             if not player_control or player:isDead() then
-                PlayerCasting.update(player, nil, false, dt)    -- A wind-up or a held beam stops
+                PlayerCasting.update(player, {}, dt)    -- Every wind-up and held beam stops
             end
             if player_control and not player:isDead() then
 
@@ -73,14 +73,26 @@ function love.update(dt)
 
                 -- Holding the cast button builds a cast circle and casts when it is done, over and over(see magic/playerCasting)
                 -- (with a stack in the hand of the character screen the click throws it instead)
-                local spell = Spellbooks.selectedSpell(player.spellbook)
-                local pressed = love.mouse.isDown(CAST_BUTTON) and not overWindow and not holdingStack
-                -- A Bound Scroll in the hotbar casts its spell with the place button instead(see items/scrolls)
+                -- Every input that casts(see magic/playerCasting): the cast button with the selected spell, aimed as that spell
+                -- is set to, a Bound Scroll in the hotbar with the place button, and every quick-cast key with its spell
+                local book = player.spellbook
+                local selected = Spellbooks.selectedEntry(book)
+                local free = not overWindow and not holdingStack
+                local inputs = {{id = "cast", spell = selected and selected.spell, aim = selected and selected.aim or "mouse",
+                    pressed = love.mouse.isDown(CAST_BUTTON) and free}}
                 local scroll = Scrolls.held(player)
-                if scroll ~= nil and love.mouse.isDown(PLACE_BUTTON) and not overWindow and not holdingStack then
-                    spell, pressed = scroll, true
+                if scroll ~= nil then
+                    table.insert(inputs, {id = "scroll", spell = scroll, aim = "mouse", pressed = love.mouse.isDown(PLACE_BUTTON) and free})
                 end
-                PlayerCasting.update(player, spell, pressed, dt)
+                local typing = Slab.IsAnyInputFocused() or uihandler.spellEditor ~= nil
+                for key, id in pairs(book.quick) do
+                    local entry = Spellbooks.find(book, id)
+                    if entry ~= nil then
+                        table.insert(inputs, {id = "key " .. key, spell = entry.spell, aim = entry.aim or "mouse",
+                            pressed = not typing and love.keyboard.isDown(key)})
+                    end
+                end
+                PlayerCasting.update(player, inputs, dt)
 
                 -- Holding the place button places the selected hotbar block under the mouse, a few a second
                 placeTimer = math.max(0, placeTimer - dt)

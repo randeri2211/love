@@ -113,7 +113,8 @@ local function combatStats(entity)
     -- What every spell gets multiplied by, the stats and the wand or staff together
     -- Spells(Spell:getDamage, getCooldown, getManaCost) and the character screen both read these
     -- Trinkets, the focus and set bonuses change casting too(see Equipments.casting)
-    local casting = entity.equipment and Equipments.casting(entity.equipment) or {manaCost = 1, cooldown = 1, complexity = 0, manaRegen = 0, spells = {}}
+    local casting = entity.equipment and Equipments.casting(entity.equipment) or {manaCost = 1, cooldown = 1, complexity = 0, manaRegen = 0, castSlots = 0, spells = {}}
+    combatStats.castSlots = casting.castSlots     -- Casts it can run at once past the first(see magic/playerCasting)
     combatStats.spellMods = casting.spells      -- Changes to the spells cast, by form(see Spell:shoot)
     for i, mod in ipairs(combatStats.tool.spells or {}) do
         table.insert(combatStats.spellMods, mod)    -- And the ones of the wand or staff's parts(a Slime Core)

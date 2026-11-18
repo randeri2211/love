@@ -35,6 +35,7 @@ local GAP = 10
 
 -- Colors(circle colors live in MagicCircle)
 local HOVER_COLOR = {1, 1, 0.3, 1}
+local SELECTED_COLOR = {0.45, 0.32, 0.75, 1}    -- The picked option of a choice(how a spell aims)
 local INSPECT_COLOR = {0.8, 0.85, 1, 0.6}     -- Ring around the circle the stats panel shows
 local HINT_COLOR = {0.6, 0.6, 0.6, 1}
 local STAGE_COLOR = {0.07, 0.08, 0.12, 1}
@@ -87,6 +88,8 @@ function SpellEditor:new(book)
     editor.targets = {}             -- Clickable parts of the circle, rebuilt every frame
     editor.circleTargets = {}       -- Every circle(main and children) as a click area, rebuilt every frame
     editor.bindingKey = false       -- True while waiting for a key to bind to the spell
+    editor.bindingQuick = false     -- True while waiting for a quick-cast key for the spell
+    editor.quickHint = nil          -- Why the last quick-cast key was refused
     editor.closed = false
     editor.circleCanvas = nil       -- Created on first draw with the window size
     editor:openSpell(Spellbooks.selectedEntry(book))
@@ -104,6 +107,8 @@ function SpellEditor:openSpell(entry)
     self.changed = false            -- True once the draft differs from the spell in the spellbook
     self.inspected = self.spell     -- Circle the stats panel shows, picked by clicking inside a circle
     self.bindingKey = false
+    self.bindingQuick = false
+    self.quickHint = nil
     self.openTime = love.timer.getTime()    -- The circle draws itself in from this moment
     Spellbooks.select(self.book, entry.id)
     self:fillSlots(self.spell)
@@ -122,6 +127,16 @@ end
 
 function SpellEditor:handleKey(key)
     -- Keys the editor uses while open, true when the key was used
+    if self.bindingQuick then
+        -- Any key the game doesnt use casts the spell while held(see magic/playerCasting)
+        if Spellbooks.isFreeKey(key) then
+            Spellbooks.setQuickKey(self.book, self.entry.id, key)
+            self.bindingQuick, self.quickHint = false, nil
+        else
+            self.quickHint = key:upper() .. " is used by the game"
+        end
+        return true
+    end
     if self.bindingKey then
         if key:match("^%d$") then
             Spellbooks.bind(self.book, key, self.entry.id)
@@ -202,8 +217,38 @@ function SpellEditor:spellList(x, y)
         if self.bindingKey then
             Slab.Text("Press 0-9 to bind", {Color = HOVER_COLOR})
             Slab.Text("Esc to cancel", {Color = HINT_COLOR})
-        elseif Slab.Button("Bind key") then
+        elseif Slab.Button("Bind number") then     -- The number key that picks the spell for the cast button
             self.bindingKey = true
+        end
+
+        -- Quick-cast: a key that casts this spell while held, besides picking it and the cast button
+        local quick = Spellbooks.quickKeyFor(self.book, self.entry.id)
+        Slab.NewLine()
+        Slab.Text("Quick-cast: " .. (quick and quick:upper() or "none"))
+        if self.bindingQuick then
+            Slab.Text("Press a key, Esc to cancel", {Color = HOVER_COLOR})
+            if self.quickHint ~= nil then
+                Slab.Text(self.quickHint, {Color = HINT_COLOR})
+            end
+        else
+            if Slab.Button(quick and "Change key" or "Set key", {W = (SPELLS_W - 30) / 2}) then
+                self.bindingQuick, self.quickHint = true, nil
+            end
+            Slab.SameLine()
+            if Slab.Button("Clear key", {W = (SPELLS_W - 30) / 2, Disabled = quick == nil}) then
+                Spellbooks.setQuickKey(self.book, self.entry.id, nil)
+            end
+        end
+        -- How it aims, the mouse or the movement keys(W, A, S, D, the way the player faces when none is held)
+        Slab.Text("Aim")
+        local aim = self.entry.aim or "mouse"
+        for i, option in ipairs({{"mouse", "Mouse"}, {"keys", "WASD"}}) do
+            if i > 1 then
+                Slab.SameLine()
+            end
+            if Slab.Button(option[2], {W = (SPELLS_W - 30) / 2, Color = aim == option[1] and SELECTED_COLOR or nil}) then
+                self.entry.aim = option[1]
+            end
         end
 
         -- Writing the draft into the spellbook, one ink item, the ink sets how strong its runes are

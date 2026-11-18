@@ -22,6 +22,7 @@ function Laser:new(caster, params, x, y, dirX, dirY)
     laser.terrainDamage = params.terrainDamage
     laser.reach = params.reach
     laser.width = params.width
+    laser.aimOffset = params.aimOffset or 0     -- The aim arrow's turn, a held beam keeps it(see updateHeld)
     laser.bounces = params.bounces   -- Rebound, reflections off surfaces
     laser.bend = params.bend         -- Gravity, how much the beam curves
     laser.gravityX, laser.gravityY = params.gravityX, params.gravityY   -- Way it curves, down unless Gravity has an arrow
@@ -182,7 +183,10 @@ function Laser:updateHeld(dt)
     -- Where it aims: a caster that aims on its own(a Spell Turret at its target, see blocks/spellTurret) says where,
     -- and lets go when it has nothing to aim at, the player aims with the mouse
     local mx, my
-    if caster.aimPoint ~= nil then
+    if self.aim ~= nil then
+        local dx, dy = self.aim()       -- Its cast's own aim(see magic/playerCasting)
+        mx, my = cx + dx * 100, cy + dy * 100
+    elseif caster.aimPoint ~= nil then
         mx, my = caster:aimPoint()
         if mx == nil then
             self:release()
@@ -197,6 +201,11 @@ function Laser:updateHeld(dt)
         ax, ay, size = 1, 0, 1
     end
     ax, ay = ax / size, ay / size
+    -- Turned by the aim arrow like a cast(mirrored when aiming left, see Spell:shoot), then by its place in the fan
+    if self.aimOffset ~= 0 then
+        local offset = ax < 0 and -self.aimOffset or self.aimOffset
+        ax, ay = ax * math.cos(offset) - ay * math.sin(offset), ax * math.sin(offset) + ay * math.cos(offset)
+    end
     local c, s = math.cos(self.holdAngle), math.sin(self.holdAngle)
     local dx, dy = ax * c - ay * s, ax * s + ay * c
     if caster.castOrigin ~= nil then

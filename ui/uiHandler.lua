@@ -47,8 +47,8 @@ function UIHandler:escape()
         self:toggleCharacterScreen()
     elseif self.spellEditor ~= nil then
         -- Escape cancels binding a key first, then closes the editor
-        if self.spellEditor.bindingKey then
-            self.spellEditor.bindingKey = false
+        if self.spellEditor.bindingKey or self.spellEditor.bindingQuick then
+            self.spellEditor.bindingKey, self.spellEditor.bindingQuick = false, false
         else
             self:toggleSpellEditor()
         end

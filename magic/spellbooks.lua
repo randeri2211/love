@@ -17,7 +17,8 @@ end
 
 function Spellbooks.add(book, name, spell)
     -- Adds a spell and returns its entry, the first spell added becomes the selected one
-    local entry = {id = book.nextId, name = name, spell = spell}
+    -- aim is how its casts aim: "mouse", or "keys" for the movement keys(see magic/playerCasting)
+    local entry = {id = book.nextId, name = name, spell = spell, aim = "mouse"}
     book.nextId = book.nextId + 1
     table.insert(book.spells, entry)
     if book.selected == nil then
@@ -37,6 +38,11 @@ function Spellbooks.remove(book, id)
     for key, boundId in pairs(book.bindings) do
         if boundId == id then
             book.bindings[key] = nil
+        end
+    end
+    for key, boundId in pairs(book.quick) do
+        if boundId == id then
+            book.quick[key] = nil
         end
     end
     if book.selected == id then
@@ -125,16 +131,60 @@ function Spellbooks.selectByKey(book, key)
 end
 
 
+-- Quick-cast keys and aiming
+
+function Spellbooks.quickKeyFor(book, id)
+    -- The quick-cast key of a spell, nil for none
+    for key, boundId in pairs(book.quick) do
+        if boundId == id then
+            return key
+        end
+    end
+    return nil
+end
+
+
+function Spellbooks.isFreeKey(key)
+    -- True when a key isnt used by the game, so a spell can be quick-cast with it: no game or debug key, no number(hotbar)
+    if key:match("^%d$") then
+        return false
+    end
+    for name, value in pairs(_G) do
+        if type(name) == "string" and name:match("_KEY$") and value == key then
+            return false
+        end
+    end
+    return key ~= "lshift" and key ~= "rshift" and key ~= "y" and key ~= "u"      -- Shift picks spells, y and u test stats
+end
+
+
+function Spellbooks.setQuickKey(book, id, key)
+    -- Binds a spell to a quick-cast key(nil unbinds it), a key casts one spell
+    for boundKey, boundId in pairs(book.quick) do
+        if boundId == id then
+            book.quick[boundKey] = nil
+        end
+    end
+    if key ~= nil then
+        book.quick[key] = id
+    end
+end
+
+
 -- Saving
 
 function Spellbooks.toData(book)
     -- Plain data for saving, spells become rune names(see Spell:toData)
     local data = {spells = {}, bindings = {}, selected = book.selected, nextId = book.nextId}
     for i, entry in ipairs(book.spells) do
-        table.insert(data.spells, {id = entry.id, name = entry.name, spell = entry.spell:toData()})
+        table.insert(data.spells, {id = entry.id, name = entry.name, spell = entry.spell:toData(), aim = entry.aim})
     end
     for key, id in pairs(book.bindings) do
         data.bindings[key] = id
+    end
+    data.quick = {}
+    for key, id in pairs(book.quick) do
+        data.quick[key] = id
     end
     return data
 end
@@ -145,7 +195,8 @@ function Spellbooks.fromData(data)
     local book = Spellbook()
     for i, entryData in ipairs(data.spells or {}) do
         if type(entryData.spell) == "table" and type(entryData.id) == "number" then
-            table.insert(book.spells, {id = entryData.id, name = tostring(entryData.name or "Spell"), spell = Spell.fromData(entryData.spell)})
+            table.insert(book.spells, {id = entryData.id, name = tostring(entryData.name or "Spell"), spell = Spell.fromData(entryData.spell),
+                aim = entryData.aim == "keys" and "keys" or "mouse"})
             book.nextId = math.max(book.nextId, entryData.id + 1)
         end
     end
@@ -156,6 +207,11 @@ function Spellbooks.fromData(data)
     for key, id in pairs(data.bindings or {}) do
         if Spellbooks.find(book, id) ~= nil then
             book.bindings[key] = id
+        end
+    end
+    for key, id in pairs(type(data.quick) == "table" and data.quick or {}) do
+        if type(key) == "string" and Spellbooks.find(book, id) ~= nil then
+            book.quick[key] = id
         end
     end
     book.selected = data.selected

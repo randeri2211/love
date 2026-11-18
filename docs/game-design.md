@@ -174,6 +174,18 @@ This is the same for every block with a screen and slots (arcane table, future s
 - **Enemies cast too**(magic/enemyCasting): a mana bar and regen, a spell list(one spell for now), the same wind-up in front of them,
   only a full freeze breaks their cast, their spells hit the player and other enemies. The first real casting enemy is still to be picked.
 
+### Quick-cast keys, aim and the cast queue (Done)
+(`magic/playerCasting`, `Spellbooks.setQuickKey`, the spell editor)
+- **Quick-cast keys:** any spell can be bound to a key the game doesnt use ("Set key" in the editor, refused keys say
+  so). Holding it casts that spell, with the normal wind-up, repeating while held, lasers held while it is, besides
+  picking spells with the number keys and casting with the mouse.
+- **Aim per spell:** Mouse, or WASD: the movement keys and their diagonals, the way the player faces when none is held.
+  A held laser aimed by keys follows the keys. Opens movement spells (recoil jets, jump boosts) without the mouse.
+- **The cast queue:** every input (the cast button, the scroll button, each quick-cast key) runs a cast of its own. A
+  caster has **one cast slot**, more from gear (`castSlots`, the placeholder **Twin Sigil** trinket gives +1).
+  Starting a cast when every slot is taken **halts the oldest**, which stays halted until its input is let go: with two
+  slots, click, then Q, then R halts the click.
+
 ## Gear
 
 ### Ores (Done in part)
