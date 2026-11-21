@@ -338,6 +338,10 @@ function UIHandler:draw()
             self.hud = Hud:new(player)
         end
         self.hud:draw(Spellbooks.selectedEntry(player.spellbook))
+        local boss = map.enemies:boss()
+        if boss ~= nil then
+            self.hud:drawBoss(boss)
+        end
         self:drawToasts()
         if player:isDead() then
             self:drawDeath()

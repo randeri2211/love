@@ -10,6 +10,8 @@ local ManaNetwork = require "world_utils.manaNetwork"
 -- processes that need mana, and takes its inputs from the chests next to it and puts its outputs in them
 -- A station keeps {input, fuel, output}(stacks or false), progress(seconds into the current item) and burn(seconds of
 -- fuel left), its block update runs this(near the player or in a running chunk, see world_utils/simulation)
+-- A process with its own mana(the Infusion Table's 1000) takes that much over its time instead of STATION_MANA, and a
+-- station that only works on mana(manaOnly) has no fuel to fall back on, it waits until the network has enough
 local Processing = {}
 
 
@@ -33,6 +35,15 @@ function Processing.ofStation(station)
         end
     end
     return list
+end
+
+
+function Processing.manaRate(process)
+    -- Mana a second a powered station takes for a process: its own mana spread over the time it takes powered
+    if process ~= nil and process.mana ~= nil then
+        return process.mana * STATION_POWERED_SPEED / process.time
+    end
+    return STATION_MANA
 end
 
 
@@ -131,8 +142,11 @@ function Processing.update(station, dt)
     end
 
     -- Paid for: mana when powered, else fuel(a new piece is burned when the last one is out)
-    if powered and ManaNetwork.drain(node, STATION_MANA * dt) then
+    if powered and ManaNetwork.drain(node, Processing.manaRate(process) * dt) then
         station.state = "Working (powered)"
+    elseif station.info.manaOnly or process.mana ~= nil then
+        station.state = "Needs more mana"       -- Nothing to burn instead, it waits for the batteries to fill
+        return
     else
         powered = false
         if station.burn <= 0 then

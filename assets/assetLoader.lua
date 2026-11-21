@@ -38,7 +38,8 @@ TILESHEET = artImage(ART_FOLDER .. "blocks.png")
 local TILE_ORDER = {"grass", "dirt", "stone1", "stone2", "stone3", "deepstone1", "deepstone2", "deepstone3",
     "bedrock1", "bedrock2", "bedrock3", "sand", "sandstone", "snow", "ice", "bricks", "slab", "ore1", "ore2", "ore3", "ore4",
     "oakLog", "oakLeaves", "pineLog", "pineLeaves", "cactus", "tallGrass", "woodworking", "forge", "arcaneTable",
-    "stoneBricks", "crackedStoneBricks", "planks", "campfire", "torch", "woodenChest", "ironChest", "arcaniteChest"}
+    "stoneBricks", "crackedStoneBricks", "planks", "campfire", "torch", "woodenChest", "ironChest", "arcaniteChest",
+    "infusionTable", "lairStone", "altar"}
 local TILE, STEP = 16 * ART_UNIT, 17 * ART_UNIT     -- A tile and the distance to the next one, in art pixels
 BLOCK_TILES = {}
 for i, name in ipairs(TILE_ORDER) do
@@ -54,7 +55,7 @@ end
 ITEM_SHEET = artImage(ART_FOLDER .. "items.png")
 ITEM_TILES = {}
 for i, name in ipairs({"helmet", "chestplate", "leggings", "boots", "bar", "rod", "largeRod", "wand", "staff", "core", "cap", "tip",
-        "trinket", "focus", "scroll", "gel", "bone", "flesh", "ink"}) do
+        "trinket", "focus", "scroll", "gel", "bone", "flesh", "ink", "hay"}) do
     ITEM_TILES[name] = love.graphics.newQuad((i - 1) * STEP, 0, TILE, TILE, ITEM_SHEET:getDimensions())
 end
 

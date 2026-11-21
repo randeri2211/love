@@ -28,8 +28,8 @@ function Enemies:draw()
         if x > - CAMERA_RENDER_OFFSET and x < SCREEN_X + CAMERA_RENDER_OFFSET and y > - CAMERA_RENDER_OFFSET and y < SCREEN_Y + CAMERA_RENDER_OFFSET then
             enemy:draw()
             -- The same hp bar as the player hud, small over the head(the hud keeps the trail per enemy)
-            -- Dead enemies drop their bar
-            if not enemy.dying then
+            -- Dead enemies drop their bar, a boss has its own across the top of the screen(see Hud:drawBoss)
+            if not enemy.dying and not enemy.boss then
                 enemy.hud = enemy.hud or Hud:new(enemy)
                 local ex, ey = enemy.body:getWorldCenter()
                 enemy.hud:drawOverhead(ex, ey - (enemy.height or 0) / 2)
@@ -45,6 +45,17 @@ function Enemies:drawCasting()
             EnemyCasting.draw(enemy)
         end
     end
+end
+
+
+function Enemies:boss()
+    -- The boss being fought, nil when there is none
+    for i, enemy in ipairs(self.enemies) do
+        if enemy.boss and not enemy.dying then
+            return enemy
+        end
+    end
+    return nil
 end
 
 

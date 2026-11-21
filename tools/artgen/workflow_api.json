@@ -1,0 +1,131 @@
+{
+  "unet": {
+    "class_type": "UnetLoaderGGUF",
+    "inputs": {
+      "unet_name": "flux1-dev-Q6_K.gguf"
+    }
+  },
+  "lora": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": [
+        "unet",
+        0
+      ],
+      "lora_name": "ume_modern_pixelart.safetensors",
+      "strength_model": 0.9
+    }
+  },
+  "clip": {
+    "class_type": "DualCLIPLoader",
+    "inputs": {
+      "clip_name1": "clip_l.safetensors",
+      "clip_name2": "t5xxl_fp8_e4m3fn.safetensors",
+      "type": "flux"
+    }
+  },
+  "vae": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "ae.safetensors"
+    }
+  },
+  "text": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "clip",
+        0
+      ],
+      "text": "pixel art game tile, block of grey stone, rough rock, storybook fantasy illustrated in pixels, natural colors at medium brightness, even neutral daylight, hue-shifted shading where shadows lean cool blue-violet and highlights lean warm, three to four tones per color, light from the top-left, each shape outlined in a darker shade of its own color, medium detail, calm and readable, seamless tileable texture filling the whole square, flat front view, no border"
+    }
+  },
+  "guide": {
+    "class_type": "FluxGuidance",
+    "inputs": {
+      "conditioning": [
+        "text",
+        0
+      ],
+      "guidance": 3.5
+    }
+  },
+  "empty": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": {
+      "conditioning": [
+        "text",
+        0
+      ]
+    }
+  },
+  "image": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "artgen_storybook_twilight_a_stone1.png"
+    }
+  },
+  "latent": {
+    "class_type": "VAEEncode",
+    "inputs": {
+      "pixels": [
+        "image",
+        0
+      ],
+      "vae": [
+        "vae",
+        0
+      ]
+    }
+  },
+  "sample": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "lora",
+        0
+      ],
+      "seed": 1000,
+      "steps": 24,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+        "guide",
+        0
+      ],
+      "negative": [
+        "empty",
+        0
+      ],
+      "latent_image": [
+        "latent",
+        0
+      ],
+      "denoise": 0.75
+    }
+  },
+  "decode": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "sample",
+        0
+      ],
+      "vae": [
+        "vae",
+        0
+      ]
+    }
+  },
+  "save": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "decode",
+        0
+      ],
+      "filename_prefix": "gui_test"
+    }
+  }
+}

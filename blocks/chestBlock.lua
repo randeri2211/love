@@ -40,6 +40,14 @@ function ChestBlock:interact()
 end
 
 
+function ChestBlock:tooltip()
+    -- Like a station's(see blocks/stationBlock): its name, whether anything is in it, the key to open it
+    local name = require("items.items").displayName(self.name)
+    local filled = Inventories.isEmpty(self.inventory) and "Empty" or "Has items in it"
+    return name .. "\n" .. filled .. "\n" .. INTERACT_KEY:upper() .. " to open"
+end
+
+
 function ChestBlock:damage(dmg, power, source)
     -- It holds together while anything is inside
     if not Inventories.isEmpty(self.inventory) then

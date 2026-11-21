@@ -15,6 +15,25 @@ for i, wood in ipairs(WOODS) do
         part = {kind = "largeRod", wood = wood.name, tint = wood.tint, bonus = {}}})
 end
 
+-- Unicorn horns, the Unicorn's drop(see entities/unicorn): rods made for Lasers, cheaper spells, stronger beams and a
+-- cheaper held beam. The large one does the rod's effect twice over(squared), a staff takes both hands
+local HORNS = {
+    {name = "UnicornHornRod", displayName = "Unicorn Horn Rod", kind = "rod", icon = "rod", power = 1},
+    {name = "LargeUnicornHornRod", displayName = "Large Unicorn Horn Rod", kind = "largeRod", icon = "largeRod", power = 2},
+}
+local HORN_TINT = {0.96, 0.9, 1, 1}
+for i, horn in ipairs(HORNS) do
+    local damage, hold = 1.1 ^ horn.power, 0.8 ^ horn.power
+    registerItem(horn.name, {displayName = horn.displayName, icon = horn.icon, tint = HORN_TINT,
+        part = {kind = horn.kind, wood = "Unicorn Horn", tint = HORN_TINT, bonus = {manaCost = 0.9 ^ horn.power},
+            spells = {
+                {form = "Laser", param = "damage", mult = damage},
+                {form = "Laser", param = "holdCost", mult = hold},
+            },
+            text = {string.format("+%d%% beam damage", math.floor((damage - 1) * 100 + 0.5)),
+                string.format("-%d%% held beam mana cost", math.floor((1 - hold) * 100 + 0.5))}}})
+end
+
 -- Cores: how powerful the tool is, every ore makes a core that opens the next ore(see the dig cap table in the design doc)
 local CORES = {
     {name = "Wooden", tint = {0.78, 0.58, 0.38, 1}, digCap = 15, complexity = 0},

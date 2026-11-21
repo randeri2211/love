@@ -10,6 +10,14 @@ registerItem("PlantFiber", {displayName = "Plant Fiber", tile = "tallGrass"})
 registerItem("SlimeGel", {displayName = "Slime Gel", icon = "gel", tint = {0.5, 0.95, 0.5, 1}})
 registerItem("Bone", {icon = "bone", tint = {0.95, 0.92, 0.84, 1}})
 registerItem("RottenFlesh", {displayName = "Rotten Flesh", icon = "flesh", tint = {0.62, 0.72, 0.42, 1}})
+
+-- Hay from plant fiber, and the hay a mana network soaked at the Infusion Table: what summons the Unicorn at the altar
+-- of its lair(see structures/unicornLair)
+registerItem("HayBale", {displayName = "Hay Bale", icon = "hay", tint = {0.95, 0.82, 0.45, 1}})
+registerItem("ManaInfusedHayBale", {displayName = "Mana-Infused Hay Bale", icon = "hay", tint = {0.78, 0.62, 1, 1},
+    tooltipLines = function()
+        return {{text = "Summons the Unicorn", good = true}, {text = "Use it on the altar of a unicorn lair"}}
+    end})
 -- Wood of any tree counts where a recipe asks for the "Wood" group(see items/crafting)
 ITEM_REGISTRY.OakWood.group = "Wood"
 ITEM_REGISTRY.PineWood.group = "Wood"

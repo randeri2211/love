@@ -49,7 +49,7 @@ end
 function ProcessPanel:update(x, y, w, h, station)
     self:drawBar(station)
     Slab.BeginWindow("ProcessStation", {
-        Title = station.info.name, X = x, Y = y, W = w, H = h,
+        Title = station.info.displayName or station.info.name, X = x, Y = y, W = w, H = h,
         AllowMove = false, AllowResize = false, AutoSizeWindow = false, ShowMinimize = false, NoSavedSettings = true,
     })
         local reason
@@ -61,14 +61,16 @@ function ProcessPanel:update(x, y, w, h, station)
             return true
         end, "In")
         self.hint = reason or self.hint
-        Slab.Text("Fuel")
-        station.fuel, reason = SlotWidget.update("ProcessFuel", station.fuel, self.screen, function(stack)
-            if Processing.fuel(stack.item) == nil then
-                return false, "Only wood burns"
-            end
-            return true
-        end, "Wood")
-        self.hint = reason or self.hint
+        if not station.info.manaOnly then       -- A station that only works on mana has nothing to burn
+            Slab.Text("Fuel")
+            station.fuel, reason = SlotWidget.update("ProcessFuel", station.fuel, self.screen, function(stack)
+                if Processing.fuel(stack.item) == nil then
+                    return false, "Only wood burns"
+                end
+                return true
+            end, "Wood")
+            self.hint = reason or self.hint
+        end
         Slab.Text("Output")
         station.output, reason = SlotWidget.update("ProcessOutput", station.output, self.screen, function()
             return false, "Take from here, nothing goes in"
@@ -79,7 +81,9 @@ function ProcessPanel:update(x, y, w, h, station)
         Slab.Image("ProcessBar", {Image = self.bar})
         Slab.Text(station.state, {Color = station.state:match("^Working") and GOOD_COLOR or HINT_COLOR})
         if station.powered then
-            Slab.Text(string.format("Powered: %.1f mana/s, %dx faster", STATION_MANA, STATION_POWERED_SPEED), {Color = BAR_POWERED})
+            local input = station.input
+            local rate = Processing.manaRate(input and Processing.forInput(station.name, input.item))
+            Slab.Text(string.format("Powered: %g mana/s, %dx faster", math.floor(rate * 10 + 0.5) / 10, STATION_POWERED_SPEED), {Color = BAR_POWERED})
             Slab.Text("Takes from and fills chests next to it", {Color = HINT_COLOR})
         elseif station.burn > 0 then
             Slab.Text(string.format("Fuel burning: %d s", math.ceil(station.burn)), {Color = BAR_FILL})
@@ -102,8 +106,11 @@ function ProcessPanel:update(x, y, w, h, station)
             if makers[process.output.item] == 1 then
                 from = from:match("(%S+)$")
             end
-            Slab.Text(string.format("%s  (%d %s, %d s%s)", Items.displayName(process.output.item), process.input.count, from,
-                process.time, process.needsMana and ", mana" or ""), {Color = HINT_COLOR})
+            -- A process that needs mana always runs powered, so it shows the time it really takes
+            local seconds = process.needsMana and process.time / STATION_POWERED_SPEED or process.time
+            local mana = process.mana and string.format(", %d mana", process.mana) or (process.needsMana and ", mana" or "")
+            Slab.Text(string.format("%s  (%d %s, %g s%s)", Items.displayName(process.output.item), process.input.count, from,
+                seconds, mana), {Color = HINT_COLOR})
         end
     Slab.EndWindow()
 end

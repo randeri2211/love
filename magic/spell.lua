@@ -520,7 +520,8 @@ function Spell:shoot(caster, x, y, dirX, dirY, triggered, target)
     -- The caster stats and the wand or staff make it stronger or weaker(see getDamage), the tool adds its knockback
     local tool = Spell.toolEffect(caster)
     -- channel makes a laser held: it stays while the caster holds the cast(see magic/playerCasting and Laser:updateHeld)
-    local castParams = setmetatable({damage = self:getDamage(caster), knockback = params.knockback + tool.knockback,
+    -- holdCost multiplies what a held laser pays every interval(a Unicorn Horn Rod lowers it, see items/wandParts)
+    local castParams = setmetatable({damage = self:getDamage(caster), knockback = params.knockback + tool.knockback, holdCost = 1,
         triggered = triggered == true, target = target, channel = not triggered and caster.channelCast == true,
         placement = placement, spell = self}, {__index = params})
     Spell.applyMods(castParams, self.core, caster)
@@ -608,7 +609,7 @@ function Spell:spawnVolley(caster, castParams, x, y, dirX, dirY)
                 -- A held laser: it follows the aim at its angle in the fan, hits each thing once per cooldown,
                 -- costs the spell mana once per cooldown and pushes like a cast every time(Recoil)
                 local spell, params = self, castParams
-                instance:hold(angle, self:getCooldown(caster), self:getManaCost(caster), function(aimX, aimY)
+                instance:hold(angle, self:getCooldown(caster), self:getManaCost(caster) * params.holdCost, function(aimX, aimY)
                     if params.recoil > 0 and caster.push ~= nil then
                         local strength = params.recoil * RECOIL_SPEED * params.cooldownScale
                         local pushX, pushY = Spell.facingDirection(params, aimX < 0 and -1 or 1)

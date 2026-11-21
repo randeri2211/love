@@ -4,6 +4,7 @@ local HPBar = require "components.hpBar"
 -- Blocks structures are built from(see world_utils/structures): stone bricks need an iron level dig cap,
 -- so early on a structure is entered through its door, cracked ones(ruins) and planks give way sooner
 -- A campfire is walk-through and lights the camp around it like a torch
+-- Lair stone holds boss lairs together, nothing breaks it(see structures/unicornLair)
 local StructureBlock = Block:new()
 
 -- Blocks by name: tile, hardness(damageThreshold), hp, and the campfire's own values
@@ -12,6 +13,7 @@ local BLOCKS = {
     {name = "CrackedStoneBricks", tile = "crackedStoneBricks", threshold = 12, hp = 8},
     {name = "Planks", tile = "planks", threshold = 5, hp = 6},
     {name = "Campfire", tile = "campfire", threshold = math.huge, hp = 1, solid = false, light = CAMPFIRE_LIGHT},
+    {name = "LairStone", tile = "lairStone", threshold = math.huge, hp = 1, noItem = true},
 }
 
 
@@ -35,6 +37,10 @@ end
 for i, info in ipairs(BLOCKS) do
     local class = StructureBlock:new()
     class.info = info
+    if info.noItem then
+        class.noItem = true     -- Part of a lair, not something to carry
+        class.drop = false
+    end
     if info.solid == false then
         -- Walk-through and out of the way of spells like a torch, it falls off with the block under it
         class.solid = false

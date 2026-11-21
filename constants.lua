@@ -18,12 +18,20 @@ TILE_SIZE = 32
 ART_PIXELS = 32
 -- Started with --art16 or --art32(the Stream Deck launch key) the game uses that art without editing this
 -- Started with --bench it runs the performance benchmark and quits(see benchmark.lua)
+-- Started with --theme=<name> it uses a generated art set, assets/art<pixels>_<name>(see tools/artgen), when it exists
+-- Without one it uses the art picked in the art selector(../art-selector), assets/art<pixels>_selected, when there is
+-- one, --theme=current starts it with the original art
 BENCHMARK = false
+ART_THEME = "selected"
 for _, a in ipairs(arg or {}) do
     ART_PIXELS = tonumber(a:match("^%-%-art(%d+)$")) or ART_PIXELS
     BENCHMARK = BENCHMARK or a == "--bench"
+    ART_THEME = a:match("^%-%-theme=([%w_%-]+)$") or ART_THEME
 end
 ART_FOLDER = "assets/art" .. ART_PIXELS .. "/"
+if ART_THEME ~= nil and love.filesystem.getInfo("assets/art" .. ART_PIXELS .. "_" .. ART_THEME, "directory") ~= nil then
+    ART_FOLDER = "assets/art" .. ART_PIXELS .. "_" .. ART_THEME .. "/"
+end
 ART_UNIT = ART_PIXELS / 16          -- Art pixels for every pixel of the 16 pixel layout(cells, pivots, anchors)
 ART_SCREEN = TILE_SIZE / ART_PIXELS -- Screen pixels per art pixel
 TILES_PER_METER = 1
@@ -154,6 +162,7 @@ LEVEL_DISTANCE = 200            -- Enemies are one level higher every this many 
 LEVEL_DEPTH = 100               -- And every this many tiles under the surface
 RUNE_XP = 50                    -- XP for learning a rune you didnt know(a glyph wall)
 LEVEL_COLOR = {1, 0.85, 0.4}    -- Level up messages and the XP bar
+BOSS_COLOR = {0.85, 0.6, 1}     -- Boss messages and the boss health bar
 MIN_CAST_SPEED = 0.2
 LASER_RELEASE_FADE = 0.12       -- Seconds a held laser takes to fade after the cast button is let go
 ENEMY_CAST_RANGE = 18           -- Tiles an enemy casts at the player from, it needs a clear line to them
@@ -225,6 +234,24 @@ SKELETON_SIGHT = 18 * TILE_SIZE
 SKELETON_AIM_TIME = 0.7             -- Seconds drawing the bow before it shoots
 SKELETON_SHOT_REST = 1.8            -- Seconds between shots
 -- Apprentice mages(see entities/apprenticeMage): keep their distance and cast a fire or frost bullet
+-- The Unicorn, the first boss(see entities/unicorn)
+UNICORN_HP = 450
+UNICORN_XP = 400
+UNICORN_SPEED = BASE_MOVE_SPEED * 0.8
+UNICORN_RANGE = {6 * TILE_SIZE, 11 * TILE_SIZE}     -- It backs off closer than this and comes in further than that
+UNICORN_TOUCH = 10                  -- Its touch, and a charge hitting the player
+UNICORN_CHARGE_DAMAGE = 28
+UNICORN_CHARGE_SPEED = 15 * TILE_SIZE
+UNICORN_CHARGE_TIME = 3             -- Most seconds a charge runs without hitting a wall
+UNICORN_BEAM_DAMAGE = 7             -- Every hit of its horn beam
+UNICORN_BEAM_INTERVAL = 0.2         -- Seconds between beam hits
+UNICORN_STOMP_RANGE = 16 * TILE_SIZE    -- It only stomps with the player this close
+UNICORN_RING_TIME = 0.5             -- Its cast circles, slower than a mage's so they read as a tell
+UNICORN_RUNE_TIME = 0.25
+UNICORN_LEASH = 45                  -- Tiles from its altar the player can go before it leaves
+UNICORN_ARENA = 18.5                -- Tiles from its altar it stays within: the left wall, a tile short of the door
+UNICORN_CHARGE_ROOM = 5             -- Tiles ahead it needs to charge
+UNICORN_LIGHT = {0.75, 0.6, 1}
 MAGE_HP = 24
 MAGE_TOUCH = 4
 MAGE_XP = 20
@@ -358,6 +385,8 @@ WALL_START = 2                  -- Tiles under the surface where the cave walls 
 PLAYER_LIGHT = {0.3, 0.28, 0.26}    -- A dim glow around the player, darkness is never fully blind
 TORCH_LIGHT = {1, 0.72, 0.42}
 FORGE_LIGHT = {0.8, 0.42, 0.18}
+ALTAR_LIGHT = {0.55, 0.38, 0.85}    -- A summoning altar, so a lair is never pitch dark
+MANA_GLYPH_COLOR = {0.5, 0.52, 1}   -- The glyphs circling over mana stations(see magic/glyphAura)
 ARCANITE_LIGHT = {0.22, 0.5, 0.65}  -- Glowing ore, it shows where the deep ore is
 SPELL_LIGHT = 0.3               -- Strength of the glow of a spell in its color, faint so a bullet doesnt light a cave
 AREA_LIGHT = 0.45               -- A burst lights more around it while it lasts
@@ -416,6 +445,8 @@ STATION_MANA = 1.5              -- Mana a second a powered processing station us
 STATION_POWERED_SPEED = 2       -- How much faster a powered station works
 WOOD_FUEL = 10                  -- Seconds of work a piece of wood burns for in an unpowered station
 SMELT_TIME = 5                  -- Seconds to smelt a bar in an unpowered forge
+INFUSE_TIME = 20                -- Seconds the Infusion Table takes to soak a Hay Bale in mana(it only works powered)
+INFUSE_MANA = 1000              -- Mana it takes from the network for one
 STATION_CHEST_INTERVAL = 0.5    -- Seconds between a powered station taking from and putting into the chests next to it
 TURRET_RANGE = 20               -- Tiles a Spell Turret sees enemies from(it needs a clear line to them)
 TURRET_WISDOM_MANA = 0.01       -- Part of a turret's spell mana cost every point of its Wisdom saves
@@ -458,10 +489,16 @@ CRAFT_TIERS = {"Basic", "Copper", "Iron", "Gold", "Arcanite"}  -- Recipe tiers i
 
 -- Trees and plants(see world_utils/flora)
 FLORA_VERSION = 1       -- Saved with new worlds, worlds without it grow no trees or plants so their saved chunks still match
-STRUCTURES_VERSION = 1  -- The same for structures(see world_utils/structures)
+STRUCTURES_VERSION = 2  -- The same for structures(see world_utils/structures), 2 has the boss lairs
 CAVES_VERSION = 1       -- The same for the cave network(see world_utils/caveNetwork), older worlds keep their noise caves
 STRUCTURE_SPAWN_CLEAR = 60      -- Tiles around where the world starts that never have a structure
 STRUCTURE_XP = 20               -- XP for clearing a structure, times its level
+-- Boss lairs(see structures/unicornLair): tiles per lair grid cell, the ley lines that count as strong(LEY_LINES rate) and
+-- how far above and under the ground the crossing may be
+LAIR_CELL = 1200
+LAIR_LEY_RATE = 5
+LAIR_ABOVE = 10
+LAIR_BELOW = 5
 CAMPFIRE_LIGHT = {0.95, 0.6, 0.3}
 STRUCTURE_WALL_SHADE = 0.45     -- How dark the walls inside buildings are drawn(cave walls are WALL_SHADE)
 TREE_CELL = 8           -- Columns per tree spot, each spot has at most one tree so canopies never touch

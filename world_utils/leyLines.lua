@@ -159,6 +159,58 @@ function LeyLines.at(tx, ty, seed)
 end
 
 
+function LeyLines.crossings(tx1, tx2, band, minRate, seed)
+    -- Where two different lines of at least minRate cross between columns tx1 and tx2, within the rows band(column)
+    -- returns(top, bottom): a list of {x, y} tiles, left to right, one per crossing
+    -- Each layer keeps only the strongest line on a tile, so a crossing is a strong tile with another strong line's tile
+    -- within CROSS_REACH of it(two lines of a layer meeting, or lines of two layers running over each other)
+    -- (Lairs of the ley beasts stand on these, see structures/unicornLair)
+    fresh(seed)
+    local CROSS_REACH = 2
+    local strong = {}       -- "x,y" -> {id = true}
+    local tiles = {}
+    for x = tx1 - CROSS_REACH, tx2 + CROSS_REACH do
+        local top, bottom = band(x)
+        for y = top - CROSS_REACH, bottom + CROSS_REACH do
+            for i, layer in ipairs(layers) do
+                local n = layer.def.region
+                local rx, ry = math.floor(x / n), math.floor(y / n)
+                local line = region(layer, seed, rx, ry)[(x - rx * n) * n + (y - ry * n)]
+                if line ~= nil and line.rate >= minRate then
+                    local key = x .. "," .. y
+                    if strong[key] == nil then
+                        strong[key] = {}
+                        table.insert(tiles, {x = x, y = y, key = key})
+                    end
+                    strong[key][line.id] = true
+                end
+            end
+        end
+    end
+    local list, last = {}, -math.huge
+    for i, tile in ipairs(tiles) do
+        local top, bottom = band(tile.x)
+        if tile.x >= tx1 and tile.x <= tx2 and tile.y >= top and tile.y <= bottom and tile.x - last > CROSS_REACH * 4 then
+            local ids, count = {}, 0
+            for dx = -CROSS_REACH, CROSS_REACH do
+                for dy = -CROSS_REACH, CROSS_REACH do
+                    for id in pairs(strong[(tile.x + dx) .. "," .. (tile.y + dy)] or {}) do
+                        if not ids[id] then
+                            ids[id], count = true, count + 1
+                        end
+                    end
+                end
+            end
+            if count >= 2 then
+                table.insert(list, {x = tile.x, y = tile.y})
+                last = tile.x
+            end
+        end
+    end
+    return list
+end
+
+
 function LeyLines.seen()
     -- True while the player wears Ley Goggles(a trinket with leySight, see items/trinkets)
     local equipment = player ~= nil and player.equipment

@@ -182,8 +182,9 @@ function saveEntities()
     -- Plain data of every entity in the world
     local data = {}
     for i, entity in pairs(map.enemies.enemies) do
-        -- Dying entities are gone by the time the save loads, spawned ones are temporary(see world_utils/spawner)
-        if not entity.dying and not entity.spawned then
+        -- Dying entities are gone by the time the save loads, spawned ones are temporary(see world_utils/spawner), and a
+        -- boss fight isnt picked up again(the boss goes back to its lair, see blocks/summoningAltar)
+        if not entity.dying and not entity.spawned and not entity.boss then
             entity:prepSave()
             table.insert(data, plainCopy(entity))
         end

@@ -10,3 +10,6 @@ saves/*
 
 # Map previews rendered while tuning world generation
 previews/
+
+# The art selector's picks(../art-selector), rebuilt on every Apply, the game uses it when it is there
+assets/art32_selected/

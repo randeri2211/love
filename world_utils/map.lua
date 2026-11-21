@@ -160,6 +160,14 @@ function Map:stampStructures(chunk, cx, cy)
                     elseif entry.glyph then
                         block = self:newBlock("GlyphWall", x, y)
                         block.rune = Structures.glyphRune(found)
+                        if found.def.boss ~= nil then
+                            block.lairId = found.id     -- Sealed until the lair's boss is beaten
+                        end
+                    elseif entry.door then
+                        block = nil     -- The way in, a Lair Seal closes it during a boss fight
+                    elseif entry.altar then
+                        block = self:newBlock("SummoningAltar", x, y)
+                        block.lairId, block.boss, block.summon = found.id, found.def.boss, found.def.summon
                     elseif entry.ore then
                         block = self:newBlock(found.def.ore(found.depth), x, y)
                     elseif entry.guard and not state.cleared then

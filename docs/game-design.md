@@ -543,14 +543,14 @@ A new player's first hours, walked through the code as it is (with the testing s
 5. **Day 2:** 20 stone and 4 wood make a Forge, copper from 20 deep, smelted with wood. Copper armor, a Copper Core
    (cap 21) opens deepstone and iron.
 6. **Day 3+:** iron armor, the Iron Core (gold), and the whole mana network unlocks (the battery is 8 iron).
-7. **Then gold**, the Gold Core opens deep gold, and **arcanite needs cap 36 from a boss drop core: the first boss is
-   the wall at the end of the early game.**
+7. **Then gold**, the Gold Core opens deep gold. Arcanite needs a cap 36 core, a **later game** core that doesnt come
+   from the first boss (where it comes from is decided with the later bosses).
 
 Gaps found, and what was decided:
 
 | # | Gap | Decision |
 |---|---|---|
-| 1 | No first boss: arcanite and everything after are blocked | To design |
+| 1 | No first boss: arcanite and everything after are blocked | The Unicorn, a ley beast holding Laser (see Bosses) |
 | 2 | Rune learning is slow (mage tower glyph walls only) | Glyphs go in **boss arenas**, wait for bosses. Some runes are **boss only** (Laser) |
 | 3 | Enemies drop nothing | Slimes: **slime gel** (torches, early ink) and rarely a **slime core**. Skeletons: **bones**. Zombies: **rotten flesh** (regeneration potions later) |
 | 4 | The starting spellbook has spells using runes a new player doesnt know | **Done:** a flag (`TESTING_SPELLBOOK`): the full testing book while on, Bullet + Dig and Bullet + Damage when off |
@@ -590,6 +590,66 @@ more bounce on main circle Bullets, a curve on main circle Lasers (`main` spell 
 **Rune pacing (proposed):** until bosses exist, mage tower glyph walls keep teaching the common runes, the strong ones
 (Laser, and probably Repeat, Trap and the triggers) are boss only.
 
+## Bosses (design)
+
+**Every boss holds a rune.** Each boss fights with one signature rune, so the player sees it at work before learning
+it, and its lair has the glyph wall that teaches it. Every boss has:
+- **A signature rune:** used in the fight, taught by the lair's glyph wall.
+- **A lair:** unbreakable, placed by world generation, with a **summoning altar** inside. The boss only comes when the
+  player uses the boss's **summoning item** on the altar, so the player picks when to fight.
+- **A signature drop:** a wand part that moves the build forward.
+- **Telegraphed attacks:** its casts show a circle before they go off, like the player's.
+
+**Two families:**
+
+| Family | Who | Lair | Teaches | Drops |
+|---|---|---|---|---|
+| **Ley beasts** | Creatures soaked in ley line mana | Where ley lines cross, each beast has its own crossing rule | **Core and form** runes, things its body does (the unicorn's horn beam is Laser) | Body parts as wand parts |
+| **Renegade mages** | Casters who went too far, using the enemy spell system (like the Apprentice) with longer combos | Sanctums, bigger mage towers | **Modifier and trigger** runes (Repeat, Trap, the triggers), the "how to combine" runes | Caster gear (staves, foci, the Twin Sigil) |
+
+Ley beasts come first, mages later: a creature fight is easier to read than a duel, and combining runes is later game
+knowledge.
+
+### The first boss: the Unicorn (ley beast) (Done)
+(`entities/unicorn`, `structures/unicornLair`, `blocks/summoningAltar`, the Infusion Table in `blocks/stationBlock`)
+- **Rune:** Laser, its horn fires beams. The lair's glyph wall teaches it, **sealed until the Unicorn is beaten**.
+  Laser is never taught anywhere else (a structure's `glyph` is a boss rune, see `Structures.bossRunes`).
+- **Lair:** an unbreakable hall of Lair Stone, 38 tiles inside and 9 high, the way in on the right, two torches, the
+  altar in the middle and the glyph wall in the left wall. Built where two **medium or wider** ley lines cross
+  (`LeyLines.crossings`), from 10 tiles above the ground to 5 below, at most one per 1200 columns (`LAIR_CELL`).
+  Measured on 5 seeds: one every 1,900-5,000 tiles, the nearest 67-3,665 tiles from spawn. Only worlds made with
+  `STRUCTURES_VERSION` 2 have lairs.
+  (A first count of **wide** lines meeting found one every 20,000-80,000 tiles, too rare, so "strong" is medium or wide.)
+  Lair stone fills down to the ground under the hall (dirt under the step outside), so it never stands over a slope
+  (a structure's `fill`).
+- **Summoning:** a **Mana-Infused Hay Bale** on the altar (the interact key, from anywhere in the inventory). One Unicorn
+  at a time, it can be called again after it is beaten. Summoning **seals the way in** with Lair Seals (unbreakable,
+  `blocks/lairSeal`): neither the Unicorn nor the player gets knocked or walks out. They open on their own once the lair
+  has no living boss (beaten, or gone back after the player died) and arent saved, a loaded world has the way in open.
+  - **Hay Bale:** 9 Plant Fiber at the Woodworking Station.
+  - **Infusion Table:** 20 wood and 4 iron bars at the Woodworking Station. A processing station with no fuel slot, it
+    only works on a mana network: a Hay Bale takes **1000 mana over 20 seconds** (a process can have its own mana,
+    `Processing.manaRate`), and it waits when the network runs dry.
+- **The fight** (no second phase). It keeps 6-11 tiles away, never leaves its arena (18.5 tiles each way from the altar),
+  and picks any attack but the last one:
+  - **Charge:** it scrapes its front right hoof twice, then runs horn first (15 tiles a second, 28 damage) until a wall
+    or the arena edge stops it, and stands dazed for 0.8 seconds. It only charges with 5 tiles of room ahead.
+  - **Horn beam:** a cast circle builds at its horn, then a plain damage Laser is held low across the arena for 1
+    second (7 damage every 0.2 seconds). Jump over it, or hide behind a block.
+  - **Stomp:** it rears with a cast circle at its hooves, and lands sending a ground wave each way along the floor: a
+    Bullet with Size, Size, Repel and Damage (15 damage). Jump over it, or a block stops it. (No Gravity, a falling
+    bullet ends on the floor, and no Pierce, it would go through blocks.)
+  - 450 hp, a health bar across the top of the screen. It leaves when the player dies or goes 45 tiles from its altar,
+    and isnt saved (a fight isnt picked up again after loading).
+- **Drop:** a **Unicorn Horn Rod** or a **Large Unicorn Horn Rod** (one of them, half and half), 400 XP,
+  and the lair is cleared (structure XP, the glyph opens). Horn rods are made for Lasers:
+  - **Unicorn Horn Rod:** +10% beam damage, x0.9 mana cost, x0.8 held beam mana cost.
+  - **Large Unicorn Horn Rod:** the rod's effect squared (+21% beam damage, x0.81 mana cost, x0.64 held beam mana
+    cost). The beam modifiers are part spell modifiers, they come from the main hand only, so a second horn wand in the
+    off hand only adds its mana cost.
+- **Not from the unicorn:** the arcanite tier's cap 36 core is later game, it comes from a later boss.
+- **Placeholder art:** the unicorn sheet, the Infusion Table, Lair Stone, the altar and the hay icon.
+
 ---
 
 ## Build order (proposed)
@@ -601,5 +661,5 @@ more bounce on main circle Bullets, a curve on main circle Lasers (`main` spell 
 5. Spawner and enemy variety **Done** (the Apprentice mage is the first real caster)
 6. Rune knowledge, glyph walls and the grimoire **Done** (placeholder walls)
 7. Light: tile light, torches, glowing blocks **Done**, the Light rune and the Block form **Done**
-8. Bosses, trinkets and set bonuses (trinkets and sets **Done**)
+8. Bosses, trinkets and set bonuses (trinkets and sets **Done**, the Unicorn **Done**)
 9. Mana network: batteries, conduits, consumers (see Mana network)

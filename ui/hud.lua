@@ -92,6 +92,21 @@ function Hud:drawBar(key, x, y, label, current, max, color, markerValue, w, h)
 end
 
 
+function Hud:drawBoss(boss)
+    -- Screen space: a boss's name and a wide health bar across the top of the screen
+    local w = love.graphics.getWidth()
+    local barW = math.min(560, w - 2 * MARGIN)
+    local x, y = math.floor(w / 2 - barW / 2), 48
+    love.graphics.push("all")
+    local name = boss.displayName or boss.name
+    local font = love.graphics.getFont()
+    love.graphics.setColor(BOSS_COLOR)
+    love.graphics.print(name, math.floor(w / 2 - font:getWidth(name) / 2), y - font:getHeight() - 4)
+    self:drawBar("boss", x, y, nil, boss.hpBar.currentHP, boss.hpBar.maxHP, HP_COLOR, nil, barW, BAR_H)
+    love.graphics.pop()
+end
+
+
 function Hud:drawOverhead(x, top)
     -- Small bars centered above an entity in world space(inside the camera): hp once it is hurt,
     -- and under it mana for enemies that cast(see magic/enemyCasting)

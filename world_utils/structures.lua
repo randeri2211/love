@@ -20,6 +20,16 @@ local Inventories = require "items.inventories"
 --   decays = {[character] = chance} blocks of ruins left out, guards = {{entity, weight}} or by biome name,
 --   backWall = {[character] = true} cells with a wall drawn behind them(backWallTile, see Structures.drawBackWalls),
 --   loot = {{item, min, max, chance}} for its chests, title = its name in messages
+--   find(def, cell, seed, settings) = the column it starts at, nil when its cell has none: for a structure placed by
+--     something other than chance(a lair on a ley line crossing), it then sits on the surface like a surface one
+--   version = the lowest STRUCTURES_VERSION a world needs to have it(older worlds already saved chunks without it)
+--   glyph = the rune its glyph walls teach(a boss rune, never taught anywhere else, see Structures.bossRunes)
+--   boss, summon = the boss its altar({altar = true}) summons and the item that does it(see blocks/summoningAltar),
+--     beating the boss clears the structure and unseals its glyph walls, {door = true} cells are air that a Lair Seal
+--     closes while the boss is fought(see blocks/lairSeal)
+--   fill = {[character] = block name}: under a column whose bottom blueprint cell is that character, the block fills
+--     down to the ground, so it never stands over a slope with air under it(found.fill = the ground row per column,
+--     found.extra = how many rows the deepest one goes past the blueprint)
 local Structures = {}
 
 local cache = {}            -- Structures worked out so far by def name and cell, false for an empty cell
@@ -34,7 +44,7 @@ end
 
 
 local function overlaps(a, b)
-    return a.tx < b.tx + b.w and b.tx < a.tx + a.w and a.ty < b.ty + b.h and b.ty < a.ty + a.h
+    return a.tx < b.tx + b.w and b.tx < a.tx + a.w and a.ty < b.ty + b.h + (b.extra or 0) and b.ty < a.ty + a.h + (a.extra or 0)
 end
 
 
@@ -48,6 +58,12 @@ local function build(def, index, cell)
     local w, h = #def.blueprint[1], #def.blueprint
     local margin = 4
     local tx = cell * def.cell + margin + math.floor(hash(seed, cell, salt + 1) * math.max(1, def.cell - w - margin * 2))
+    if def.find ~= nil then
+        tx = def.find(def, cell, seed, settings)
+        if tx == nil then
+            return false
+        end
+    end
     local center = tx + math.floor(w / 2)
     -- Never on top of where the world starts
     if math.abs(center) < STRUCTURE_SPAWN_CLEAR then
@@ -61,7 +77,7 @@ local function build(def, index, cell)
         end
         -- Only where the ground is flat enough under it
         for column = tx, tx + w - 1 do
-            if math.abs(Generator.surfaceRow(column, seed, settings) - ground) > def.maxSlope then
+            if def.maxSlope ~= nil and math.abs(Generator.surfaceRow(column, seed, settings) - ground) > def.maxSlope then
                 return false
             end
         end
@@ -70,8 +86,18 @@ local function build(def, index, cell)
         local depth = def.depth[1] + math.floor(hash(seed, cell, salt + 2) * (def.depth[2] - def.depth[1]))
         ty = ground + depth
     end
-    return {def = def, id = def.name .. ":" .. cell, tx = tx, ty = ty, w = w, h = h, cell = cell,
-        biome = Biomes.surface(center, seed, settings).name, depth = ty - ground}
+    local found = {def = def, id = def.name .. ":" .. cell, tx = tx, ty = ty, w = w, h = h, cell = cell,
+        biome = Biomes.surface(center, seed, settings).name, depth = ty - ground, extra = 0}
+    if def.fill ~= nil then
+        -- Where the ground is under every column, the fill goes down to it
+        found.fill = {}
+        for c = 1, w do
+            local row = Generator.surfaceRow(tx + c - 1, seed, settings)
+            found.fill[c] = row
+            found.extra = math.max(found.extra, row - (ty + h - 1))
+        end
+    end
+    return found
 end
 
 
@@ -115,9 +141,11 @@ function Structures.inArea(tx1, ty1, tx2, ty2)
     end
     for index, def in ipairs(STRUCTURE_REGISTRY) do
         local w = #def.blueprint[1]
-        for cell = math.floor((tx1 - w) / def.cell), math.floor(tx2 / def.cell) do
+        -- A type newer than the world isnt in it
+        local cells = (def.version or 1) <= map.settings.structures and math.floor(tx2 / def.cell) or math.floor((tx1 - w) / def.cell) - 1
+        for cell = math.floor((tx1 - w) / def.cell), cells do
             local found = structure(def, index, cell)
-            if found and found.tx <= tx2 and found.tx + found.w > tx1 and found.ty <= ty2 and found.ty + found.h > ty1 then
+            if found and found.tx <= tx2 and found.tx + found.w > tx1 and found.ty <= ty2 and found.ty + found.h + found.extra > ty1 then
                 table.insert(list, found)
             end
         end
@@ -163,7 +191,74 @@ function Structures.cells(found, tx1, ty1, tx2, ty2)
             end
         end
     end
+    -- The fill under it, down to the ground
+    if found.fill ~= nil then
+        local bottom = def.blueprint[found.h]
+        for c = math.max(1, tx1 - found.tx + 1), math.min(found.w, tx2 - found.tx + 1) do
+            local block = def.fill[bottom:sub(c, c)]
+            if block ~= nil then
+                for ty = math.max(ty1, found.ty + found.h), math.min(ty2, found.fill[c]) do
+                    table.insert(cells, {tx = found.tx + c - 1, ty = ty, entry = block})
+                end
+            end
+        end
+    end
     return cells
+end
+
+
+function Structures.byId(id)
+    -- The structure with an id("UnicornLair:-3"), nil when there is none
+    local name, cell = tostring(id):match("^(.-):(%-?%d+)$")
+    for index, def in ipairs(STRUCTURE_REGISTRY) do
+        if def.name == name then
+            return structure(def, index, tonumber(cell)) or nil
+        end
+    end
+    return nil
+end
+
+
+function Structures.doors(found)
+    -- The tiles of its {door = true} cells, {tx, ty}
+    local list = {}
+    for r, row in ipairs(found.def.blueprint) do
+        for c = 1, #row do
+            local entry = found.def.legend[row:sub(c, c)]
+            if type(entry) == "table" and entry.door then
+                table.insert(list, {tx = found.tx + c - 1, ty = found.ty + r - 1})
+            end
+        end
+    end
+    return list
+end
+
+
+function Structures.bossOf(id)
+    -- The living boss of a lair, nil when it isnt summoned
+    for i, enemy in ipairs(map.enemies.enemies) do
+        if enemy.lairId == id and enemy.boss and not enemy.dying then
+            return enemy
+        end
+    end
+    return nil
+end
+
+
+function Structures.sealDoors(id)
+    -- Closes a lair's way in with Lair Seals while its boss is fought, they open on their own when it is gone
+    local found = Structures.byId(id)
+    if found == nil then
+        return
+    end
+    for i, door in ipairs(Structures.doors(found)) do
+        local x, y = door.tx + map.center.x + 1, map.center.y + 1 - door.ty
+        if map:get(x, y) == nil then
+            local seal = map:newBlock("LairSeal", x, y)
+            seal.lairId = id
+            map:set(x, y, seal)
+        end
+    end
 end
 
 
@@ -224,11 +319,28 @@ function Structures.fillChest(found, chest, index)
 end
 
 
+function Structures.bossRunes()
+    -- The runes only a boss lair teaches(their glyph), name -> true
+    local runes = {}
+    for i, def in ipairs(STRUCTURE_REGISTRY) do
+        if def.glyph ~= nil then
+            runes[def.glyph] = true
+        end
+    end
+    return runes
+end
+
+
 function Structures.glyphRune(found)
-    -- The rune its glyph wall teaches, one the player doesnt start with, the same one every time
+    -- The rune its glyph wall teaches: its own(a lair's boss rune), or one the player doesnt start with and no boss
+    -- teaches, the same one every time
+    if found.def.glyph ~= nil then
+        return found.def.glyph
+    end
+    local boss = Structures.bossRunes()
     local names = {}
     for name in pairs(RUNE_REGISTRY) do
-        local starting = false
+        local starting = boss[name] == true
         for i, start in ipairs(STARTING_RUNES) do
             starting = starting or start == name
         end
@@ -287,6 +399,29 @@ function Structures.guardDied(enemy)
         Levels.gain(player, STRUCTURE_XP * (state.level or 1))
         if uihandler ~= nil then
             uihandler:toast(string.format("Cleared the %s, +%d XP", state.title or "structure", STRUCTURE_XP * (state.level or 1)), LEVEL_COLOR)
+        end
+    end
+end
+
+
+function Structures.isCleared(id)
+    -- True once a structure is cleared(a lair once its boss was beaten)
+    local state = map.structures[id]
+    return state ~= nil and state.cleared == true
+end
+
+
+function Structures.bossDefeated(id)
+    -- A lair's boss is dead: the lair is cleared and its glyph walls open, experience the first time
+    local state = map.structures[id]
+    if state == nil then
+        return
+    end
+    if not state.cleared then
+        state.cleared = true
+        Levels.gain(player, STRUCTURE_XP * (state.level or 1))
+        if uihandler ~= nil then
+            uihandler:toast(string.format("The %s is open, +%d XP", state.title or "lair", STRUCTURE_XP * (state.level or 1)), LEVEL_COLOR)
         end
     end
 end

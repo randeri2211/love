@@ -32,6 +32,10 @@ end
 
 function EnemyCasting.circlePosition(enemy)
     -- Where the circle builds: a little in front of the enemy toward its target, at chest height
+    -- An enemy can say where its own circles go(the Unicorn's at its horn or its hooves)
+    if enemy.castCirclePosition ~= nil then
+        return enemy:castCirclePosition()
+    end
     local x, y = enemy.body:getWorldCenter()
     local who = target()
     local side = enemy.facing == "left" and -1 or 1

@@ -73,8 +73,21 @@ function BigBlock:breakApart()
 end
 
 
+local arts = {}     -- Machine pictures by name, loaded with the first block that draws one
+
+
 function BigBlock:drawArt(x, y, w, h)
-    -- The picture of the block in a box, the same for the world and the item icon(block types draw their own)
+    -- The picture of the block in a box, the same for the world and the item icon: a block type with an art name has
+    -- its whole picture in assets/art*/machines/<art>.png, the others draw their own
+    if self.art == nil then
+        return
+    end
+    local image = arts[self.art]
+    if image == nil then
+        image = artImage(ART_FOLDER .. "machines/" .. self.art .. ".png")
+        arts[self.art] = image
+    end
+    love.graphics.draw(image, x, y, 0, w / image:getWidth(), h / image:getHeight())
 end
 
 

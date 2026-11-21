@@ -1,0 +1,22 @@
+{
+    "name": "storybook_twilight_b",
+    "prompt": "pixel art game tile, {subject}, cozy hand-painted fantasy, friendly slightly rounded shapes, natural colors at medium brightness, neutral even lighting, soft painterly shading with cool violet-tinted shadows and warm highlights, light from the top-left, darker same-hue outlines, moderate texture with a few bright highlight pixels",
+    "full_hint": "seamless tileable texture filling the whole square, flat front view, no border",
+    "shape_hint": "single object centered on a plain grey background, flat front view",
+    "reference": null,
+    "reference_strength": 0.4,
+    "denoise": 0.75,
+    "guidance": 3.5,
+    "steps": 24,
+    "seed": 1000,
+    "palette_colors": 48,
+    "lora_strength": 0.9,
+    "model": "flux1-dev-Q6_K.gguf",
+    "lora": "ume_modern_pixelart.safetensors",
+    "clip_l": "clip_l.safetensors",
+    "t5": "t5xxl_fp8_e4m3fn.safetensors",
+    "vae": "ae.safetensors",
+    "clip_vision": "sigclip_vision_patch14_384.safetensors",
+    "style_model": "flux1-redux-dev.safetensors",
+    "magic_hint": "softly glowing violet magic light, luminous runes, the only glowing thing in the scene"
+}

@@ -164,6 +164,11 @@ function Lighting.update()
             spell.instance:light(addLight)
         end
     end
+    for i, enemy in ipairs(map.enemies.enemies) do
+        if enemy.light ~= nil and not enemy.dying then
+            enemy:light(addLight)       -- Creatures that glow(the Unicorn's horn)
+        end
+    end
 
     spread(g)
 

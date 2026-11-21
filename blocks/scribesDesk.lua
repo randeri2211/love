@@ -45,6 +45,14 @@ function ScribesDesk:interact()
 end
 
 
+function ScribesDesk:tooltip()
+    -- Like a station's(see blocks/stationBlock): its name, the scrolls in its slot, the key to open it
+    local scrolls = self.slot and string.format("%d Blank Scroll%s", self.slot.count, self.slot.count == 1 and "" or "s")
+        or "No scrolls"
+    return "Scribe's Desk\n" .. scrolls .. "\n" .. INTERACT_KEY:upper() .. " to open"
+end
+
+
 function ScribesDesk:damage(dmg, power, source)
     -- It holds together while scrolls are in it
     if self.slot then

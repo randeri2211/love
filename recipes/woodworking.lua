@@ -16,6 +16,14 @@ registerRecipe({output = "WoodenCore", inputs = {{group = "Wood", count = 6}}, s
 registerRecipe({output = "WoodenCap", inputs = {{group = "Wood", count = 2}}, station = "WoodworkingStation", tier = 1, category = "Wand parts"})
 registerRecipe({output = "WoodenTip", inputs = {{group = "Wood", count = 4}}, station = "WoodworkingStation", tier = 1, category = "Wand parts"})
 
+-- Hay for the Unicorn's summoning(see structures/unicornLair), and the Infusion Table that soaks it in mana: it only
+-- works on a mana network, so the first boss waits for the mana network
+registerRecipe({output = "HayBale", inputs = {{item = "PlantFiber", count = 9}}, station = "WoodworkingStation", tier = 1, category = "Summoning"})
+registerRecipe({output = "InfusionTable", inputs = {{group = "Wood", count = 20}, {item = "IronBar", count = 4}},
+    station = "WoodworkingStation", tier = 3, category = "Stations"})
+registerProcess({station = "InfusionTable", input = {item = "HayBale", count = 1}, output = {item = "ManaInfusedHayBale", count = 1},
+    time = INFUSE_TIME * STATION_POWERED_SPEED, needsMana = true, mana = INFUSE_MANA})
+
 -- The arcane table puts wands and staves together, it needs no stone(bare hands cant dig stone)
 registerRecipe({output = "ArcaneTable", inputs = {{group = "Wood", count = 15}}, station = "WoodworkingStation", tier = 1, category = "Stations"})
 
